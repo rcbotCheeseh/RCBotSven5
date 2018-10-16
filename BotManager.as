@@ -22,10 +22,11 @@ void PluginInit()
 	
 	@m_pAddBot = @CConCommand( "addbot", "Adds a new bot", @AddBotCallback );
 
-	@m_pRCBotWaypointAdd = @CConCommand( "RCBotWaypoint_add", "Adds a new RCBotWaypoint", @AddRCBotWaypointCallback );
+	@m_pRCBotWaypointAdd = @CConCommand( "waypoint_add", "Adds a new waypoint", @AddWaypointCallback );
 }
-
-
+// ------------------------------------
+// COMMANDS - 	start
+// ------------------------------------
 void AddBotCallback( const CCommand@ args )
 {
 	/*if( args.ArgC() < 2 )
@@ -38,11 +39,17 @@ void AddBotCallback( const CCommand@ args )
 
 }
 
-void AddRCBotWaypointCallback ( const CCommand@ args )
+void AddWaypointCallback ( const CCommand@ args )
 {
 	//g_Waypoints.addWaypoint();
 }
+// ------------------------------------
+// COMMANDS - 	end
+// ------------------------------------
 
+// ------------------------------------
+// TASKS / SCHEDULES - 	START
+// ------------------------------------
 final class RCBotTask
 {
 	bool m_bComplete = false;
@@ -82,6 +89,13 @@ final class RCBotSchedule
 	}
 }
 
+// ------------------------------------
+// TASKS / SCHEDULES - 	END
+// ------------------------------------
+
+// ------------------------------------
+// BOT BASE - START
+// ------------------------------------
 final class RCBot : BotManager::BaseBot
 {	
 	private float m_fNextThink = 0;
