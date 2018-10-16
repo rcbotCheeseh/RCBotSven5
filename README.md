@@ -5,11 +5,11 @@ New Angelscript RCBot for Svencoop 5 test
 
 WIP!!!
 
-#Editor
+# Editor
 
 Visual Studio Code: https://code.visualstudio.com/
 
-#Usage
+# Usage
 
 open default_plugins.txt
 
