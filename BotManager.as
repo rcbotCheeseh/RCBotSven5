@@ -4,7 +4,7 @@
 */
 
 #include "BotManagerInterface"
-//#include "BotWaypoint"
+#include "BotWaypoint"
 
 BotManager::BotManager g_BotManager( @CreateRCBot );
 
