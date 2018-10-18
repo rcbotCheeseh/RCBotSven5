@@ -152,6 +152,28 @@ class CWaypointTypes
 
 		return colour;
 	}
+
+	int findTypeFlag ( string type )
+	{
+		for ( uint i = 0; i < m_Types.length(); i ++ )
+		{
+			if ( m_Types[i].m_szName == type  )
+				return m_Types[i].m_iFlag;
+
+		}
+
+		return 0;
+	}
+
+	int parseTypes ( array<string> types )
+	{
+		int flags = 0;
+
+		for ( uint i = 0; i < types.length(); i ++  )
+		{
+			flags |= findTypeFlag(types[i]);
+		}
+	}
 }
 
 WptColor@ PathColor = WptColor(255,255,255,200);
