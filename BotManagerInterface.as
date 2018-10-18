@@ -123,7 +123,8 @@ namespace BotManager
 		private array<BaseBot@> m_Bots;
 		
 		private CScheduledFunction@ m_pScheduledFunction;
-		
+		private CScheduledFunction@ m_pWaypointDisplay;
+
 		private CreateBotFn@ m_pCreateBotFn;
 		
 		private bool m_bInitialized = false;
@@ -158,7 +159,8 @@ namespace BotManager
 			g_Hooks.RegisterHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
 			
 			@m_pScheduledFunction = g_Scheduler.SetInterval( @this, "Think", 0.1 );
-			
+			@m_pWaypointDisplay = g_Scheduler.SetInterval(@this, "WaypointDisplay", 1);
+
 			//If the plugin was reloaded, find all bots and add them again.
 			for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
 			{
@@ -312,6 +314,26 @@ namespace BotManager
 				
 				pBot.Think();
 				pBot.RunPlayerMove();
+			}
+
+		}
+
+		void WaypointDisplay ()
+		{
+
+			//If the plugin was reloaded, find all bots and add them again.
+			for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+			{
+				CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+				
+				if( pPlayer is null )
+					continue;
+					
+				// not a bot
+				if( ( pPlayer.pev.flags & FL_FAKECLIENT ) == 0 )
+				{				
+					g_Waypoints.DrawWaypoints(pPlayer);
+				}
 			}
 		}
 	}

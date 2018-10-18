@@ -10,8 +10,11 @@ BotManager::BotManager g_BotManager( @CreateRCBot );
 
 CConCommand@ m_pAddBot;
 CConCommand@ m_pRCBotWaypointAdd;
-
-//RCBotWaypoints g_Waypoints;
+CConCommand@ m_pRCBotWaypointDelete;
+CConCommand@ m_pRCBotWaypointOff;
+CConCommand@ m_pRCBotWaypointOn;
+CConCommand@ m_pPathWaypointCreate1;
+CConCommand@ m_pPathWaypointCreate2;
 
 void PluginInit()
 {
@@ -22,7 +25,14 @@ void PluginInit()
 	
 	@m_pAddBot = @CConCommand( "addbot", "Adds a new bot", @AddBotCallback );
 
-	@m_pRCBotWaypointAdd = @CConCommand( "waypoint_add", "Adds a new waypoint", @AddWaypointCallback );
+	@m_pRCBotWaypointOff = @CConCommand( "waypoint_off", "Display waypoints off", @WaypointOff );
+	@m_pRCBotWaypointOn = @CConCommand( "waypoint_on", "Displays waypoints on", @WaypointOn );
+	@m_pRCBotWaypointAdd = @CConCommand( "waypoint_add", "Adds a new waypoint", @WaypointAdd );
+	@m_pRCBotWaypointDelete = @CConCommand( "waypoint_delete", "Adds a new waypoint", @WaypointDelete );
+
+	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
+	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
+
 }
 // ------------------------------------
 // COMMANDS - 	start
@@ -39,9 +49,40 @@ void AddBotCallback( const CCommand@ args )
 
 }
 
-void AddWaypointCallback ( const CCommand@ args )
+void WaypointAdd ( const CCommand@ args )
+{
+	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+
+	g_Waypoints.addWaypoint(player.pev.origin);
+}
+
+void WaypointOff ( const CCommand@ args )
+{
+	g_Waypoints.WaypointsOn(false);
+}
+
+void WaypointOn ( const CCommand@ args )
+{
+	g_Waypoints.WaypointsOn(true);
+}
+
+void WaypointDelete ( const CCommand@ args )
 {
 	//g_Waypoints.addWaypoint();
+}
+
+void PathWaypoint_Create1 ( const CCommand@ args )
+{
+	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+
+	g_Waypoints.PathWaypoint_Create1(player);
+}
+
+void PathWaypoint_Create2 ( const CCommand@ args )
+{
+	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	
+	g_Waypoints.PathWaypoint_Create2(player);
 }
 // ------------------------------------
 // COMMANDS - 	end

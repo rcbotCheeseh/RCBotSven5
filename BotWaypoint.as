@@ -1,18 +1,167 @@
 
 CWaypoints g_Waypoints;
+CWaypointTypes g_WaypointTypes;
 
 const int W_FL_JUMP = 1;
 const int W_FL_CROUCH = 2;
 const int W_FL_END_LEVEL = 4;
+const int W_FL_AMMO = 8;
+const int W_FL_HEALTH = 16;
 
 const int MAX_WAYPOINTS = 1024;
+
+void BotMessage ( string message )
+{
+	g_Game.AlertMessage( at_console, "[RCBOT]" + message );	
+}
+
+void drawBeam (CBasePlayer@ pPlayer, Vector start, Vector end, WptColor@ col )
+{
+	//BotMessage("Beam from " + formatFloat(start.x) + "," + formatFloat(start.y) + "," + formatFloat(start.z)+ "," + " to " + formatFloat(end.x)+ "," +formatFloat(end.y)+ "," + formatFloat(end.z) + "\n" );
+		// PM - Use MSG_ONE_UNRELIABLE
+		//    - no overflows!
+	NetworkMessage message(MSG_ONE_UNRELIABLE, NetworkMessages::SVC_TEMPENTITY, pPlayer.edict());
+
+	message.WriteByte(TE_BEAMPOINTS);
+	message.WriteCoord(start.x);
+	message.WriteCoord(start.y);
+	message.WriteCoord(start.z);
+	message.WriteCoord(end.x);
+	message.WriteCoord(end.y);
+	message.WriteCoord(end.z);
+	message.WriteShort( g_EngineFuncs.ModelIndex("sprites/laserbeam.spr") );
+	message.WriteByte( 1 ); // framestart
+	message.WriteByte( 10 ); // framerate
+	message.WriteByte( 10 ); // life in 0.1's
+	message.WriteByte( 32 ); // width
+	message.WriteByte( 2 );  // noise
+
+	message.WriteByte( col.r );   // r, g, b
+	message.WriteByte( col.g );   // r, g, b
+	message.WriteByte( col.b );   // r, g, b
+
+	message.WriteByte( col.a );   // brightness
+	message.WriteByte( 1 );    // speed
+	message.End();
+}
+
+class CWaypointType
+{
+	string m_szName;
+	int m_iFlag;
+	WptColor@ color;
+
+	CWaypointType ( string name, int flag, WptColor@ col )
+	{
+		m_iFlag = flag;
+		m_szName = name;
+		@color = col;
+	}
+
+	bool isBitsInFlags ( int flags )
+	{
+		return (flags & m_iFlag) == m_iFlag;
+	}
+
+	void getColour (WptColor@ other)
+	{
+
+		other.r = color.r;
+		other.g =  color.g;
+		other.b =  color.b;
+		other.a =  color.a;
+
+	}
+
+}
+
+
+class WptColor
+{
+	WptColor ()
+	{
+		r=0;g=0;b=0;a=0;
+	}
+
+	WptColor ( int _r, int _g, int _b, int _a )
+	{
+		r=_r;
+		g=_g;
+		b=_b;
+		a=_a;
+	}
+
+	WptColor ( int _r, int _g, int _b )
+	{
+		r=_r;
+		g=_g;
+		b=_b;
+		a=200;
+	}
+
+
+	void mixColor ( WptColor@ other )
+	{
+		r = int( (0.5*r) + (0.5*other.r));
+		g = int( (0.5*g) + (0.5*other.g));
+		b = int( (0.5*b) + (0.5*other.b));
+	}	
+	int r;
+	int g;
+	int b;
+	int a;
+	
+};
+
+class CWaypointTypes
+{
+	array<CWaypointType@> m_Types;
+
+	CWaypointTypes ()
+	{
+		m_Types.insertLast(CWaypointType("jump",W_FL_JUMP,WptColor(255,255,255)));
+		m_Types.insertLast(CWaypointType("crouch",W_FL_CROUCH,WptColor(0,255,255)));
+		m_Types.insertLast(CWaypointType("end",W_FL_END_LEVEL,WptColor(255,0,255)));
+		m_Types.insertLast(CWaypointType("ammo",W_FL_AMMO,WptColor(50,255,50)));
+		m_Types.insertLast(CWaypointType("health",W_FL_HEALTH,WptColor(255,50,50)));
+	}
+
+	WptColor getColour ( int flags )
+	{
+		WptColor colour = WptColor(0,0,255); // normal waypoint
+
+		bool bNoColour = true;
+
+		for ( uint i = 0; i < m_Types.length(); i ++ )
+		{
+			if ( m_Types[i].isBitsInFlags(flags) )
+			{
+				if ( bNoColour )
+				{
+					m_Types[i].getColour(colour);
+					bNoColour = false;
+				}
+				else
+				{
+					WptColor col;
+					m_Types[i].getColour(col);
+					colour.mixColor(col);
+				}
+			}
+		}
+
+		return colour;
+	}
+}
+
+WptColor@ PathColor = WptColor(255,255,255,200);
 
 // apparently "Waypoint" is a reserved class name
 class CWaypoint
 {
 	// link to waypoint id
-	array<uint> m_PathsFrom;
-	array<uint> m_PathsTo;
+	array<int> m_PathsFrom;
+	array<int> m_PathsTo;
 
 	int iIndex;
 
@@ -21,12 +170,32 @@ class CWaypoint
 	uint m_iFlags;
 	// true if in use, false if can overwrite
 	bool m_bUsed;
+
+
 	
 	CWaypoint ()
 	{
 		m_bUsed = false;
 		m_iFlags = 0;
 	}
+
+
+	void draw ( CBasePlayer@ pPlayer, bool drawPaths )
+	{
+
+		drawBeam(pPlayer,m_vOrigin-Vector(0,0,32),m_vOrigin+Vector(0,0,32),g_WaypointTypes.getColour(m_iFlags));
+
+		if ( drawPaths )
+		{
+			for ( uint i = 0; i < m_PathsTo.length(); i ++ )
+			{
+				CWaypoint@ wpt = g_Waypoints.getWaypointAtIndex(m_PathsTo[i]);
+				
+				drawBeam(pPlayer,m_vOrigin,wpt.m_vOrigin,PathColor);
+			}
+		}
+	}
+
 	
 	float distanceFrom ( Vector vecLocation )
 	{
@@ -36,6 +205,11 @@ class CWaypoint
 	int numPaths ( )
 	{
 		return m_PathsTo.length();
+	}
+
+	void addPath ( int wpt )
+	{
+		m_PathsTo.insertLast(wpt);
 	}
 
 	int getPath ( int i )
@@ -81,19 +255,24 @@ class CWaypoint
 }
 
 
-CWaypoint@ ReadWaypoint ( string line )
+CWaypoint@ ReadWaypoint ( int index, string line )
 {
-	array<string> csv = line.split(",");
+	array<string> csv = line.Split(",");
 
 	Vector vecLoc;
 	int iFlags;
 
-	vecLoc.x = parseFloat(csv[0]);
-	vecLoc.y = parseFloat(csv[1]);
-	vecLoc.z = parseFloat(csv[2]);
-	iFlags = parseUint(csv[3]);
+	vecLoc.x = atof(csv[0]);
+	vecLoc.y = atof(csv[1]);
+	vecLoc.z = atof(csv[2]);
+	iFlags = atoi(csv[3]);
 
-	return CWaypoint(vecLoc,iFlags);
+	CWaypoint@ wpt = CWaypoint();
+
+	wpt.Place(index, vecLoc);
+	wpt.m_iFlags = iFlags;
+
+	return wpt;
 }	
 
 class CWaypoints
@@ -101,34 +280,95 @@ class CWaypoints
 	// Max waypoint is 1024 
 	private array<CWaypoint> m_Waypoints(MAX_WAYPOINTS);
 
+	bool g_WaypointsOn = false;
 	int m_iNumWaypoints = 0;
+	int m_PathFrom;
 
 	CWaypoint@ getWaypointAtIndex ( uint idx )
 	{
 		return m_Waypoints[idx];
 	}
 
+	void WaypointsOn ( bool on )
+	{
+		g_WaypointsOn = on;
+
+		if ( on )
+			BotMessage("Waypoints On");
+		else 
+			BotMessage("Waypoints OFf");
+	}
+
+	void PathWaypoint_Create1 ( CBasePlayer@ player )
+	{
+		int wpt = getNearestWaypointIndex(player.pev.origin);
+
+		BotMessage("Nearest waypoint is " + wpt + "\n");
+
+		m_PathFrom = wpt;
+	}
+
+	void PathWaypoint_Create2 ( CBasePlayer@ player )
+	{
+		int wpt = getNearestWaypointIndex(player.pev.origin);
+
+		BotMessage("Nearest waypoint is " + wpt + "\n");
+
+		if ( wpt != -1 && m_PathFrom != -1 )
+		{
+			CWaypoint@ pWpt = getWaypointAtIndex(m_PathFrom);
+
+			pWpt.addPath(wpt);
+		}
+	}
+
+
+	void DrawWaypoints ( CBasePlayer@ player )
+	{
+		if ( g_WaypointsOn )
+		{
+			for ( int i = 0; i < m_iNumWaypoints; i ++ )
+			{
+				CWaypoint@ wpt = m_Waypoints[i];
+
+				float dist = wpt.distanceFrom(player.pev.origin);
+
+				if ( dist < 512 )
+				{
+
+					wpt.draw(player,dist<64);
+				}
+			}
+		}
+	}	
+
 	int getWaypointIndex ( CWaypoint@ pWpt )
 	{
 		return pWpt.iIndex;
 	}
 	
-	void addWaypoint ( Vector vecLocation, int flags )
+	void addWaypoint ( Vector vecLocation, int flags = 0 )
 	{
 		int index = freeWaypointIndex();
+
+		BotMessage("Adding waypoint...");
 
 		if ( index != -1 )
 		{	
 			m_Waypoints[index].Place(index,vecLocation);
+
+			BotMessage("OK! index " + formatInt(index));
 		
 			if ( index == m_iNumWaypoints )
 				m_iNumWaypoints++;	
+
+				BotMessage("Num waypoints = "+m_iNumWaypoints);
 		}
 	}
 
 	int freeWaypointIndex ()
 	{
-		for( int i = 0; i < m_iNumWaypoints; i ++ )
+		for( int i = 0; i < MAX_WAYPOINTS; i ++ )
 		{
 			if ( m_Waypoints[i].m_bUsed == false )
 				return i;
@@ -147,7 +387,7 @@ class CWaypoints
 		{
 			distance = m_Waypoints[i].distanceFrom(vecLocation);
 			
-			if ( (nearestWptIdx == -1 ) || (minDistance < distance) )
+			if ( (nearestWptIdx == -1 ) || ( distance < minDistance) )
 			{
 				minDistance = distance;
 				nearestWptIdx = i;
@@ -157,7 +397,7 @@ class CWaypoints
 		return nearestWptIdx;
 	}
 
-	void deleteWaypoint ( uint idx )
+	void deleteWaypoint ( int idx )
 	{		
 		for ( int i = 0; i < m_iNumWaypoints; i ++ )
 		{
@@ -197,39 +437,66 @@ class CWaypoints
 
 	bool Load ()
 	{
-		file f;
+		bool ret = false;
+		File@ f = g_FileSystem.OpenFile( "scripts/plugins/BotManager/" + g_Engine.mapname + ".wpt", OpenFile::READ);
+
 		// Open the file in 'read' mode
-		if( f.open(g_Engine.mapname + ".wpt", "r") >= 0 ) 
+		if( f !is null ) 
 		{
 			// Read the whole file into the string buffer
-			string str;
 
 			ClearWaypoints();
+
+			int index = 0;
+
+			string line;
 			
-			while ( (str = f.readLine()) !is null )
+			f.ReadLine(line);
+
+			m_iNumWaypoints = atoi(line);
+
+			while(!f.EOFReached())
 			{
-				m_Waypoints.insertLast(ReadWaypoint(str));				
+				
+				f.ReadLine(line);
+
+				CWaypoint@ wpt = ReadWaypoint(index,line);
+
+				if ( wpt !is null )
+				{
+					m_Waypoints.insertLast(wpt);		
+					ret = true;		
+				}
 			}
 
-			f.close();
+			f.Close();
 		}
+
+		return ret;
 	}
 
 	bool Save ()
 	{
-		file f;
+		bool ret = false;
+		File@ f = g_FileSystem.OpenFile( "scripts/plugins/BotManager/" + g_Engine.mapname + ".wpt", OpenFile::WRITE);
 		// Open the file in 'read' mode
-		if( f.open(g_Engine.mapname + ".wpt", "w") >= 0 ) 
+		if( f !is null ) 
 		{
-			for ( uint i = 0; i < m_iNumWaypoints; i ++ )
+			f.Write(formatInt(m_iNumWaypoints));
+
+			for ( int i = 0; i < m_iNumWaypoints; i ++ )
 			{
 				CWaypoint@ wpt = m_Waypoints[i];
 			
-				f.WriteString(wpt.getSerialized());
+				f.Write(wpt.getSerialized());
+
+				ret = true;
 			}
 
-			f.close();
+			f.Close();
 		}
+
+		return ret;
 	}
 }
 	const int NavigatorState_Complete = 0;
@@ -240,10 +507,6 @@ class CWaypoints
 // ------------------------------------
 final class RCBotNavigator 
 {
-
-	
-	
-
 	int state;
 
 	int iStart;
@@ -281,7 +544,7 @@ final class RCBotNavigator
 		else
 		{
 			state = NavigatorState_InProgress;
-			curr = @paths[iStart];
+			@curr = paths[iStart];
 			curr.setWaypoint(iStart);
 			pStartWpt = g_Waypoints.getWaypointAtIndex(iStart);
 			pGoalWpt = g_Waypoints.getWaypointAtIndex(iGoal);
@@ -500,7 +763,7 @@ final class AStarOpenList
 		AStarListNode@ p;
 
 		if ( m_Head is null )
-			m_Head = newNode;
+			@m_Head = newNode;
 		else
 		{
 			if ( data.precedes(m_Head.m_Data) )
