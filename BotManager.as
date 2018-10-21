@@ -15,6 +15,8 @@ CConCommand@ m_pRCBotWaypointOff;
 CConCommand@ m_pRCBotWaypointOn;
 CConCommand@ m_pPathWaypointCreate1;
 CConCommand@ m_pPathWaypointCreate2;
+CConCommand@ m_pRCBotWaypointLoad;
+CConCommand@ m_pRCBotWaypointSave;
 
 void PluginInit()
 {
@@ -29,7 +31,8 @@ void PluginInit()
 	@m_pRCBotWaypointOn = @CConCommand( "waypoint_on", "Displays waypoints on", @WaypointOn );
 	@m_pRCBotWaypointAdd = @CConCommand( "waypoint_add", "Adds a new waypoint", @WaypointAdd );
 	@m_pRCBotWaypointDelete = @CConCommand( "waypoint_delete", "Adds a new waypoint", @WaypointDelete );
-
+	@m_pRCBotWaypointLoad = @CConCommand( "waypoint_load", "Loads waypoints", @WaypointLoad );
+	@m_pRCBotWaypointSave = @CConCommand( "waypoint_save", "Saves waypoints", @WaypointSave );
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
 	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
 
@@ -49,6 +52,11 @@ void AddBotCallback( const CCommand@ args )
 
 }
 
+
+void WaypointLoad ( const CCommand@ args )
+{
+	g_Waypoints.Load();
+}
 void WaypointAdd ( const CCommand@ args )
 {
 	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
@@ -69,6 +77,11 @@ void WaypointOn ( const CCommand@ args )
 void WaypointDelete ( const CCommand@ args )
 {
 	//g_Waypoints.addWaypoint();
+}
+
+void WaypointSave ( const CCommand@ args )
+{
+	g_Waypoints.Save();
 }
 
 void PathWaypoint_Create1 ( const CCommand@ args )
@@ -107,6 +120,7 @@ final class RCBotTask
 	}	
 }
 
+
 final class RCBotSchedule
 {
 	bool m_bComplete = false;
@@ -140,6 +154,8 @@ final class RCBotSchedule
 final class RCBot : BotManager::BaseBot
 {	
 	private float m_fNextThink = 0;
+
+	RCBotNavigator@ navigator;
 
 	RCBot( CBasePlayer@ pPlayer )
 	{

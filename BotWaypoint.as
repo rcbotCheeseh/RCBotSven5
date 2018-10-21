@@ -1,12 +1,44 @@
 
+#include "FileBuffer"
+
 CWaypoints g_Waypoints;
 CWaypointTypes g_WaypointTypes;
 
-const int W_FL_JUMP = 1;
-const int W_FL_CROUCH = 2;
-const int W_FL_END_LEVEL = 4;
-const int W_FL_AMMO = 8;
-const int W_FL_HEALTH = 16;
+const int W_FL_TEAM	= ((1<<0) + (1<<1));  /* allow for 4 teams (0-3) */
+const int W_FL_TEAM_SPECIFIC = (1<<2);  /* waypoint only for specified team */
+const int W_FL_CROUCH	= 	(1<<3);  /* must crouch to reach this waypoint */
+const int W_FL_LADDER	= 	(1<<4);  /* waypoint on a ladder */
+const int W_FL_LIFT		= 	(1<<5);  // lift button
+const int W_FL_DOOR		= 	(1<<6);  /* wait for door to open */
+const int W_FL_HEALTH	= 	(1<<7);  /* health kit (or wall mounted) location */
+const int W_FL_ARMOR	= 	(1<<8);  /* armor (or HEV) location */
+const int W_FL_AMMO		=	(1<<9);  /* ammo location */
+const int W_FL_CHECK_LIFT	= (1<<10); /* checks for lift at this point */
+const int W_FL_IMPORTANT	= (1<<11);/* flag position (or hostage or president) */
+const int W_FL_DYNAMIC_TELEPORTER= ((1<<22)&(1<<21)); /* created automatically */
+const int W_FL_SCIENTIST_POINT= (1<<11);
+const int W_FL_TFC_FLAG_POINT=  (1<<11);
+const int W_FL_BARNEY_POINT  = (1<<12);
+const int W_FL_DEFEND_ZONE  =  (1<<13);
+const int W_FL_AIMING	= (1<<14); /* aiming waypoint */
+const int W_FL_CROUCHJUMP= 	(1<<16); // }
+const int W_FL_WAIT_FOR_LIFT= (1<<17);/* wait for lift to be down before approaching this waypoint */
+const int W_FL_PAIN	= (1<<18);
+const int W_FL_JUMP    = (1<<19);
+const int W_FL_WEAPON	= (1<<20); // Crouch and jump
+const int W_FL_TELEPORT  = (1<<21);
+const int W_FL_TANK	= (1<<22); // func_tank near waypoint
+const int W_FL_FLY = (1<<23);
+const int W_FL_GRAPPLE = (1<<23);
+const int W_FL_STAY_NEAR= (1<<24);
+const int W_FL_ENDLEVEL  = (1<<25); // end of level, in svencoop etc
+const int W_FL_OPENS_LATER  =(1<<26);
+const int W_FL_HUMAN_TOWER = (1<<27);// bot will crouch & wait for a player to jump on them
+const int W_FL_UNREACHABLE = (1<<28); // not reachable by bot, used as a reference point for visibility only
+const int W_FL_PUSHABLE  = (1<<29);
+const int W_FL_GREN_THROW  = (1<<30);
+const int W_FL_SNIPE = (1<<30);
+const int W_FL_DELETED = (1<<31); /* used by waypoint allocation code */
 
 const int MAX_WAYPOINTS = 1024;
 
@@ -43,6 +75,49 @@ void drawBeam (CBasePlayer@ pPlayer, Vector start, Vector end, WptColor@ col )
 	message.WriteByte( col.a );   // brightness
 	message.WriteByte( 1 );    // speed
 	message.End();
+}
+
+class CWaypointHeader
+{
+	// 8 characters
+   string filetype;  // should be "RC_bot\0"
+   int  waypoint_file_version;
+   int  waypoint_file_flags;  // used for visualisation
+   int  number_of_waypoints;
+   // 32 characters
+   string mapname;  // name of map for these waypoints
+	
+	void Read ( FileBuffer@ file )
+	{
+		filetype = file.ReadString(8);
+		BotMessage(filetype+"\n");
+		waypoint_file_version = file.ReadInt32();
+		BotMessage("VERSION = " + formatInt(waypoint_file_version)+"\n");
+		waypoint_file_flags = file.ReadInt32();
+		BotMessage("FLAGS = " + formatInt(waypoint_file_flags)+"\n");
+		number_of_waypoints = file.ReadInt32();
+		BotMessage("NUM WPTS = " + formatInt(number_of_waypoints)+"\n");
+
+		mapname = file.ReadString(32);
+	}
+
+	CWaypointHeader ( )
+	{
+		filetype = "RCBot";
+		waypoint_file_version = 10;
+		waypoint_file_flags = 0;
+		number_of_waypoints = g_Waypoints.m_iNumWaypoints;
+	}
+
+
+	void Save ( FileBuffer@ file )
+	{
+		file.Write(filetype,8);
+		file.Write(waypoint_file_version);
+		file.Write(waypoint_file_flags);
+		file.Write(number_of_waypoints);
+		file.Write(mapname,32);
+	}
 }
 
 class CWaypointType
@@ -121,7 +196,7 @@ class CWaypointTypes
 	{
 		m_Types.insertLast(CWaypointType("jump",W_FL_JUMP,WptColor(255,255,255)));
 		m_Types.insertLast(CWaypointType("crouch",W_FL_CROUCH,WptColor(0,255,255)));
-		m_Types.insertLast(CWaypointType("end",W_FL_END_LEVEL,WptColor(255,0,255)));
+		m_Types.insertLast(CWaypointType("end",W_FL_ENDLEVEL,WptColor(255,0,255)));
 		m_Types.insertLast(CWaypointType("ammo",W_FL_AMMO,WptColor(50,255,50)));
 		m_Types.insertLast(CWaypointType("health",W_FL_HEALTH,WptColor(255,50,50)));
 	}
@@ -173,6 +248,8 @@ class CWaypointTypes
 		{
 			flags |= findTypeFlag(types[i]);
 		}
+
+		return flags;
 	}
 }
 
@@ -189,18 +266,48 @@ class CWaypoint
 
 	Vector m_vOrigin;
 	// flags such as Jump, crouch etc
-	uint m_iFlags;
-	// true if in use, false if can overwrite
-	bool m_bUsed;
-
-
+	int m_iFlags;
 	
 	CWaypoint ()
 	{
-		m_bUsed = false;
 		m_iFlags = 0;
 	}
 
+	void Read ( FileBuffer@ file, int index )
+	{
+		m_iFlags = file.ReadInt32();
+		BotMessage("m_iFlags = " + m_iFlags + "\n");
+		m_vOrigin.x = file.ReadFloat();		
+		m_vOrigin.y = file.ReadFloat();
+		m_vOrigin.z = file.ReadFloat();
+
+		BotMessage("m_vOrigin.x = " + m_vOrigin.x + "\n");
+		BotMessage("m_vOrigin.y = " + m_vOrigin.y + "\n");
+		BotMessage("m_vOrigin.z = " + m_vOrigin.z + "\n");
+
+		int numPaths = file.ReadInt32();
+		BotMessage("numPaths = " + numPaths + "\n");
+		m_PathsTo = {};
+
+		for (int i = 0; i < numPaths; i ++ )
+			m_PathsTo.insertLast(file.ReadInt32());
+
+		iIndex = index;
+	}
+
+	void Save ( FileBuffer@ file )
+	{
+		file.Write(m_iFlags);
+		file.Write(m_vOrigin.x);
+		file.Write(m_vOrigin.y);
+		file.Write(m_vOrigin.z);
+		file.Write(m_PathsTo.length());
+
+		for ( uint i = 0; i < m_PathsTo.length(); i ++ )
+		{
+			file.Write(m_PathsTo[i]);
+		}
+	}
 
 	void draw ( CBasePlayer@ pPlayer, bool drawPaths )
 	{
@@ -256,13 +363,15 @@ class CWaypoint
 
 	void Delete ()
 	{
-		m_bUsed = false;
+		Clear();
+
+		m_iFlags = W_FL_DELETED;
 	}
 
 	void Place ( int index, Vector loc )
 	{
 		m_vOrigin = loc;
-		m_bUsed = true;
+		
 		iIndex = index;
 	}
 
@@ -270,9 +379,10 @@ class CWaypoint
 	{
 		m_PathsFrom = {};
 		m_PathsTo = {};
-		m_bUsed = false;
+		
 		m_iFlags = 0;
 	}
+
 
 }
 
@@ -392,9 +502,12 @@ class CWaypoints
 	{
 		for( int i = 0; i < MAX_WAYPOINTS; i ++ )
 		{
-			if ( m_Waypoints[i].m_bUsed == false )
-				return i;
+			if ( (m_Waypoints[i].m_iFlags & W_FL_DELETED) == W_FL_DELETED )
+				return int(i);
 		}
+
+		if ( m_iNumWaypoints < MAX_WAYPOINTS )
+			return m_iNumWaypoints;
 
 		return -1;
 	}
@@ -444,9 +557,15 @@ class CWaypoints
 			}
 		}
 
-		CWaypoint@ pDelete = g_Waypoints.getWaypointAtIndex(idx);
+		if ( m_iNumWaypoints > 0 )
+		{
+			CWaypoint@ pDelete = g_Waypoints.getWaypointAtIndex(idx);
 
-		pDelete.Delete();
+			pDelete.Delete();
+
+			if ( idx == m_iNumWaypoints )
+				m_iNumWaypoints--;
+		}
 	}
 
 	void ClearWaypoints ()
@@ -460,39 +579,42 @@ class CWaypoints
 	bool Load ()
 	{
 		bool ret = false;
-		File@ f = g_FileSystem.OpenFile( "scripts/plugins/BotManager/" + g_Engine.mapname + ".wpt", OpenFile::READ);
+		string filename = "scripts/plugins/BotManager/rcw/" + g_Engine.mapname + ".rcwa";
+		File@ f = g_FileSystem.OpenFile( filename, OpenFile::READ);
 
 		// Open the file in 'read' mode
 		if( f !is null ) 
 		{
+			FileBuffer buf(f);
 			// Read the whole file into the string buffer
 
 			ClearWaypoints();
 
 			int index = 0;
 
-			string line;
-			
-			f.ReadLine(line);
+			CWaypointHeader@ hdr = CWaypointHeader();
 
-			m_iNumWaypoints = atoi(line);
+			hdr.Read(buf);
 
-			while(!f.EOFReached())
+			BotMessage("Waypoint Header : " + hdr.number_of_waypoints + "\n");
+
+			//if ( hdr !is null )
+			//	return false;
+
+			for ( int i = 0; i < hdr.number_of_waypoints ; i ++ )
 			{
-				
-				f.ReadLine(line);
+				m_Waypoints[i].Read(buf,i);
 
-				CWaypoint@ wpt = ReadWaypoint(index,line);
-
-				if ( wpt !is null )
-				{
-					m_Waypoints.insertLast(wpt);		
-					ret = true;		
-				}
+				m_Waypoints[i].Save(buf);
+			
 			}
+
+			m_iNumWaypoints = hdr.number_of_waypoints;
 
 			f.Close();
 		}
+		else
+			BotMessage("Waypoint " + filename + " not found \n");
 
 		return ret;
 	}
@@ -500,23 +622,28 @@ class CWaypoints
 	bool Save ()
 	{
 		bool ret = false;
-		File@ f = g_FileSystem.OpenFile( "scripts/plugins/BotManager/" + g_Engine.mapname + ".wpt", OpenFile::WRITE);
+		string filename = "scripts/plugins/BotManager/rcw/" + g_Engine.mapname + ".rcwa";
+		File@ f = g_FileSystem.OpenFile( filename, OpenFile::WRITE);
 		// Open the file in 'read' mode
 		if( f !is null ) 
 		{
-			f.Write(formatInt(m_iNumWaypoints));
+			CWaypointHeader@ hdr = CWaypointHeader();
 
+			FileBuffer buf;
+
+			hdr.Save(buf);			
+			
 			for ( int i = 0; i < m_iNumWaypoints; i ++ )
 			{
-				CWaypoint@ wpt = m_Waypoints[i];
-			
-				f.Write(wpt.getSerialized());
 
-				ret = true;
 			}
+
+			f.Write(buf.getData());
 
 			f.Close();
 		}
+		else
+			BotMessage("F is null!\n");
 
 		return ret;
 	}
