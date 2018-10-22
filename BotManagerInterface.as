@@ -1,3 +1,4 @@
+#include "UtilFuncs"
 /*
 *	This file defines the interface to the bot manager
 *	This is a sample script.
@@ -5,19 +6,45 @@
 
 namespace BotManager
 {
+
 	/*
 	*	Base class for bots.
 	*/
 	abstract class BaseBot
 	{
-		private CBasePlayer@ m_pPlayer;
+		CBasePlayer@ m_pPlayer;
 		
 		private int m_iMSecInterval = 0;
 		private float m_flLastRunMove = 0;
 
 		BotProfile@ m_pProfile;
-		
-		protected Vector m_vecVelocity;
+
+		Vector m_vMoveTo;
+		bool m_bMoveToValid;
+
+		void ReleaseButtons ( )
+		{
+			m_pPlayer.pev.button = 0;
+		}
+
+		void PressButton ( int button )
+		{
+			m_pPlayer.pev.button |= button;
+		}
+
+		void setMove ( Vector origin )
+		{
+			m_vMoveTo = origin;
+			m_bMoveToValid = true;
+		}
+				
+		float m_fUpMove;
+		float m_fSideMove;
+		float m_fForwardMove;		
+
+		float m_fDesiredSpeed = 320;	
+
+		Vector m_vLookAngles = Vector(0,0,0);
 		
 		CBasePlayer@ Player
 		{
@@ -38,6 +65,7 @@ namespace BotManager
 		{
 		}
 
+
 		void Disconnected ()
 		{
 			// free stuff
@@ -52,14 +80,37 @@ namespace BotManager
 				m_iMSecInterval = 0;
 		}
 		
+		/*
+		void RunPlayerMove(edict_t@ pEdict, const Vector& in vecViewAngles,
+		 float flFowardMove, float flSideMove, float flUpMove,
+		  uint16 iButtons, uint8 iImpulse, uint8 iMsec)
+		*/
+
 		void RunPlayerMove() final
 		{
+		 	float yaw = 0;
+
+			if ( m_bMoveToValid )
+			{
+				yaw = UTIL_yawAngleFromEdict(m_vMoveTo,m_vLookAngles,m_pPlayer.pev.origin);
+
+				BotMessage("Yaw = " + yaw + "\n");
+			}
+
 			UpdateMSec();
 			
 			m_flLastRunMove = g_Engine.time;
+
+			m_fForwardMove = cos(yaw*0.01745329252) * m_fDesiredSpeed;
+			m_fSideMove = sin(yaw*0.01745329252) * m_fDesiredSpeed;		
+
+			BotMessage("m_fForwardMove = " + m_fForwardMove + "\n");	
+			BotMessage("m_fSideMove = " + m_fSideMove + "\n");	
+			//m_fUpMove = cos(v_angles.z*0.01745329252) * m_fDesiredSpeed;
+			m_fUpMove = 0;			
 			
-			g_EngineFuncs.RunPlayerMove( m_pPlayer.edict(), m_pPlayer.pev.angles, 
-				m_vecVelocity.x, m_vecVelocity.y, m_vecVelocity.z, 
+			g_EngineFuncs.RunPlayerMove( m_pPlayer.edict(), m_vLookAngles, 
+				m_fForwardMove, m_fSideMove, m_fUpMove, 
 				m_pPlayer.pev.button, m_pPlayer.pev.impulse, uint8( m_iMSecInterval ) );
 		}
 	}

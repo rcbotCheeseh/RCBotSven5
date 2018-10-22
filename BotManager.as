@@ -5,7 +5,8 @@
 
 #include "BotManagerInterface"
 #include "BotWaypoint"
-
+#include "CBotTasks"
+#include "UtilFuncs"
 BotManager::BotManager g_BotManager( @CreateRCBot );
 
 CConCommand@ m_pAddBot;
@@ -17,6 +18,13 @@ CConCommand@ m_pPathWaypointCreate1;
 CConCommand@ m_pPathWaypointCreate2;
 CConCommand@ m_pRCBotWaypointLoad;
 CConCommand@ m_pRCBotWaypointSave;
+CConCommand@ m_pRCBotKill;
+CConCommand@ yawc;
+
+CBasePlayer@ ListenPlayer ()
+{
+	return  g_PlayerFuncs.FindPlayerByIndex( 1 );
+}
 
 void PluginInit()
 {
@@ -35,7 +43,31 @@ void PluginInit()
 	@m_pRCBotWaypointSave = @CConCommand( "waypoint_save", "Saves waypoints", @WaypointSave );
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
 	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
+	@m_pRCBotKill = @CConCommand( "kill", "kills a bot", @RCBot_Kill );
+	@yawc = @CConCommand( "waypoint_yaw", "Display waypoints off", @WptYaw );
 
+}
+
+void RCBot_Kill ( const CCommand@ args )
+{
+	//int i = atoi(args.Arg(1));
+
+	//RCBot@ bot = RCBot@(g_BotManager.FindBot(g_PlayerFuncs.FindPlayerByIndex(i)));
+
+
+}
+
+void WptYaw ( const CCommand@ args )
+{
+	int i = atoi(args.Arg(1));
+
+	CWaypoint@ wpt = g_Waypoints.getWaypointAtIndex(i);
+
+	CBasePlayer@ player = ListenPlayer();
+
+	float yaw = UTIL_yawAngleFromEdict(wpt.m_vOrigin,player.pev.v_angle,player.pev.origin);
+
+	BotMessage("Yaw = " + yaw + "\n");
 }
 // ------------------------------------
 // COMMANDS - 	start
@@ -102,53 +134,6 @@ void PathWaypoint_Create2 ( const CCommand@ args )
 // ------------------------------------
 
 // ------------------------------------
-// TASKS / SCHEDULES - 	START
-// ------------------------------------
-final class RCBotTask
-{
-	bool m_bComplete = false;
-	bool m_bFailed = false;
-
-	void Complete ()
-	{
-		m_bComplete = true;	
-	}
-
-	void Failed ()
-	{
-		m_bFailed = true;
-	}	
-}
-
-
-final class RCBotSchedule
-{
-	bool m_bComplete = false;
-	bool m_bFailed = false;
-
-	array<RCBotTask@> m_pTasks;
-
-	void addTaskFront ( RCBotTask@ pTask )
-	{
-		m_pTasks.insertAt(0,pTask);
-	}
-
-	void addTask ( RCBotTask@ pTask )
-	{	
-		m_pTasks.insertLast(pTask);
-	}
-
-	void DoTasks ()
-	{
-
-	}
-}
-
-// ------------------------------------
-// TASKS / SCHEDULES - 	END
-// ------------------------------------
-
-// ------------------------------------
 // BOT BASE - START
 // ------------------------------------
 final class RCBot : BotManager::BaseBot
@@ -157,18 +142,46 @@ final class RCBot : BotManager::BaseBot
 
 	RCBotNavigator@ navigator;
 
+	RCBotSchedule@ m_pCurrentSchedule;
+
 	RCBot( CBasePlayer@ pPlayer )
 	{
 		super( pPlayer );
 	}
-	
+
+	Vector origin ()
+	{
+		return m_pPlayer.pev.origin;
+	}
+
+	void touchedWpt ( CWaypoint@ wpt )
+	{
+		if ( wpt.hasFlags(W_FL_JUMP) )
+			PressButton(IN_JUMP);
+	}
+
+	WptColor@ col = WptColor(255,255,255);
+
+	void followingWpt ( CWaypoint@ wpt )
+	{
+		if ( wpt.hasFlags(W_FL_CROUCH) )
+			PressButton(IN_DUCK);
+
+		setMove(wpt.m_vOrigin);
+
+		drawBeam (ListenPlayer(), m_pPlayer.pev.origin, wpt.m_vOrigin, col, 1 );
+
+	}
+
 	void Think()
 	{
-		if ( m_fNextThink > g_Engine.time )
-			return;
+		//if ( m_fNextThink > g_Engine.time )
+		//	return;
+
+		ReleaseButtons();
 
 		// 100 ms think
-		m_fNextThink = g_Engine.time + 0.1;
+		//m_fNextThink = g_Engine.time + 0.1;
 
 		BotManager::BaseBot::Think();
 		
@@ -176,12 +189,14 @@ final class RCBot : BotManager::BaseBot
 		if( Player.pev.deadflag >= DEAD_RESPAWNABLE )
 		{
 			if( Math.RandomLong( 0, 100 ) > 10 )
-				Player.pev.button |= IN_ATTACK;
-			else
-				Player.pev.button &= ~IN_ATTACK;
+				PressButton(IN_ATTACK);
+
+			@m_pCurrentSchedule = null;
+			@navigator = null;
+
+			return; // Dead , nothing else to do
 		}
-		else
-			Player.pev.button &= ~IN_ATTACK;
+
 		
 		/*
 		KeyValueBuffer@ pInfoBuffer = g_EngineFuncs.GetInfoKeyBuffer( Player.edict() );
@@ -212,7 +227,8 @@ final class RCBot : BotManager::BaseBot
 
 	void DoMove ()
 	{
-		
+		if ( navigator !is null )
+			navigator.execute(this);
 	}
 
 	void DoLook ()
@@ -227,7 +243,17 @@ final class RCBot : BotManager::BaseBot
 
 	void DoTasks ()
 	{
-
+		if ( m_pCurrentSchedule !is null )
+		{
+			if ( m_pCurrentSchedule.execute(this) )
+			{
+				@m_pCurrentSchedule = null;
+			}			
+		}
+		else
+		{
+			@m_pCurrentSchedule = CFindPathSchedule(this);
+		}
 	}
 }
 

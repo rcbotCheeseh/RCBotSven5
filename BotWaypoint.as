@@ -1,5 +1,6 @@
 
 #include "FileBuffer"
+#include "UtilFuncs"
 
 CWaypoints g_Waypoints;
 CWaypointTypes g_WaypointTypes;
@@ -42,12 +43,7 @@ const int W_FL_DELETED = (1<<31); /* used by waypoint allocation code */
 
 const int MAX_WAYPOINTS = 1024;
 
-void BotMessage ( string message )
-{
-	g_Game.AlertMessage( at_console, "[RCBOT]" + message );	
-}
-
-void drawBeam (CBasePlayer@ pPlayer, Vector start, Vector end, WptColor@ col )
+void drawBeam (CBasePlayer@ pPlayer, Vector start, Vector end, WptColor@ col, int life = 10 )
 {
 	//BotMessage("Beam from " + formatFloat(start.x) + "," + formatFloat(start.y) + "," + formatFloat(start.z)+ "," + " to " + formatFloat(end.x)+ "," +formatFloat(end.y)+ "," + formatFloat(end.z) + "\n" );
 		// PM - Use MSG_ONE_UNRELIABLE
@@ -64,7 +60,7 @@ void drawBeam (CBasePlayer@ pPlayer, Vector start, Vector end, WptColor@ col )
 	message.WriteShort( g_EngineFuncs.ModelIndex("sprites/laserbeam.spr") );
 	message.WriteByte( 1 ); // framestart
 	message.WriteByte( 10 ); // framerate
-	message.WriteByte( 10 ); // life in 0.1's
+	message.WriteByte( life ); // life in 0.1's
 	message.WriteByte( 32 ); // width
 	message.WriteByte( 2 );  // noise
 
@@ -273,6 +269,11 @@ class CWaypoint
 		m_iFlags = 0;
 	}
 
+	bool hasFlags ( int flags )
+	{
+		return m_iFlags & flags == flags;
+	}
+
 	void Read ( FileBuffer@ file, int index )
 	{
 		m_iFlags = file.ReadInt32();
@@ -433,7 +434,7 @@ class CWaypoints
 
 	void PathWaypoint_Create1 ( CBasePlayer@ player )
 	{
-		int wpt = getNearestWaypointIndex(player.pev.origin);
+		int wpt = getNearestWaypointIndex(player.pev.origin,player);
 
 		BotMessage("Nearest waypoint is " + wpt + "\n");
 
@@ -442,7 +443,7 @@ class CWaypoints
 
 	void PathWaypoint_Create2 ( CBasePlayer@ player )
 	{
-		int wpt = getNearestWaypointIndex(player.pev.origin);
+		int wpt = getNearestWaypointIndex(player.pev.origin,player);
 
 		BotMessage("Nearest waypoint is " + wpt + "\n");
 
@@ -512,7 +513,28 @@ class CWaypoints
 		return -1;
 	}
 	
-	int getNearestWaypointIndex ( Vector vecLocation )
+	int getRandomFlaggedWaypoint ( int iFlags )
+	{
+		array<int> wpts;
+		
+		for( int i = 0; i < m_iNumWaypoints; i ++ )
+		{
+			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
+				continue;	
+
+			if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
+			{
+				wpts.insertLast(i);
+			}
+		}
+		
+		if ( wpts.length() == 0 )
+			return -1;
+
+		return wpts[Math.RandomLong( 0, wpts.length()-1 )];
+	}
+
+	int getNearestWaypointIndex ( Vector vecLocation, CBasePlayer@ player = null )
 	{
 		int nearestWptIdx = -1;
 		float distance = 0;
@@ -524,8 +546,11 @@ class CWaypoints
 			
 			if ( (nearestWptIdx == -1 ) || ( distance < minDistance) )
 			{
-				minDistance = distance;
-				nearestWptIdx = i;
+				if ( UTIL_IsVisible(vecLocation,m_Waypoints[i].m_vOrigin,player) )
+				{
+					minDistance = distance;
+					nearestWptIdx = i;
+				}
 			}
 		}
 		
@@ -604,9 +629,6 @@ class CWaypoints
 			for ( int i = 0; i < hdr.number_of_waypoints ; i ++ )
 			{
 				m_Waypoints[i].Read(buf,i);
-
-				m_Waypoints[i].Save(buf);
-			
 			}
 
 			m_iNumWaypoints = hdr.number_of_waypoints;
@@ -635,7 +657,7 @@ class CWaypoints
 			
 			for ( int i = 0; i < m_iNumWaypoints; i ++ )
 			{
-
+				m_Waypoints[i].Save(buf);
 			}
 
 			f.Write(buf.getData());
@@ -651,6 +673,9 @@ class CWaypoints
 	const int NavigatorState_Complete = 0;
 	const int NavigatorState_InProgress = 1;
 	const int NavigatorState_Fail = 2;
+	const int NavigatorState_ReachedGoal = 3;
+	const int NavigatorState_FoundGoal = 4;
+	const int NavigatorState_Following = 5;
 // ------------------------------------
 // NAVIGATOR - 	START (WIP)
 // ------------------------------------
@@ -663,13 +688,16 @@ final class RCBotNavigator
 
 	int iMaxLoops = 200;
 	int iLastNode;
+
+	int m_iCurrentWaypoint = -1;
+
 	array<AStarNode> paths(MAX_WAYPOINTS);
 	AStarNode@ curr;
 
 	CWaypoint@ pStartWpt;
 	CWaypoint@ pGoalWpt;
 
-	array<AStarNode@> m_theOpenList;
+	AStarOpenList m_theOpenList;
 
 	void open ( AStarNode@ pNode )
 	{
@@ -677,13 +705,48 @@ final class RCBotNavigator
 		{
 			pNode.open();
 			//m_theOpenList.push_back(pNode);
-			m_theOpenList.insertLast(pNode);
+			m_theOpenList.add(pNode);
 		}
 	}
 
-	RCBotNavigator ( Vector vFrom , Vector vTo )
+	// AStar Algorithm : get the waypoint with lowest cost
+	AStarNode@ nextNode ()
 	{
-		iStart = g_Waypoints.getNearestWaypointIndex(vFrom);
+		AStarNode@ pNode = null;
+
+		@pNode = m_theOpenList.top();
+		m_theOpenList.pop();
+			
+		return pNode;
+	}
+
+	RCBotNavigator ( RCBot@ bot , int iGoalWpt )
+	{
+		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer);
+
+		if ( iStart == -1 || iGoalWpt == -1 )
+		{
+			state = NavigatorState_Fail;
+		}
+		else
+		{
+			state = NavigatorState_InProgress;
+			@curr = paths[iStart];
+			curr.setWaypoint(iStart);
+			@pStartWpt = g_Waypoints.getWaypointAtIndex(iStart);
+			iGoal = iGoalWpt;
+			@pGoalWpt = g_Waypoints.getWaypointAtIndex(iGoal);
+
+
+			curr.setHeuristic(0);
+			open(curr);
+			iLastNode = iStart;
+		}
+	}	
+
+	RCBotNavigator ( RCBot@ bot , Vector vTo )
+	{
+		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer);
 		iGoal = g_Waypoints.getNearestWaypointIndex(vTo);
 
 		if ( iStart == -1 || iGoal == -1 )
@@ -697,110 +760,196 @@ final class RCBotNavigator
 			curr.setWaypoint(iStart);
 			pStartWpt = g_Waypoints.getWaypointAtIndex(iStart);
 			pGoalWpt = g_Waypoints.getWaypointAtIndex(iGoal);
+
 			curr.setHeuristic(0);
 			open(curr);
 			iLastNode = iStart;
 		}
 	}
 
+	bool execute ( RCBot@ bot )
+	{
+		if ( m_currentRoute.length () == 0 )
+		{			
+			return false;
+		}
+
+		m_iCurrentWaypoint = m_currentRoute[0];
+
+		CWaypoint@ wpt = g_Waypoints.getWaypointAtIndex(m_iCurrentWaypoint);
+
+		if ( (wpt.m_vOrigin - bot.origin()).Length() < 100 )
+		{
+			bot.touchedWpt(wpt);
+
+			m_currentRoute.removeAt(0);
+
+			if ( m_currentRoute.length () == 0 )
+			{
+				state = NavigatorState_ReachedGoal;				
+				return true;
+			}
+		}
+		else
+		{
+			bot.followingWpt(wpt);
+			
+		}	
+
+		return false;
+	}
+
+	int iCurrentNode = -1;
+
+	array<int> m_currentRoute = {};
+
+
 	int run ()
 	{		
-		int iLoops = 0;
+		
+		switch ( state )
+		{
+			case NavigatorState_InProgress:
+			{
+						int iLoops = 0;
 		int iPath;
 
-		while ( state == NavigatorState_InProgress )
-		{
-			iLoops++;
+		//BotMessage("Navigator State IN_PROGRESS...\n");
 
-			if ( iLoops > iMaxLoops )
-				break;
-
-			if ( m_theOpenList.length() == 0 )
-			{
-				state = NavigatorState_Fail;
-				break;
-			}
-
-			if ( curr.getWaypoint() == iGoal )
-			{
-				state = NavigatorState_Complete;
-				break;
-			}
-
-			CWaypoint@ currWpt = g_Waypoints.getWaypointAtIndex(curr.getWaypoint());
-			CWaypoint@ succWpt;
-			AStarNode@ succ;
-			int iCurrentNode = curr.getWaypoint();
-			int iMaxPaths = currWpt.numPaths();
-
-			for ( iPath = 0; iPath < iMaxPaths; iPath ++ )
-			{
-				int iSucc = currWpt.getPath(iPath);
-				
-
-				if ( iSucc == iLastNode )
-					continue;
-				if ( iSucc == iCurrentNode ) // argh?
-					continue;	
-
-				/*(if ( m_lastFailedPath.bValid )
-				{
-					if ( m_lastFailedPath.iFrom == iCurrentNode ) 
-					{
-						// failed this path last time
-						if ( m_lastFailedPath.iTo == iSucc )
+						while ( state == NavigatorState_InProgress )
 						{
-							m_lastFailedPath.bSkipped = true;
-							continue;
-						}
-					}
-				}*/
+							iLoops++;
 
-				@succ = @paths[iSucc];
-				succWpt = g_Waypoints.getWaypointAtIndex(iSucc);
 
-				//if ( (iSucc != m_iGoalWaypoint) && !m_pBot.canGotoWaypoint(vOrigin,succWpt,currWpt) )
-			//		continue;
+							if ( m_theOpenList.empty() )
+							{
+								state = NavigatorState_Fail;
+								break;
+							}							
 
-				float fCost = curr.getCost()+(succWpt.distanceFrom(currWpt.m_vOrigin));
+							@curr = nextNode();
 
-				if ( succ.isOpen() || succ.isClosed() )
-				{
-					if ( succ.getParent() != -1 )
+
+							if ( @curr is null )
+							{
+								state = NavigatorState_Fail;
+								break;
+							}
+
+							if ( iLoops > iMaxLoops )
+								break;
+
+
+							if ( curr.getWaypoint() == iGoal )
+							{
+								state = NavigatorState_FoundGoal;
+								break;
+							}
+
+							CWaypoint@ currWpt = g_Waypoints.getWaypointAtIndex(curr.getWaypoint());
+							CWaypoint@ succWpt;
+							AStarNode@ succ;
+
+							iCurrentNode = curr.getWaypoint();
+							int iMaxPaths = currWpt.numPaths();
+
+							for ( iPath = 0; iPath < iMaxPaths; iPath ++ )
+							{
+								int iSucc = currWpt.getPath(iPath);
+								
+								if ( iSucc == iLastNode )
+									continue;
+								if ( iSucc == iCurrentNode ) // argh?
+									continue;	
+
+								/*(if ( m_lastFailedPath.bValid )
+								{
+									if ( m_lastFailedPath.iFrom == iCurrentNode ) 
+									{
+										// failed this path last time
+										if ( m_lastFailedPath.iTo == iSucc )
+										{
+											m_lastFailedPath.bSkipped = true;
+											continue;
+										}
+									}
+								}*/
+
+								@succ = @paths[iSucc];
+								@succWpt = g_Waypoints.getWaypointAtIndex(iSucc);
+
+								//if ( (iSucc != m_iGoalWaypoint) && !m_pBot.canGotoWaypoint(vOrigin,succWpt,currWpt) )
+							//		continue;
+
+								float fCost = curr.getCost()+(succWpt.distanceFrom(currWpt.m_vOrigin));
+
+								if ( succ.isOpen() || succ.isClosed() )
+								{
+									if ( succ.getParent() != -1 )
+									{
+										if ( fCost >= succ.getCost() )
+											continue; // ignore route
+									}
+									else
+										continue;
+								}
+
+								succ.unClose();
+
+								succ.setParent(iCurrentNode);
+
+								succ.setCost(fCost);	
+
+								succ.setWaypoint(iSucc);
+
+								if ( succ.heuristicSet() == false )		
+								{
+									float h = pStartWpt.distanceFrom(succWpt.m_vOrigin) + pGoalWpt.distanceFrom(succWpt.m_vOrigin);
+
+									succ.setHeuristic(h);
+								}
+
+								// Fix: do this AFTER setting heuristic and cost!!!!
+								if ( succ.isOpen() == false )
+								{
+									open(succ);
+								}
+
+							}
+
+							curr.close(); // close chosen node
+
+							iLastNode = iCurrentNode;				
+						}	
+			}		
+			break;
+			case NavigatorState_FoundGoal:
+			{
+					int iLoops = 0;
+
+					float fDistance = 0.0;
+					int iParent;
+
+					while ( (iCurrentNode != -1) && (iCurrentNode != m_iCurrentWaypoint ) && (iLoops <= g_Waypoints.m_iNumWaypoints) )
 					{
-						if ( fCost >= succ.getCost() )
-							continue; // ignore route
+						iLoops++;
+
+						m_currentRoute.insertAt(0,iCurrentNode);
+
+						iParent = paths[iCurrentNode].getParent();
+
+						iCurrentNode = iParent;
 					}
-					else
-						continue;
-				}
 
-				succ.unClose();
+					state = NavigatorState_Following;
 
-				succ.setParent(iCurrentNode);
-
-				succ.setCost(fCost);	
-
-				succ.setWaypoint(iSucc);
-
-				if ( succ.heuristicSet() == false )		
-				{
-					float h = pStartWpt.distanceFrom(succWpt.m_vOrigin) + pGoalWpt.distanceFrom(succWpt.m_vOrigin);
-
-					succ.setHeuristic(h);
-				}
-
-				// Fix: do this AFTER setting heuristic and cost!!!!
-				if ( succ.isOpen() == false )
-				{
-					open(succ);
-				}
-
+					BotMessage("Navigator State FOUND_GOAL...\n");
 			}
+			break;
+			default:
 
-			curr.close(); // close chosen node
-
-			iLastNode = iCurrentNode;				
+				BotMessage("Current Waypoint =	 " +  m_iCurrentWaypoint + " - goal =  " + iGoal+"\n");
+			break;
 		}
 
 		return state;
