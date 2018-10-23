@@ -1,7 +1,8 @@
 # RCBotSven5
 New Angelscript RCBot for Svencoop 5 test
 
-(BOTS CURRENTLY DON'T DO ANYTHING)
+Bots currently walks around and shoot...
+waypoints for osprey and sc_another
 
 WIP!!!
 
