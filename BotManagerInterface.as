@@ -22,6 +22,9 @@ namespace BotManager
 		Vector m_vMoveTo;
 		bool m_bMoveToValid;
 
+		Vector m_vLookAt;
+		bool m_vLookAtIsValid;
+
 		void ReleaseButtons ( )
 		{
 			m_pPlayer.pev.button = 0;
@@ -36,6 +39,13 @@ namespace BotManager
 		{
 			m_vMoveTo = origin;
 			m_bMoveToValid = true;
+			BotMessage("setMove!");
+		}
+
+		void setLookAt ( Vector origin )
+		{
+			m_vLookAtIsValid = true;
+			m_vLookAt = origin;
 		}
 				
 		float m_fUpMove;
@@ -59,6 +69,9 @@ namespace BotManager
 		void Spawn()
 		{
 			m_pPlayer.pev.fixangle = FAM_FORCEVIEWANGLES;
+
+			m_vLookAtIsValid = false;
+			m_bMoveToValid = false;
 		}
 		
 		void Think()
@@ -90,13 +103,35 @@ namespace BotManager
 		{
 		 	float yaw = 0;
 
-			if ( m_bMoveToValid )
+			if ( m_vLookAtIsValid )
 			{
-				yaw = UTIL_yawAngleFromEdict(m_vMoveTo,m_vLookAngles,m_pPlayer.pev.origin);
+				m_vLookAngles = Math.VecToAngles(m_vLookAt - m_pPlayer.pev.origin);
 
-				BotMessage("Yaw = " + yaw + "\n");
+				m_vLookAngles.x = UTIL_FixFloatAngle(m_vLookAngles.x);
+				m_vLookAngles.y = UTIL_FixFloatAngle(m_vLookAngles.y);
+				m_vLookAngles.z = UTIL_FixFloatAngle(m_vLookAngles.z);
+
+				m_pPlayer.pev.v_angle = m_vLookAngles;
+				
+				m_pPlayer.pev.idealpitch = -m_vLookAngles.x;
+				m_pPlayer.pev.ideal_yaw = m_vLookAngles.y;
+
+				m_pPlayer.pev.angles.x = m_pPlayer.pev.v_angle.x/3;
+				m_pPlayer.pev.angles.y = m_pPlayer.pev.v_angle.y;
+				m_pPlayer.pev.angles.z = 0;
 			}
 
+			if ( m_bMoveToValid )
+			{				
+				yaw = UTIL_yawAngleFromEdict(m_vMoveTo,m_pPlayer.pev.v_angle,m_pPlayer.pev.origin);
+
+				BotMessage("Yaw = " + yaw + "\n");
+
+				m_fDesiredSpeed = 320.0f;
+			}
+			else
+				m_fDesiredSpeed = 0.0f;
+				
 			UpdateMSec();
 			
 			m_flLastRunMove = g_Engine.time;
@@ -104,12 +139,12 @@ namespace BotManager
 			m_fForwardMove = cos(yaw*0.01745329252) * m_fDesiredSpeed;
 			m_fSideMove = sin(yaw*0.01745329252) * m_fDesiredSpeed;		
 
-			BotMessage("m_fForwardMove = " + m_fForwardMove + "\n");	
-			BotMessage("m_fSideMove = " + m_fSideMove + "\n");	
+			//BotMessage("m_fForwardMove = " + m_fForwardMove + "\n");	
+			//BotMessage("m_fSideMove = " + m_fSideMove + "\n");	
 			//m_fUpMove = cos(v_angles.z*0.01745329252) * m_fDesiredSpeed;
 			m_fUpMove = 0;			
 			
-			g_EngineFuncs.RunPlayerMove( m_pPlayer.edict(), m_vLookAngles, 
+			g_EngineFuncs.RunPlayerMove( m_pPlayer.edict(), m_pPlayer.pev.angles, 
 				m_fForwardMove, m_fSideMove, m_fUpMove, 
 				m_pPlayer.pev.button, m_pPlayer.pev.impulse, uint8( m_iMSecInterval ) );
 		}

@@ -197,6 +197,22 @@ class CWaypointTypes
 		m_Types.insertLast(CWaypointType("health",W_FL_HEALTH,WptColor(255,50,50)));
 	}
 
+	void printInfo ( CBasePlayer@ player, int flags )
+	{
+		string szflags = "";
+
+		for ( uint i = 0; i < m_Types.length(); i ++ )
+		{
+			if ( flags & m_Types[i].m_iFlag == m_Types[i].m_iFlag )
+				szflags += "," + m_Types[i].m_szName;
+		}
+
+		if ( szflags == "" )
+			szflags = "NO FLAGS";
+
+		SayMessage(player,szflags);
+	}
+
 	WptColor getColour ( int flags )
 	{
 		WptColor colour = WptColor(0,0,255); // normal waypoint
@@ -496,6 +512,38 @@ class CWaypoints
 				m_iNumWaypoints++;	
 
 				BotMessage("Num waypoints = "+m_iNumWaypoints);
+
+				CWaypoint@ added = getWaypointAtIndex(index);
+				// auto path waypoint
+				for ( int i = 0; i < m_iNumWaypoints; i ++ )
+				{
+					CWaypoint@ other = getWaypointAtIndex(i);
+					float zDiff = other.m_vOrigin.z - added.m_vOrigin.z;
+
+					if ( zDiff < 0 )
+						zDiff = -zDiff;
+
+					if ( i == index )
+						continue;					
+
+					if ( added.distanceFrom(other.m_vOrigin) > 512 )
+						continue;
+
+					if ( zDiff > 64 )
+					{
+						continue;
+					}
+					
+					if ( !UTIL_IsVisible(other.m_vOrigin,added.m_vOrigin) )
+					{
+						continue;
+					}
+
+					BotMessage("ADDED PATH\n");
+
+					other.addPath(index);
+					added.addPath(i);
+				}
 		}
 	}
 
@@ -511,6 +559,43 @@ class CWaypoints
 			return m_iNumWaypoints;
 
 		return -1;
+	}
+
+	void WaypointInfo ( CBasePlayer@ player )
+	{
+		int index = getNearestWaypointIndex(player.pev.origin,player);
+
+		if ( index != -1 ) 
+		{
+			CWaypoint@ wpt = m_Waypoints[index];
+
+			g_WaypointTypes.printInfo(player,wpt.m_iFlags);
+		}
+	}
+
+	int getNearestFlaggedWaypoint ( CBasePlayer@ player, int iFlags )
+	{
+		int iIndex = -1;
+		float min_distance = 0;
+		
+		for( int i = 0; i < m_iNumWaypoints; i ++ )
+		{
+			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
+				continue;	
+
+			if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
+			{
+				float distance = m_Waypoints[i].distanceFrom(player.pev.origin);
+
+				if ( iIndex == -1 || distance < min_distance )
+				{
+					min_distance = distance;
+					iIndex = i;
+				}
+			}
+		}
+		
+		return iIndex;
 	}
 	
 	int getRandomFlaggedWaypoint ( int iFlags )
@@ -769,6 +854,7 @@ final class RCBotNavigator
 
 	bool execute ( RCBot@ bot )
 	{
+	
 		if ( m_currentRoute.length () == 0 )
 		{			
 			return false;
@@ -862,6 +948,8 @@ final class RCBotNavigator
 								if ( iSucc == iCurrentNode ) // argh?
 									continue;	
 
+									
+
 								/*(if ( m_lastFailedPath.bValid )
 								{
 									if ( m_lastFailedPath.iFrom == iCurrentNode ) 
@@ -877,6 +965,13 @@ final class RCBotNavigator
 
 								@succ = @paths[iSucc];
 								@succWpt = g_Waypoints.getWaypointAtIndex(iSucc);
+
+								if ( succWpt.hasFlags(W_FL_OPENS_LATER) )
+								{
+									// make sure path is visible from current to succ
+									if ( !UTIL_IsVisible(currWpt.m_vOrigin,succWpt.m_vOrigin) )
+										continue;
+								}
 
 								//if ( (iSucc != m_iGoalWaypoint) && !m_pBot.canGotoWaypoint(vOrigin,succWpt,currWpt) )
 							//		continue;

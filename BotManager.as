@@ -7,11 +7,13 @@
 #include "BotWaypoint"
 #include "CBotTasks"
 #include "UtilFuncs"
+
 BotManager::BotManager g_BotManager( @CreateRCBot );
 
 CConCommand@ m_pAddBot;
 CConCommand@ m_pRCBotWaypointAdd;
 CConCommand@ m_pRCBotWaypointDelete;
+CConCommand@ m_pRCBotWaypointInfo;
 CConCommand@ m_pRCBotWaypointOff;
 CConCommand@ m_pRCBotWaypointOn;
 CConCommand@ m_pPathWaypointCreate1;
@@ -19,7 +21,7 @@ CConCommand@ m_pPathWaypointCreate2;
 CConCommand@ m_pRCBotWaypointLoad;
 CConCommand@ m_pRCBotWaypointSave;
 CConCommand@ m_pRCBotKill;
-CConCommand@ yawc;
+CConCommand@ GodMode;
 
 CBasePlayer@ ListenPlayer ()
 {
@@ -43,9 +45,27 @@ void PluginInit()
 	@m_pRCBotWaypointSave = @CConCommand( "waypoint_save", "Saves waypoints", @WaypointSave );
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
 	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
+	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
+	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@m_pRCBotKill = @CConCommand( "kill", "kills a bot", @RCBot_Kill );
-	@yawc = @CConCommand( "waypoint_yaw", "Display waypoints off", @WptYaw );
+	
 
+}
+
+void GodModeFunc ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+	
+	if ( player.pev.flags & FL_GODMODE == FL_GODMODE )
+	{
+		player.pev.flags &= ~FL_GODMODE;
+		SayMessageAll(player,"God mode disabled");
+	}
+	else 
+	{
+		player.pev.flags |= FL_GODMODE;
+		SayMessageAll(player,"God mode enabled");
+	}
 }
 
 void RCBot_Kill ( const CCommand@ args )
@@ -57,18 +77,6 @@ void RCBot_Kill ( const CCommand@ args )
 
 }
 
-void WptYaw ( const CCommand@ args )
-{
-	int i = atoi(args.Arg(1));
-
-	CWaypoint@ wpt = g_Waypoints.getWaypointAtIndex(i);
-
-	CBasePlayer@ player = ListenPlayer();
-
-	float yaw = UTIL_yawAngleFromEdict(wpt.m_vOrigin,player.pev.v_angle,player.pev.origin);
-
-	BotMessage("Yaw = " + yaw + "\n");
-}
 // ------------------------------------
 // COMMANDS - 	start
 // ------------------------------------
@@ -84,6 +92,10 @@ void AddBotCallback( const CCommand@ args )
 
 }
 
+void WaypointInfo ( const CCommand@ args )
+{
+	g_Waypoints.WaypointInfo(ListenPlayer());
+}
 
 void WaypointLoad ( const CCommand@ args )
 {
@@ -133,6 +145,139 @@ void PathWaypoint_Create2 ( const CCommand@ args )
 // COMMANDS - 	end
 // ------------------------------------
 
+class CBits
+{
+	CBits ( int length )
+	{
+		bits = array<int>((length/32) + 1);
+	}
+
+	bool getBit ( int longbit )
+	{
+		int bit = 1<<(longbit % 32);
+		int byte = longbit / 32;
+
+		return (bits[byte] & bit) == bit;
+	}
+
+	void setBit ( int longbit , bool val )
+	{
+		int bit = 1<<(longbit % 32);
+		int byte = longbit / 32;
+
+		if ( val )
+			bits[byte] |= bit;
+		else
+			bits[byte] &= ~bit;
+	}
+
+	void reset ()
+	{
+		for ( uint i = 0; i < bits.length(); i ++  )
+		{
+			bits[i] = 0;
+		}
+	}
+
+	array<int> bits;
+}
+
+class CBotVisibles
+{
+	CBotVisibles ( RCBot@ bot )
+	{
+		iCurrentEntity = 0;
+		@bits = CBits(g_Engine.maxEntities+1);
+		@m_pBot = bot;
+	}
+
+	bool isVisible ( int iIndex )
+	{
+		return bits.getBit(iIndex);
+	}
+
+	void setVisible (int iIndex, bool bVisible)
+	{
+		bool wasVisible = isVisible(iIndex);
+
+		//BotMessage("setVisible iIndex = " + iIndex + ", bVisible = " + bVisible + "\n");
+
+		if ( !bVisible )
+		{
+			if ( wasVisible )
+				m_pBot.lostVisible(iIndex);
+		}
+		else 
+		{
+			if ( !wasVisible )
+				m_pBot.newVisible(iIndex);
+		}
+
+		bits.setBit(iIndex,bVisible);
+	}	
+
+	void reset ()
+	{
+		bits.reset();
+	}
+
+	void update (  )
+	{
+		CBasePlayer@ player = m_pBot.m_pPlayer;
+		int iLoops = 0;
+
+		while ( iLoops < iMaxLoops )
+		{
+			edict_t@ edict = g_EngineFuncs.PEntityOfEntIndex( iCurrentEntity );
+
+			iCurrentEntity = (iCurrentEntity + 1) % g_Engine.maxEntities;
+			
+			iLoops ++;
+
+			if ( edict is null )
+			{
+				setVisible(iCurrentEntity,false);
+				continue;
+			}
+
+			if( edict.free != 0 )
+			{
+				setVisible(iCurrentEntity,false);
+				continue;
+			}			
+
+			CBaseEntity@ ent = g_EntityFuncs.Instance(edict);
+
+			if ( ent is null )
+			{
+				setVisible(iCurrentEntity,false);
+				continue;
+			}
+
+			if ( !player.FInViewCone(ent) )
+			{
+				setVisible(iCurrentEntity,false);
+				continue;
+			}			
+
+			if ( !player.FVisible(ent,false) )
+			{
+				setVisible(iCurrentEntity,false);
+				continue;		
+			}
+
+			setVisible(iCurrentEntity,true);
+		}
+
+	}
+
+	int iCurrentEntity;
+	//array<int> m_VisibleList;
+	int iMaxLoops = 200;
+	CBits@ bits;
+	RCBot@ m_pBot;
+	
+};
 // ------------------------------------
 // BOT BASE - START
 // ------------------------------------
@@ -144,9 +289,62 @@ final class RCBot : BotManager::BaseBot
 
 	RCBotSchedule@ m_pCurrentSchedule;
 
+	bool init;
+
+	CBaseEntity@ m_pEnemy;
+
+	CBotVisibles@ m_pVisibles;
+
 	RCBot( CBasePlayer@ pPlayer )
 	{
 		super( pPlayer );
+
+		init = false;
+
+		@m_pVisibles = CBotVisibles(this);
+
+		SpawnInit();		
+	}
+
+	bool IsEnemy ( CBaseEntity@ entity )
+	{
+		if ( entity.pev.deadflag != DEAD_NO )
+			return false;
+
+		switch ( entity.Classify() )
+		{
+case 	CLASS_FORCE_NONE	:
+case 	CLASS_PLAYER_ALLY	:
+case 	CLASS_NONE	:
+case 	CLASS_PLAYER	:
+case 	CLASS_HUMAN_PASSIVE	:
+case 	CLASS_ALIEN_PASSIVE	:
+		return false;
+case 	CLASS_MACHINE	:
+case 	CLASS_HUMAN_MILITARY	:
+case 	CLASS_ALIEN_MILITARY	:
+case 	CLASS_ALIEN_MONSTER	:
+case 	CLASS_ALIEN_PREY	:
+case 	CLASS_ALIEN_PREDATOR	:
+case 	CLASS_INSECT	:
+case 	CLASS_PLAYER_BIOWEAPON	:
+case 	CLASS_ALIEN_BIOWEAPON	:
+case 	CLASS_XRACE_PITDRONE	:
+case 	CLASS_XRACE_SHOCK	:
+case 	CLASS_BARNACLE	:
+
+		return !entity.IsPlayerAlly();
+
+		default:
+		break;
+		}
+
+		return false;
+	}
+
+	float distanceFrom ( Vector vOrigin )
+	{
+		return (vOrigin - m_pPlayer.pev.origin).Length();
 	}
 
 	Vector origin ()
@@ -191,13 +389,18 @@ final class RCBot : BotManager::BaseBot
 			if( Math.RandomLong( 0, 100 ) > 10 )
 				PressButton(IN_ATTACK);
 
-			@m_pCurrentSchedule = null;
-			@navigator = null;
+			SpawnInit();
 
 			return; // Dead , nothing else to do
 		}
 
-		
+		init = false;
+
+		if ( m_pEnemy !is null )
+		{
+			if ( !IsEnemy(m_pEnemy) )
+				@m_pEnemy = null;
+		}
 		/*
 		KeyValueBuffer@ pInfoBuffer = g_EngineFuncs.GetInfoKeyBuffer( Player.edict() );
 		
@@ -214,15 +417,73 @@ final class RCBot : BotManager::BaseBot
 			m_vecVelocity[ uiIndex ] = Math.RandomLong( -50, 50 );
 		}*/
 
+		DoVisibles();
 		DoMove();
 		DoLook();
 		DoButtons();
 		DoTasks();
 	}
 
+	float getEnemyFactor ( CBaseEntity@ entity )
+	{
+		return distanceFrom(entity.pev.origin);
+	}
+
+	void newVisible ( int iIndex )
+	{
+		//BotMessage("newVisible iIndex = " + iIndex + "\n");
+
+		edict_t@ edict = g_EngineFuncs.PEntityOfEntIndex( iIndex );
+		CBaseEntity@ ent = g_EntityFuncs.Instance(edict);
+
+		if ( ent is null )
+		{
+			// WTFFFFF!!!!!!!
+			return;
+		}
+
+		//BotMessage("New Visible " + ent.pev.classname + "\n");
+		if ( IsEnemy(ent) )
+		{
+			BotMessage("NEW ENEMY !!!  " + ent.pev.classname + "\n");
+
+			if ( m_pEnemy is null )
+				@m_pEnemy = ent;
+			else if ( getEnemyFactor(ent) < getEnemyFactor(m_pEnemy) )
+				@m_pEnemy = ent;
+		}
+	}
+
+	void lostVisible ( int iIndex )
+	{
+		//BotMessage("lostVisible iIndex = " + iIndex + "\n");
+
+		edict_t@ edict = g_EngineFuncs.PEntityOfEntIndex( iIndex );
+		CBaseEntity@ ent = g_EntityFuncs.Instance(edict);
+
+		if ( m_pEnemy is ent )
+		{
+			@m_pEnemy = null;
+		}
+	}
+
+	void SpawnInit ()
+	{
+		if ( init == true )
+			return;
+
+		init = true;
+
+		@m_pCurrentSchedule = null;
+		@navigator = null;	
+		@m_pEnemy = null;
+		m_pVisibles.reset();
+	}
+
 	void DoVisibles ()
 	{
 		// update visible objects
+		m_pVisibles.update();
 	}
 
 	void DoMove ()
@@ -233,12 +494,23 @@ final class RCBot : BotManager::BaseBot
 
 	void DoLook ()
 	{
-
+		if ( m_pEnemy !is null )
+		{
+			setLookAt(m_pEnemy.pev.origin);
+			//BotMessage("LOOKING AT ENEMY!!!\n");
+		}
 	}
 
 	void DoButtons ()
 	{
+		if ( m_pEnemy !is null )
+		{
+			// attack
+			if( Math.RandomLong( 0, 100 ) < 90 )
+				PressButton(IN_ATTACK);
 
+			//BotMessage("SHOOTING ENEMY!!!\n");
+		}
 	}
 
 	void DoTasks ()
@@ -252,7 +524,9 @@ final class RCBot : BotManager::BaseBot
 		}
 		else
 		{
-			@m_pCurrentSchedule = CFindPathSchedule(this);
+			CBotUtilities@ util = CBotUtilities(this);
+
+			@m_pCurrentSchedule = util.execute(this);
 		}
 	}
 }

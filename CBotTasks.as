@@ -110,8 +110,115 @@ final class CFindPathTask : RCBotTask
 
 class CFindPathSchedule : RCBotSchedule
 {
-    CFindPathSchedule ( RCBot@ bot )
+    CFindPathSchedule ( RCBot@ bot, int iWpt )
     {
-        addTask(CFindPathTask(bot,Math.RandomLong(0,g_Waypoints.m_iNumWaypoints-1)));
+        addTask(CFindPathTask(bot,iWpt));
+    }
+}
+
+/// UTIL
+
+abstract class CBotUtil
+{
+    float utility;
+
+    CBotUtil ( float util ) { utility = util; }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        return null;
+    }
+}
+
+class CBotGetHealthUtil : CBotUtil
+{
+    CBotGetHealthUtil ( RCBot@ bot )
+    {
+        float healthPercent = float(bot.m_pPlayer.pev.health) / bot.m_pPlayer.pev.max_health;
+
+        super(1.0f - healthPercent);
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_HEALTH);				
+
+        if ( iWpt != -1 )
+            return CFindPathSchedule(bot,iWpt);
+
+        return null;
+    }
+}
+
+class CBotGetArmorUtil : CBotUtil
+{
+    CBotGetArmorUtil ( RCBot@ bot )
+    {
+        float healthPercent = float(bot.m_pPlayer.pev.armorvalue) / 100;
+
+        super(1.0f - healthPercent);
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_ARMOR);				
+
+        if ( iWpt != -1 )
+            return CFindPathSchedule(bot,iWpt);
+
+        return null;
+    }    
+}
+
+class CBotRoamUtil : CBotUtil
+{
+    CBotRoamUtil( RCBot@ bot )
+    {
+        super(0.1f);
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_ENDLEVEL);
+
+        if ( iRandomGoal == -1 )
+            iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT);
+        
+        if ( iRandomGoal != -1 )
+        {
+            return CFindPathSchedule(bot,iRandomGoal);
+        }
+
+        return null;
+    }
+}
+
+class CBotUtilities 
+{
+    array <CBotUtil@>  m_Utils;
+
+    CBotUtilities ( RCBot@ bot )
+    {
+            //m_Utils.insertLast(CBotGetHealthUtil(bot));
+            //m_Utils.insertLast(CBotGetArmorUtil(bot));
+            m_Utils.insertLast(CBotRoamUtil(bot));
+
+            m_Utils.sort(function(a,b) { return a.utility > b.utility; });
+    }
+
+    RCBotSchedule@  execute ( RCBot@ bot )
+    {
+        for ( uint i = 0; i < m_Utils.length(); i ++ )
+        {
+            RCBotSchedule@ sched = m_Utils[i].execute(bot);
+
+            if ( sched !is null )
+            {
+                BotMessage("GOT A NEW SCHEDULE");
+                return sched;
+            }
+        }
+
+        return null;
     }
 }
