@@ -22,6 +22,9 @@ CConCommand@ m_pRCBotWaypointLoad;
 CConCommand@ m_pRCBotWaypointSave;
 CConCommand@ m_pRCBotKill;
 CConCommand@ GodMode;
+CConCommand@ NoClipMode;
+CConCommand@ m_pRCBotWaypointRemoveType;
+CConCommand@ m_pRCBotWaypointGiveType;
 
 CBasePlayer@ ListenPlayer ()
 {
@@ -46,10 +49,59 @@ void PluginInit()
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
 	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
 	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
+	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint tyow",@WaypointGiveType);
+	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint tyow",@WaypointRemoveType);
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
+	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
 	@m_pRCBotKill = @CConCommand( "kill", "kills a bot", @RCBot_Kill );
 	
 
+}
+
+void WaypointGiveType ( const CCommand@ args )
+{
+	array<string> types;
+
+	CBasePlayer@ player = ListenPlayer();
+
+	for ( int i = 0 ; i < args.ArgC(); i ++ )
+	{
+		types.insertLast(args.Arg(i));
+	}
+
+	int flags = g_WaypointTypes.parseTypes(types);
+
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+
+	if ( wpt != -1 )
+	{
+		CWaypoint@ pWpt =  g_Waypoints.getWaypointAtIndex(wpt);
+
+		pWpt.m_iFlags |= flags;
+	}
+}
+
+void WaypointRemoveType ( const CCommand@ args )
+{
+	array<string> types;
+
+	CBasePlayer@ player = ListenPlayer();
+
+	for ( int i = 0 ; i < args.ArgC(); i ++ )
+	{
+		types.insertLast(args.Arg(i));
+	}
+
+	int flags = g_WaypointTypes.parseTypes(types);
+
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+
+	if ( wpt != -1 )
+	{
+		CWaypoint@ pWpt =  g_Waypoints.getWaypointAtIndex(wpt);
+
+		pWpt.m_iFlags &= ~flags;
+	}
 }
 
 void GodModeFunc ( const CCommand@ args )
@@ -65,6 +117,22 @@ void GodModeFunc ( const CCommand@ args )
 	{
 		player.pev.flags |= FL_GODMODE;
 		SayMessageAll(player,"God mode enabled");
+	}
+}
+
+void NoClipModeFunc ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+	
+	if ( player.pev.movetype != MOVETYPE_NOCLIP )
+	{
+		player.pev.movetype = MOVETYPE_NOCLIP;
+		SayMessageAll(player,"No clip mode enabled");
+	}
+	else 
+	{
+		player.pev.movetype = MOVETYPE_WALK;
+		SayMessageAll(player,"Noclip mode disabled");
 	}
 }
 

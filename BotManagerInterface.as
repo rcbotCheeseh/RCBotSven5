@@ -286,6 +286,11 @@ namespace BotManager
 		HookReturnCode MapChange()
 		{
 			m_Bots.resize( 0 );
+
+			if ( g_Waypoints.Load() )
+				BotMessage("Waypoints Loaded!");
+			else
+				BotMessage("No waypoints!");
 			
 			return HOOK_CONTINUE;
 		}
