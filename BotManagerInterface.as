@@ -39,7 +39,7 @@ namespace BotManager
 		{
 			m_vMoveTo = origin;
 			m_bMoveToValid = true;
-			BotMessage("setMove!");
+			//BotMessage("setMove!");
 		}
 
 		void setLookAt ( Vector origin )
@@ -125,7 +125,7 @@ namespace BotManager
 			{				
 				yaw = UTIL_yawAngleFromEdict(m_vMoveTo,m_pPlayer.pev.v_angle,m_pPlayer.pev.origin);
 
-				BotMessage("Yaw = " + yaw + "\n");
+				//BotMessage("Yaw = " + yaw + "\n");
 
 				m_fDesiredSpeed = 320.0f;
 			}

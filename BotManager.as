@@ -7,6 +7,7 @@
 #include "BotWaypoint"
 #include "CBotTasks"
 #include "UtilFuncs"
+#include "BotWeapons"
 
 BotManager::BotManager g_BotManager( @CreateRCBot );
 
@@ -25,6 +26,10 @@ CConCommand@ GodMode;
 CConCommand@ NoClipMode;
 CConCommand@ m_pRCBotWaypointRemoveType;
 CConCommand@ m_pRCBotWaypointGiveType;
+CConCommand@ m_pDebugBot;
+
+int g_DebugBot;
+int g_DebugLevel = 0;
 
 CBasePlayer@ ListenPlayer ()
 {
@@ -49,13 +54,23 @@ void PluginInit()
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
 	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
 	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
-	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint tyow",@WaypointGiveType);
-	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint tyow",@WaypointRemoveType);
+	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type",@WaypointGiveType);
+	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type",@WaypointRemoveType);
+	//@m_pDebugBot = @ConCommand ( "debug_bot" , "debug a bot" , @DebugBot );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
-	@m_pRCBotKill = @CConCommand( "kill", "kills a bot", @RCBot_Kill );
+	@m_pRCBotKill = @CConCommand( "test", "test func", @RCBot_Kill );
 	
 
+}
+
+
+void DebugBot ( const CCommand@ args )
+{
+	if ( args.ArgC() > 0 )		
+	{
+		g_DebugBot = atoi(args.Arg(0));
+	}
 }
 
 void WaypointGiveType ( const CCommand@ args )
@@ -142,7 +157,55 @@ void RCBot_Kill ( const CCommand@ args )
 
 	//RCBot@ bot = RCBot@(g_BotManager.FindBot(g_PlayerFuncs.FindPlayerByIndex(i)));
 
+	CBasePlayer@ p = ListenPlayer();
 
+        TraceResult tr;
+
+
+		g_EngineFuncs.MakeVectors(p.pev.v_angle);
+//void TraceHull(const Vector& in vecStart, const Vector& in vecEnd, IGNORE_MONSTERS igmon,HULL_NUMBER hullNumber, edict_t@ pEntIgnore, TraceResult& out ptr)
+
+        g_Utility.TraceLine( p.pev.origin, p.pev.origin + g_Engine.v_forward*2000, ignore_monsters,dont_ignore_glass, null, tr );
+
+
+	CBasePlayerWeapon@ w = findBestWeapon(p,tr.vecEndPos);
+
+	if ( w !is null )
+	{
+		BotMessage("Best Weapon is : " + w.GetClassname());
+	}
+	else
+		BotMessage("No Best Weapon! :(");
+	//if ( w.GetClassname() )
+	{
+
+	}
+/*
+	CBasePlayer@ p = ListenPlayer();
+
+	BotMessage("MAX_ITEM_TYPES = " + MAX_ITEM_TYPES);
+
+	for ( uint i = 0; i < MAX_ITEM_TYPES; i ++ )
+	{
+		CBasePlayerItem@ item = p.m_rgpPlayerItems(i);
+		
+		if ( item !is null )
+		{
+			CBasePlayerWeapon@ weapon = item.GetWeaponPtr();
+
+			if ( weapon !is null )
+			{
+				// this is a weapon
+				BotMessage("Weapon : " + item.GetClassname());
+
+				BotMessage(" Primary Ammo: " + p.m_rgAmmo(weapon.PrimaryAmmoIndex()));
+				if ( weapon.SecondaryAmmoIndex() >= 0)
+				BotMessage(" Secondary Ammo: " + p.m_rgAmmo(weapon.SecondaryAmmoIndex()));
+			}
+			else
+				BotMessage("Item : " + item.GetClassname());
+		}
+	}*/
 }
 
 // ------------------------------------
@@ -254,7 +317,7 @@ class CBotVisibles
 {
 	CBotVisibles ( RCBot@ bot )
 	{
-		iCurrentEntity = 0;
+		@m_pCurrentEntity = null;
 		@bits = CBits(g_Engine.maxEntities+1);
 		@m_pBot = bot;
 	}
@@ -264,8 +327,9 @@ class CBotVisibles
 		return bits.getBit(iIndex);
 	}
 
-	void setVisible (int iIndex, bool bVisible)
+	void setVisible ( CBaseEntity@ ent, bool bVisible)
 	{
+		int iIndex = ent.entindex();
 		bool wasVisible = isVisible(iIndex);
 
 		//BotMessage("setVisible iIndex = " + iIndex + ", bVisible = " + bVisible + "\n");
@@ -273,12 +337,12 @@ class CBotVisibles
 		if ( !bVisible )
 		{
 			if ( wasVisible )
-				m_pBot.lostVisible(iIndex);
+				m_pBot.lostVisible(ent);
 		}
 		else 
 		{
 			if ( !wasVisible )
-				m_pBot.newVisible(iIndex);
+				m_pBot.newVisible(ent);
 		}
 
 		bits.setBit(iIndex,bVisible);
@@ -293,53 +357,37 @@ class CBotVisibles
 	{
 		CBasePlayer@ player = m_pBot.m_pPlayer;
 		int iLoops = 0;
+		CBaseEntity@ pStart = m_pCurrentEntity;
 
-		while ( iLoops < iMaxLoops )
+		do
 		{
-			edict_t@ edict = g_EngineFuncs.PEntityOfEntIndex( iCurrentEntity );
+   			@m_pCurrentEntity = g_EntityFuncs.FindEntityByClassname(m_pCurrentEntity, "*"); 
 
-			iCurrentEntity = (iCurrentEntity + 1) % g_Engine.maxEntities;
-			
 			iLoops ++;
-
-			if ( edict is null )
+			
+			if ( m_pCurrentEntity is null )
 			{
-				setVisible(iCurrentEntity,false);
 				continue;
 			}
 
-			if( edict.free != 0 )
+			if ( !player.FInViewCone(m_pCurrentEntity) )
 			{
-				setVisible(iCurrentEntity,false);
+				setVisible(m_pCurrentEntity,false);
 				continue;
 			}			
-
-			CBaseEntity@ ent = g_EntityFuncs.Instance(edict);
-
-			if ( ent is null )
+		
+			if ( !player.FVisible(m_pCurrentEntity,false) )
 			{
-				setVisible(iCurrentEntity,false);
-				continue;
-			}
-
-			if ( !player.FInViewCone(ent) )
-			{
-				setVisible(iCurrentEntity,false);
-				continue;
-			}			
-
-			if ( !player.FVisible(ent,false) )
-			{
-				setVisible(iCurrentEntity,false);
+				setVisible(m_pCurrentEntity,false);
 				continue;		
 			}
 
-			setVisible(iCurrentEntity,true);
-		}
+			setVisible(m_pCurrentEntity,true);
+		}while ( iLoops < iMaxLoops );
 
 	}
 
-	int iCurrentEntity;
+	CBaseEntity@ m_pCurrentEntity = null;
 	//array<int> m_VisibleList;
 	int iMaxLoops = 200;
 	CBits@ bits;
@@ -362,6 +410,8 @@ final class RCBot : BotManager::BaseBot
 	CBaseEntity@ m_pEnemy;
 
 	CBotVisibles@ m_pVisibles;
+
+	CBasePlayerWeapon@ m_pCurrentWeapon;
 
 	RCBot( CBasePlayer@ pPlayer )
 	{
@@ -488,8 +538,29 @@ case 	CLASS_BARNACLE	:
 		DoVisibles();
 		DoMove();
 		DoLook();
+		DoWeapons();
 		DoButtons();
 		DoTasks();
+	}
+
+	void DoWeapons ()
+	{	
+		if ( m_pEnemy !is null )
+		{
+			CBasePlayerWeapon@ desiredWeapon = null;
+
+			@desiredWeapon = findBestWeapon(m_pPlayer,m_pEnemy.pev.origin,m_pEnemy);
+
+			if ( desiredWeapon !is null )
+			{
+				if ( desiredWeapon !is m_pCurrentWeapon )
+				{
+					@m_pCurrentWeapon = desiredWeapon;
+					m_pPlayer.SelectItem(m_pCurrentWeapon.GetClassname());
+					BotMessage("SELECT " + m_pCurrentWeapon.GetClassname());
+				}
+			}
+		}
 	}
 
 	float getEnemyFactor ( CBaseEntity@ entity )
@@ -497,13 +568,8 @@ case 	CLASS_BARNACLE	:
 		return distanceFrom(entity.pev.origin);
 	}
 
-	void newVisible ( int iIndex )
+	void newVisible ( CBaseEntity@ ent )
 	{
-		//BotMessage("newVisible iIndex = " + iIndex + "\n");
-
-		edict_t@ edict = g_EngineFuncs.PEntityOfEntIndex( iIndex );
-		CBaseEntity@ ent = g_EntityFuncs.Instance(edict);
-
 		if ( ent is null )
 		{
 			// WTFFFFF!!!!!!!
@@ -522,13 +588,8 @@ case 	CLASS_BARNACLE	:
 		}
 	}
 
-	void lostVisible ( int iIndex )
+	void lostVisible ( CBaseEntity@ ent )
 	{
-		//BotMessage("lostVisible iIndex = " + iIndex + "\n");
-
-		edict_t@ edict = g_EngineFuncs.PEntityOfEntIndex( iIndex );
-		CBaseEntity@ ent = g_EntityFuncs.Instance(edict);
-
 		if ( m_pEnemy is ent )
 		{
 			@m_pEnemy = null;

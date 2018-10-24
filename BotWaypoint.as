@@ -1043,7 +1043,7 @@ final class RCBotNavigator
 			break;
 			default:
 
-				BotMessage("Current Waypoint =	 " +  m_iCurrentWaypoint + " - goal =  " + iGoal+"\n");
+				//BotMessage("Current Waypoint =	 " +  m_iCurrentWaypoint + " - goal =  " + iGoal+"\n");
 			break;
 		}
 

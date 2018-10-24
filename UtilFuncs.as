@@ -77,6 +77,17 @@
 
 	}
 
+	void UTIL_DebugMsg ( CBasePlayer@ debugBot, int level, string message )
+	{
+		/*if ( g_DebugBot == debugBot )
+		{
+			if ( g_DebugLevel & level == level )
+			{
+				BotMessage("DEBUG: " + message);
+			}*
+		}*/
+	}
+
     bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
     {
         TraceResult tr;
