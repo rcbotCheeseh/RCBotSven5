@@ -25,6 +25,10 @@ add "BotManager" plugin
 	
 when running type
 
-as_command rcbot.addbot
+	as_command rcbot.waypoint_load
+
+to load waypoints, and....
+
+	as_command rcbot.addbot
 
 to add a bot 
