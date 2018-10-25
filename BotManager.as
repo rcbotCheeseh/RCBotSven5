@@ -31,6 +31,9 @@ CConCommand@ m_pDebugBot;
 int g_DebugBot;
 int g_DebugLevel = 0;
 
+	const int PRIORITY_NONE = 0;
+	const int PRIORITY_TASK = 1;
+	
 CBasePlayer@ ListenPlayer ()
 {
 	return  g_PlayerFuncs.FindPlayerByIndex( 1 );
@@ -56,7 +59,7 @@ void PluginInit()
 	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
 	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type",@WaypointGiveType);
 	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type",@WaypointRemoveType);
-	//@m_pDebugBot = @ConCommand ( "debug_bot" , "debug a bot" , @DebugBot );
+	@m_pDebugBot = @CConCommand ( "debug_bot" , "debug a bot" , @DebugBot );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
 	@m_pRCBotKill = @CConCommand( "test", "test func", @RCBot_Kill );
@@ -153,33 +156,15 @@ void NoClipModeFunc ( const CCommand@ args )
 
 void RCBot_Kill ( const CCommand@ args )
 {
-	//int i = atoi(args.Arg(1));
+	Vector v = ListenPlayer().pev.origin;
+CBaseEntity@ pent = null;
 
-	//RCBot@ bot = RCBot@(g_BotManager.FindBot(g_PlayerFuncs.FindPlayerByIndex(i)));
+//FindEntityInSphere(CBaseEntity@ pStartEntity, const Vector& in vecCenter, float flRadius,const string& in szValue = "", const string& in szKeyword = "targetname")
 
-	CBasePlayer@ p = ListenPlayer();
-
-        TraceResult tr;
-
-
-		g_EngineFuncs.MakeVectors(p.pev.v_angle);
-//void TraceHull(const Vector& in vecStart, const Vector& in vecEnd, IGNORE_MONSTERS igmon,HULL_NUMBER hullNumber, edict_t@ pEntIgnore, TraceResult& out ptr)
-
-        g_Utility.TraceLine( p.pev.origin, p.pev.origin + g_Engine.v_forward*2000, ignore_monsters,dont_ignore_glass, null, tr );
-
-
-	CBasePlayerWeapon@ w = findBestWeapon(p,tr.vecEndPos);
-
-	if ( w !is null )
-	{
-		BotMessage("Best Weapon is : " + w.GetClassname());
-	}
-	else
-		BotMessage("No Best Weapon! :(");
-	//if ( w.GetClassname() )
-	{
-
-	}
+        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, v, 512,"weapon_*", "classname"  )) !is null )
+        {
+				BotMessage(pent.GetClassname());			
+        }
 /*
 	CBasePlayer@ p = ListenPlayer();
 
@@ -413,6 +398,9 @@ final class RCBot : BotManager::BaseBot
 
 	CBasePlayerWeapon@ m_pCurrentWeapon;
 
+
+	CBotUtilities@ utils;
+
 	RCBot( CBasePlayer@ pPlayer )
 	{
 		super( pPlayer );
@@ -421,7 +409,9 @@ final class RCBot : BotManager::BaseBot
 
 		@m_pVisibles = CBotVisibles(this);
 
+		@utils = CBotUtilities(this);
 		SpawnInit();		
+
 	}
 
 	bool IsEnemy ( CBaseEntity@ entity )
@@ -465,6 +455,16 @@ case 	CLASS_BARNACLE	:
 		return (vOrigin - m_pPlayer.pev.origin).Length();
 	}
 
+	float distanceFrom ( CBaseEntity@ pent )
+	{
+		return distanceFrom(pent.pev.origin);
+	}
+
+	bool FVisible ( CBaseEntity@ pent )
+	{
+		return m_pVisibles.isVisible(pent.entindex());
+	}
+
 	Vector origin ()
 	{
 		return m_pPlayer.pev.origin;
@@ -485,7 +485,7 @@ case 	CLASS_BARNACLE	:
 
 		setMove(wpt.m_vOrigin);
 
-		drawBeam (ListenPlayer(), m_pPlayer.pev.origin, wpt.m_vOrigin, col, 1 );
+		//drawBeam (ListenPlayer(), m_pPlayer.pev.origin, wpt.m_vOrigin, col, 1 );
 
 	}
 
@@ -493,6 +493,8 @@ case 	CLASS_BARNACLE	:
 	{
 		//if ( m_fNextThink > g_Engine.time )
 		//	return;
+
+		m_iCurrentPriority = PRIORITY_NONE;
 
 		ReleaseButtons();
 
@@ -607,6 +609,7 @@ case 	CLASS_BARNACLE	:
 		@navigator = null;	
 		@m_pEnemy = null;
 		m_pVisibles.reset();
+		utils.reset();
 	}
 
 	void DoVisibles ()
@@ -628,6 +631,10 @@ case 	CLASS_BARNACLE	:
 			setLookAt(m_pEnemy.pev.origin);
 			//BotMessage("LOOKING AT ENEMY!!!\n");
 		}
+		else if (m_bMoveToValid )
+		{
+			setLookAt(m_vMoveTo);
+		}
 	}
 
 	void DoButtons ()
@@ -635,7 +642,7 @@ case 	CLASS_BARNACLE	:
 		if ( m_pEnemy !is null )
 		{
 			// attack
-			if( Math.RandomLong( 0, 100 ) < 90 )
+			if( Math.RandomLong( 0, 100 ) < 99 )
 				PressButton(IN_ATTACK);
 
 			//BotMessage("SHOOTING ENEMY!!!\n");
@@ -644,6 +651,8 @@ case 	CLASS_BARNACLE	:
 
 	void DoTasks ()
 	{
+		m_iCurrentPriority = PRIORITY_TASK;
+
 		if ( m_pCurrentSchedule !is null )
 		{
 			if ( m_pCurrentSchedule.execute(this) )
@@ -653,10 +662,10 @@ case 	CLASS_BARNACLE	:
 		}
 		else
 		{
-			CBotUtilities@ util = CBotUtilities(this);
-
-			@m_pCurrentSchedule = util.execute(this);
+			@m_pCurrentSchedule = utils.execute(this);
 		}
+
+		m_iCurrentPriority = PRIORITY_NONE;
 	}
 }
 

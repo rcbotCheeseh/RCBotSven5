@@ -31,7 +31,8 @@
     
     void BotMessage ( string message )
     {
-        g_Game.AlertMessage( at_console, "[RCBOT]" + message + "\n" );	
+		if ( g_DebugBot > 0 )
+        	g_Game.AlertMessage( at_console, "[RCBOT]" + message + "\n" );	
     }
 
 	void SayMessage ( CBasePlayer@ player, string message )
@@ -46,7 +47,8 @@
 
     void UTIL_PrintVector ( string name, Vector v )
     {
-        g_Game.AlertMessage( at_console, name + " = (" + v.x + "," + v.y + "," + v.z + ")\n" );	
+		if ( g_DebugBot > 0 )
+        	g_Game.AlertMessage( at_console, name + " = (" + v.x + "," + v.y + "," + v.z + ")\n" );	
     }
 
 	float UTIL_DotProduct ( Vector vA, Vector vB )

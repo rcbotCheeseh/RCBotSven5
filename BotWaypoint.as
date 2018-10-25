@@ -811,6 +811,7 @@ final class RCBotNavigator
 
 		if ( iStart == -1 || iGoalWpt == -1 )
 		{
+			BotMessage("IsTART == -1 OR GOAL == -1");
 			state = NavigatorState_Fail;
 		}
 		else
@@ -909,6 +910,7 @@ final class RCBotNavigator
 
 							if ( m_theOpenList.empty() )
 							{
+								//BotMessage("EMPTY OPEN LIST");
 								state = NavigatorState_Fail;
 								break;
 							}							
@@ -918,6 +920,7 @@ final class RCBotNavigator
 
 							if ( @curr is null )
 							{
+								//BotMessage("CURR NULL");
 								state = NavigatorState_Fail;
 								break;
 							}
@@ -1025,6 +1028,8 @@ final class RCBotNavigator
 					float fDistance = 0.0;
 					int iParent;
 
+					m_currentRoute.insertAt(0,iGoal);
+
 					while ( (iCurrentNode != -1) && (iCurrentNode != m_iCurrentWaypoint ) && (iLoops <= g_Waypoints.m_iNumWaypoints) )
 					{
 						iLoops++;
@@ -1036,6 +1041,19 @@ final class RCBotNavigator
 						iCurrentNode = iParent;
 					}
 
+					if ( m_currentRoute.length () > 0 )
+					{
+						m_iCurrentWaypoint = m_currentRoute[0];
+
+					}
+					else
+					{
+						// error
+						//BotMessage("ERORRR");
+						state = NavigatorState_Fail;
+						break;
+					}
+
 					state = NavigatorState_Following;
 
 					BotMessage("Navigator State FOUND_GOAL...\n");
@@ -1043,7 +1061,7 @@ final class RCBotNavigator
 			break;
 			default:
 
-				//BotMessage("Current Waypoint =	 " +  m_iCurrentWaypoint + " - goal =  " + iGoal+"\n");
+				//BotMessage("Current Waypoint =	 " +  m_iCurrentWaypoint + " - goal =  " + iGoal+"");
 			break;
 		}
 
