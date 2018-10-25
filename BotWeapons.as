@@ -39,7 +39,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_pipewrench",0.0,100.0,false,true,15));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_rpg",400.0,5000.0,false,true,16));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_shockrifle",100.0,2000.0,false,false,9));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_snark",300.0,2000.0,false,false,10);
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_snark",300.0,2000.0,false,false,10));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_uzi",100.0,2000.0,false,false,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_medkit",0.0,0.0,false,false,0)); // will be handled in task code
     }
