@@ -29,7 +29,7 @@ CConCommand@ m_pRCBotWaypointRemoveType;
 CConCommand@ m_pRCBotWaypointGiveType;
 CConCommand@ m_pDebugBot;
 
-int g_DebugBot;
+bool g_DebugOn;
 int g_DebugLevel = 0;
 
 	const int PRIORITY_NONE = 0;
@@ -60,7 +60,7 @@ void PluginInit()
 	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
 	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type",@WaypointGiveType);
 	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type",@WaypointRemoveType);
-	@m_pDebugBot = @CConCommand ( "debug_bot" , "debug a bot" , @DebugBot );
+	@m_pDebugBot = @CConCommand ( "debug" , "debug messages toggle" , @DebugBot );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
 	@m_pRCBotKill = @CConCommand( "test", "test func", @RCBot_Kill );
@@ -71,10 +71,7 @@ void PluginInit()
 
 void DebugBot ( const CCommand@ args )
 {
-	if ( args.ArgC() > 0 )		
-	{
-		g_DebugBot = atoi(args.Arg(0));
-	}
+	g_DebugOn = !g_DebugOn;
 }
 
 void WaypointGiveType ( const CCommand@ args )

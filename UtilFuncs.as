@@ -42,7 +42,7 @@
     
     void BotMessage ( string message )
     {
-		//if ( g_DebugBot > 0 )
+		if ( g_DebugOn == true )
         	g_Game.AlertMessage( at_console, "[RCBOT]" + message + "\n" );	
     }
 
@@ -58,7 +58,7 @@
 
     void UTIL_PrintVector ( string name, Vector v )
     {
-		if ( g_DebugBot > 0 )
+		if ( g_DebugOn == true )
         	g_Game.AlertMessage( at_console, name + " = (" + v.x + "," + v.y + "," + v.z + ")\n" );	
     }
 
