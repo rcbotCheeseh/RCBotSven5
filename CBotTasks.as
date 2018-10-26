@@ -9,6 +9,7 @@ class RCBotTask
     bool m_bInit = false;
 
     float m_fTimeout = 0.0f;
+    float m_fDefaultTimeout = 30.0f;
 
     RCBotSchedule@ m_pContainingSchedule;
 
@@ -31,7 +32,7 @@ class RCBotTask
     {
         if ( m_bInit == false )
         {
-            m_fTimeout = g_Engine.time + 30.0f;
+            m_fTimeout = g_Engine.time + m_fDefaultTimeout;
             m_bInit = true;
         }
         
@@ -132,7 +133,7 @@ final class CFindHealthTask : RCBotTask
             {
                 if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
                 {
-                        if ( pent.pev.frame != 0 )
+                        if ( pent.pev.frame == 0  )
                         {
                             BotMessage("func_healthcharger");
 
@@ -229,12 +230,14 @@ final class CFindArmorTask : RCBotTask
 
         while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_recharge")) !is null )
         {
+            float dist =  bot.distanceFrom(pent);
+            BotMessage("FUNC_RECHARD DIST == " + dist);
             // within reaching distance
-            if ( bot.distanceFrom(pent) < 400 )
+            if ( dist < 400 )
             {
                 if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
                 {
-                    if ( pent.pev.frame != 0 )
+                    if ( pent.pev.frame == 0 )
                     {
                         BotMessage("func_recharge");
 
@@ -242,7 +245,9 @@ final class CFindArmorTask : RCBotTask
                         m_pContainingSchedule.addTask(CUseArmorCharger(bot,pent));
                         Complete();
                         return;
-                    }                    
+                    }          
+                    else
+                     BotMessage("FRAME != 0!!!");          
                 }
             }
         }
@@ -314,13 +319,14 @@ final class CUseArmorCharger : RCBotTask
     CUseArmorCharger ( RCBot@ bot, CBaseEntity@ charger )
     {
         @m_pCharger = charger;
+        m_fDefaultTimeout = 8.0;
     } 
 
     void execute ( RCBot@ bot )
     {
         BotMessage("CUseArmorCharger");
 
-        if ( m_pCharger.pev.frame == 0 )
+        if ( m_pCharger.pev.frame != 0 )
         {
             Complete();
             BotMessage(" m_pCharger.pev.frame == 0");
@@ -338,6 +344,7 @@ final class CUseArmorCharger : RCBotTask
         }
         else
         {
+            bot.StopMoving();
             bot.setLookAt(m_pCharger.pev.origin);
             BotMessage("bot.PressButton(IN_USE)");
 
@@ -356,12 +363,16 @@ final class CUseHealthChargerTask : RCBotTask
     CUseHealthChargerTask ( RCBot@ bot, CBaseEntity@ charger )
     {
         @m_pCharger = charger;
+        m_fDefaultTimeout = 8.0;
     } 
 
     void execute ( RCBot@ bot )
     {
-        if ( m_pCharger.pev.frame == 0 )
+        if ( m_pCharger.pev.frame != 0 )
             Complete();
+        BotMessage("Health  = " + bot.m_pPlayer.pev.health);
+        BotMessage("MAx Health = " + bot.m_pPlayer.pev.max_health);
+
         if ( bot.m_pPlayer.pev.health >= bot.m_pPlayer.pev.max_health )
             Complete();
 
@@ -369,6 +380,7 @@ final class CUseHealthChargerTask : RCBotTask
             bot.setMove(m_pCharger.pev.origin);
         else
         {
+            bot.StopMoving();
             bot.setLookAt(m_pCharger.pev.origin);
 
             if ( Math.RandomLong(0,100) < 99 )

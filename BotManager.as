@@ -162,7 +162,9 @@ CBaseEntity@ pent = null;
 
 //FindEntityInSphere(CBaseEntity@ pStartEntity, const Vector& in vecCenter, float flRadius,const string& in szValue = "", const string& in szKeyword = "targetname")
 
-        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, v, 512,"weapon_*", "classname"  )) !is null )
+        //while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, v, 512,"*", "classname"  )) !is null )
+
+		 while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_healthcharger"  )) !is null )
         {
 				BotMessage(pent.GetClassname());			
         }
@@ -280,6 +282,11 @@ class CBotVisibles
 
 	void setVisible ( CBaseEntity@ ent, bool bVisible)
 	{
+		if ( ent is null )
+		{
+			// ARG?
+			return;
+		}
 		int iIndex = ent.entindex();
 		bool wasVisible = isVisible(iIndex);
 
@@ -358,7 +365,7 @@ final class RCBot : BotManager::BaseBot
 
 	bool init;
 
-	CBaseEntity@ m_pEnemy;
+	EHandle m_pEnemy;
 
 	CBotVisibles@ m_pVisibles;
 
@@ -366,9 +373,11 @@ final class RCBot : BotManager::BaseBot
 
 	CBotUtilities@ utils;
 
+	float m_flStuckTime = 0;
+
 	Vector m_vLastSeeEnemy;
 	bool m_bLastSeeEnemyValid = false;
-	CBaseEntity@ m_pLastEnemy = null;
+	EHandle m_pLastEnemy = null;
 
 	int m_iPrevHealthArmor;
 	int m_iCurrentHealthArmor;
@@ -431,7 +440,7 @@ case 	CLASS_BARNACLE	:
 
 	float distanceFrom ( CBaseEntity@ pent )
 	{
-		return distanceFrom(pent.pev.origin);
+		return distanceFrom(UTIL_EntityOrigin(pent));
 	}
 
 	bool FVisible ( CBaseEntity@ pent )
@@ -499,14 +508,14 @@ case 	CLASS_BARNACLE	:
 		{
 			int iDamage = m_iPrevHealthArmor - m_iCurrentHealthArmor;
 
-			if ( iDamage > 10 )	
+			if ( iDamage > 1 )	
 			{
-				if ( m_pEnemy !is null )
+				if ( m_pEnemy.GetEntity() !is null )
 				{
 					if ( m_fNextTakeCover < g_Engine.time )
 					{
-						@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,m_pEnemy);
-						m_fNextTakeCover = g_Engine.time + 5.0;
+						@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,m_pEnemy.GetEntity());
+						m_fNextTakeCover = g_Engine.time + 8.0;
 					}				
 				}
 			}
@@ -516,10 +525,10 @@ case 	CLASS_BARNACLE	:
 
 		init = false;
 
-		if ( m_pEnemy !is null )
+		if ( m_pEnemy.GetEntity()  !is null )
 		{
-			if ( !IsEnemy(m_pEnemy) )
-				@m_pEnemy = null;
+			if ( !IsEnemy(m_pEnemy.GetEntity() ) )
+				m_pEnemy = null;
 		}
 		/*
 		KeyValueBuffer@ pInfoBuffer = g_EngineFuncs.GetInfoKeyBuffer( Player.edict() );
@@ -547,11 +556,11 @@ case 	CLASS_BARNACLE	:
 
 	void DoWeapons ()
 	{	
-		if ( m_pEnemy !is null )
+		if ( m_pEnemy.GetEntity()  !is null )
 		{
 			CBasePlayerWeapon@ desiredWeapon = null;
 
-			@desiredWeapon = findBestWeapon(m_pPlayer,m_pEnemy.pev.origin,m_pEnemy);
+			@desiredWeapon = findBestWeapon(m_pPlayer,m_pEnemy.GetEntity().pev.origin,m_pEnemy.GetEntity() );
 
 			if ( desiredWeapon !is null )
 			{
@@ -583,21 +592,21 @@ case 	CLASS_BARNACLE	:
 		{
 			BotMessage("NEW ENEMY !!!  " + ent.pev.classname + "\n");
 
-			if ( m_pEnemy is null )
-				@m_pEnemy = ent;
+			if ( m_pEnemy.GetEntity() is null )
+				m_pEnemy = ent;
 			else if ( getEnemyFactor(ent) < getEnemyFactor(m_pEnemy) )
-				@m_pEnemy = ent;
+				m_pEnemy = ent;
 		}
 	}
 
 	void lostVisible ( CBaseEntity@ ent )
 	{
-		if ( m_pEnemy is ent )
+		if ( m_pEnemy.GetEntity() is ent )
 		{
-			@m_pLastEnemy = m_pEnemy;
-			m_vLastSeeEnemy = m_pEnemy.pev.origin;
+			m_pLastEnemy = m_pEnemy.GetEntity();
+			m_vLastSeeEnemy = m_pEnemy.GetEntity().pev.origin;
 			m_bLastSeeEnemyValid = true;
-			@m_pEnemy = null;
+			m_pEnemy = null;
 		}
 	}
 
@@ -610,12 +619,14 @@ m_iLastFailedWaypoint = -1;
 
 		@m_pCurrentSchedule = null;
 		@navigator = null;	
-		@m_pEnemy = null;
+		m_pEnemy = null;
 
 	 m_bLastSeeEnemyValid = false;
-	@m_pLastEnemy = null;		
+		m_pLastEnemy = null;		
 		m_pVisibles.reset();
 		utils.reset();
+
+		m_flStuckTime = 0;
 	}
 
 	void DoVisibles ()
@@ -624,17 +635,34 @@ m_iLastFailedWaypoint = -1;
 		m_pVisibles.update();
 	}
 
+	void StopMoving ()
+	{
+		m_bMoveToValid = false;
+	}
+
 	void DoMove ()
 	{
 		if ( navigator !is null )
 			navigator.execute(this);
+
+		
+		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.25*m_pPlayer.pev.maxspeed)) )
+		{
+			m_flStuckTime = g_Engine.time;
+		}
+		// stuck for more than 3 sec
+		else if ( (m_flStuckTime > 0) && (g_Engine.time - m_flStuckTime) > 3.0 )
+		{
+			PressButton(IN_JUMP);
+			m_flStuckTime = 0;
+		}
 	}
 
 	void DoLook ()
 	{
-		if ( m_pEnemy !is null )
+		if ( m_pEnemy.GetEntity() !is null )
 		{
-			setLookAt(m_pEnemy.pev.origin);
+			setLookAt(m_pEnemy.GetEntity().pev.origin);
 			//BotMessage("LOOKING AT ENEMY!!!\n");
 		}
 		else if ( m_bLastSeeEnemyValid )
@@ -649,7 +677,7 @@ m_iLastFailedWaypoint = -1;
 
 	void DoButtons ()
 	{
-		if ( m_pEnemy !is null )
+		if ( m_pEnemy.GetEntity() !is null )
 		{
 			// attack
 			if( Math.RandomLong( 0, 100 ) < 99 )

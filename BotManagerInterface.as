@@ -138,7 +138,7 @@ namespace BotManager
 
 				//BotMessage("Yaw = " + yaw + "\n");
 
-				m_fDesiredSpeed = 320.0f;
+				m_fDesiredSpeed = m_pPlayer.pev.maxspeed;
 			}
 			else
 				m_fDesiredSpeed = 0.0f;

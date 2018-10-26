@@ -28,10 +28,21 @@
 			return fAngle;
 	}
 
+	Vector UTIL_EntityOrigin ( CBaseEntity@ entity )
+	{
+
+	if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+		return entity.pev.origin + (entity.pev.view_ofs/2);
+
+	return entity.pev.absmin + (entity.pev.size / 2);
+
+	//return pEdict->v.origin;
+
+	}
     
     void BotMessage ( string message )
     {
-		if ( g_DebugBot > 0 )
+		//if ( g_DebugBot > 0 )
         	g_Game.AlertMessage( at_console, "[RCBOT]" + message + "\n" );	
     }
 
@@ -105,10 +116,12 @@
     {
         TraceResult tr;
 
-        g_Utility.TraceLine( vFrom, pTo.pev.origin, ignore_monsters, dont_ignore_glass , ignore !is null ? null : ignore.edict(), tr );
+		Vector vTo = UTIL_EntityOrigin(pTo);
+
+        g_Utility.TraceLine( vFrom, vTo, ignore_monsters, dont_ignore_glass , ignore !is null ? null : ignore.edict(), tr );
 
         CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
 
-        return tr.flFraction >= 1.0f || pTo == pEntity;
+        return tr.flFraction >= 1.0f || (pTo is pEntity);
     }   
 		        
