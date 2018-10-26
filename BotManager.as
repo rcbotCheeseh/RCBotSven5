@@ -394,6 +394,11 @@ final class RCBot : BotManager::BaseBot
 		m_iCurrentHealthArmor = 0;
 	}
 
+	float totalHealth ()
+	{
+		return (float(m_pPlayer.pev.health + m_pPlayer.pev.armorvalue))/(m_pPlayer.pev.max_health + m_pPlayer.pev.armortype);
+	}
+
 	bool IsEnemy ( CBaseEntity@ entity )
 	{
 		if ( entity.pev.deadflag != DEAD_NO )

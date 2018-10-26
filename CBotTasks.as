@@ -310,6 +310,70 @@ final class CPickupItemTask : RCBotTask
     }
 }
 
+final class CFindButtonTask : RCBotTask
+{
+    CFindButtonTask ( )
+    {
+
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        CBaseEntity@ pent = null;
+
+        while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_button")) !is null )
+        {            
+            // within reaching distance
+            if ( bot.distanceFrom(pent) < 400 )
+            {
+                if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
+                {
+                        BotMessage("func_button");
+                        // add Task to pick up health
+                        m_pContainingSchedule.addTask(CUseButtonTask(pent));
+                        Complete();
+                        return;                                    
+                }
+            }
+            
+        }
+
+        Failed();
+    }
+}
+
+final class CUseButtonTask : RCBotTask
+{
+    CBaseEntity@ m_pButton;
+
+    CUseButtonTask ( CBaseEntity@ button )
+    {
+        @m_pButton = button;
+    } 
+
+    void execute ( RCBot@ bot )
+    {
+        Vector vOrigin = UTIL_EntityOrigin(m_pButton);
+
+        if ( bot.distanceFrom(m_pButton) > 56 )
+        {
+            bot.setMove(vOrigin);
+            BotMessage("bot.setMove(m_pCharger.pev.origin)");
+        }
+        else
+        {
+            bot.StopMoving();
+            bot.setLookAt(vOrigin);
+            BotMessage("bot.PressButton(IN_USE)");
+
+            if ( Math.RandomLong(0,100) < 99 )
+            {
+                bot.PressButton(IN_USE);
+                Complete();
+            }
+        }
+    }
+}
 
 
 final class CUseArmorCharger : RCBotTask
@@ -337,15 +401,17 @@ final class CUseArmorCharger : RCBotTask
             BotMessage(" bot.m_pPlayer.pev.armorvalue >= 100");
         }
 
+        Vector vOrigin = UTIL_EntityOrigin(m_pCharger);
+
         if ( bot.distanceFrom(m_pCharger) > 56 )
         {
-            bot.setMove(m_pCharger.pev.origin);
+            bot.setMove(vOrigin);
             BotMessage("bot.setMove(m_pCharger.pev.origin)");
         }
         else
         {
             bot.StopMoving();
-            bot.setLookAt(m_pCharger.pev.origin);
+            bot.setLookAt(vOrigin);
             BotMessage("bot.PressButton(IN_USE)");
 
             if ( Math.RandomLong(0,100) < 99 )
@@ -370,18 +436,21 @@ final class CUseHealthChargerTask : RCBotTask
     {
         if ( m_pCharger.pev.frame != 0 )
             Complete();
+
         BotMessage("Health  = " + bot.m_pPlayer.pev.health);
         BotMessage("MAx Health = " + bot.m_pPlayer.pev.max_health);
 
         if ( bot.m_pPlayer.pev.health >= bot.m_pPlayer.pev.max_health )
             Complete();
 
+        Vector vOrigin = UTIL_EntityOrigin(m_pCharger);
+
         if ( bot.distanceFrom(m_pCharger) > 56 )
-            bot.setMove(m_pCharger.pev.origin);
+            bot.setMove(vOrigin);
         else
         {
             bot.StopMoving();
-            bot.setLookAt(m_pCharger.pev.origin);
+            bot.setLookAt(vOrigin);
 
             if ( Math.RandomLong(0,100) < 99 )
             {
@@ -474,7 +543,20 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
     }
     
 }
+/*
+class CBotTaskFindCoverCompleteTask : RCBotTask
+{
+    CBotTaskFindCoverCompleteTask ( )
+    {
 
+    }
+
+     void execute ( RCBot@ bot )
+     {
+         Complete
+     }
+}
+*/
 class CBotTaskFindCoverTask : RCBotTask
 {    
     RCBotCoverWaypointFinder@ finder;
@@ -511,13 +593,11 @@ abstract class CBotUtil
 {
     float utility;
     float m_fNextDo;
-    RCBot@ m_pBot;
 
-    CBotUtil (  RCBot@ bot ) 
+    CBotUtil ( ) 
     { 
         utility = 0; 
         m_fNextDo = 0.0;   
-        @m_pBot = bot;
     }
 
     void reset ()
@@ -525,7 +605,7 @@ abstract class CBotUtil
         m_fNextDo = 0.0;
     }
 
-    bool canDo ()
+    bool canDo (RCBot@ bot)
     {
         return g_Engine.time > m_fNextDo;
     }
@@ -553,10 +633,6 @@ abstract class CBotUtil
 
 class CBotGetHealthUtil : CBotUtil
 {
-    CBotGetHealthUtil ( RCBot@ bot )
-    {
-        super(bot);
-    }
 
     float calculateUtility ( RCBot@ bot )
     {
@@ -584,11 +660,7 @@ class CBotGetHealthUtil : CBotUtil
 
 class CBotGetAmmo : CBotUtil
 {
-    CBotGetAmmo ( RCBot@ bot )
-    {
-        super(bot);
-    }
-    
+
    float calculateUtility ( RCBot@ bot )
     {
         return 0.5;
@@ -611,10 +683,6 @@ class CBotGetAmmo : CBotUtil
 
 class CBotGetArmorUtil : CBotUtil
 {
-    CBotGetArmorUtil ( RCBot@ bot )
-    {
-        super(bot);
-    }
     
    float calculateUtility ( RCBot@ bot )
     {
@@ -639,6 +707,93 @@ class CBotGetArmorUtil : CBotUtil
     }    
 }
 
+class CBotGotoObjectiveUtil : CBotUtil
+{
+
+    float calculateUtility ( RCBot@ bot )
+    {
+        return 0.2;
+    }
+
+    void setNextDo ()
+    {
+        m_fNextDo = g_Engine.time + 1.0f;
+    }   
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT);
+
+        if ( iRandomGoal != -1 )
+        {
+            RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal);
+
+            sched.addTask(CFindButtonTask());
+
+            return sched;
+        }
+
+        return null;
+    }
+}
+
+class CBotFindLastEnemyUtil : CBotUtil
+{
+    float calculateUtility ( RCBot@ bot )
+    {        
+            return bot.totalHealth(); 
+    }
+
+    bool canDo (RCBot@ bot)
+    {
+        if ( bot.m_pEnemy.GetEntity() is null && bot.m_bLastSeeEnemyValid && bot.m_pLastEnemy.GetEntity() !is null )
+            return CBotUtil::canDo(bot);
+
+        return false;
+    }    
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        int iRandomGoal = g_Waypoints.getNearestWaypointIndex(bot.m_vLastSeeEnemy);
+
+        if ( iRandomGoal != -1 )
+        {
+            RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal);
+
+          //  sched.addTask(CFindButtonTask());
+
+            return sched;
+        }
+
+        return null;
+    }
+}
+
+
+class CBotGotoEndLevelUtil : CBotUtil
+{
+    float calculateUtility ( RCBot@ bot )
+    {
+        return 0.3;
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_ENDLEVEL);    
+
+        if ( iRandomGoal != -1 )
+        {
+            RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal);
+
+            sched.addTask(CFindButtonTask());
+
+            return sched;
+        }
+
+        return null;
+    }
+}
+/*
 class CBotRoamUtil : CBotUtil
 {
     CBotRoamUtil( RCBot@ bot )
@@ -670,7 +825,7 @@ class CBotRoamUtil : CBotUtil
 
         return null;
     }
-}
+}*/
 
 class CBotUtilities 
 {
@@ -678,10 +833,12 @@ class CBotUtilities
 
     CBotUtilities ( RCBot@ bot )
     {
-            m_Utils.insertLast(CBotGetHealthUtil(bot));
-            m_Utils.insertLast(CBotGetArmorUtil(bot));
-            m_Utils.insertLast(CBotRoamUtil(bot));
-            m_Utils.insertLast(CBotGetAmmo(bot));
+            m_Utils.insertLast(CBotGetHealthUtil());
+            m_Utils.insertLast(CBotGetArmorUtil());
+            m_Utils.insertLast(CBotGotoObjectiveUtil());
+            m_Utils.insertLast(CBotGotoEndLevelUtil());
+            m_Utils.insertLast(CBotGetAmmo());
+            m_Utils.insertLast(CBotFindLastEnemyUtil());
     }
 
     void reset ()
@@ -698,7 +855,7 @@ class CBotUtilities
 
         for ( uint i = 0; i < m_Utils.length(); i ++ )
         {
-            if ( m_Utils[i].canDo() )
+            if ( m_Utils[i].canDo(bot) )
             {
                    
                 m_Utils[i].setUtility(m_Utils[i].calculateUtility(bot));

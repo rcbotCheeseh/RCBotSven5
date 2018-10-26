@@ -198,6 +198,7 @@ class CWaypointTypes
 		m_Types.insertLast(CWaypointType("health",W_FL_HEALTH,WptColor(255,50,50)));
 		m_Types.insertLast(CWaypointType("armor",W_FL_ARMOR,WptColor(255,255,0)));
 		m_Types.insertLast(CWaypointType("openslater",W_FL_OPENS_LATER,WptColor(200,200,255)));
+		//m_Types.insertLast(CWaypointType("button",W_FL_BUTTON,WptColor(200,200,255)));
 	}
 
 	void printInfo ( CBasePlayer@ player, int flags )
