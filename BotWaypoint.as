@@ -1,6 +1,7 @@
 
 #include "FileBuffer"
 #include "UtilFuncs"
+#include "CBotBits"
 
 CWaypoints g_Waypoints;
 CWaypointTypes g_WaypointTypes;
@@ -424,6 +425,95 @@ CWaypoint@ ReadWaypoint ( int index, string line )
 	return wpt;
 }	
 
+const int W_VIS_RUNNING = 0;
+const int W_VIS_COMPLETE = 1;
+
+final class CWaypointVisibility
+{
+	int state;
+	int iWptFrom;
+	int iWptTo;	
+	int iMaxLoops = 200;
+	int m_iNumWaypoints;
+
+	CBits@ bits;
+
+	CWaypointVisibility ( int iNumWaypoints )
+	{
+		BotMessage("SET STATE");
+		state = W_VIS_RUNNING;
+		iWptFrom = 0;
+		iWptTo = 0;
+		@bits = CBits(MAX_WAYPOINTS*MAX_WAYPOINTS);		
+		m_iNumWaypoints = iNumWaypoints;
+	}
+
+	bool VisibleFromTo ( int iFrom, int iTo )
+	{
+		int bit_num = (iFrom * m_iNumWaypoints) + iTo;
+		
+		return bits.getBit(bit_num);
+	}
+
+	int run ( )
+	{
+
+		if ( state == W_VIS_RUNNING )
+		{
+			int iLoops = 0;
+
+			int Percent = (100 * ((iWptFrom * m_iNumWaypoints) + iWptTo)) / (m_iNumWaypoints * m_iNumWaypoints);
+
+			BotMessage("Visibility Calculating Percent = " + Percent + " complete" );
+
+			while ( (iLoops < iMaxLoops) && (state == W_VIS_RUNNING) )
+			{				
+					//@set_bits = null;
+					//BotMessage(" " + iWptFrom + " / " + m_iNumWaypoints);
+
+				if ( iWptFrom < m_iNumWaypoints )
+				{					
+					//BotMessage("iWptFrom < m_iNumWaypoints");
+
+					if ( iWptTo >= m_iNumWaypoints )	
+					{
+						//BotMessage("iWptTo >= m_iNumWaypoints");
+							iWptFrom++;
+							iWptTo = 0;
+					}
+					else
+					{
+						//BotMessage("else");
+						CWaypoint@ pFrom = g_Waypoints.getWaypointAtIndex(iWptFrom);
+						CWaypoint@ pTo = g_Waypoints.getWaypointAtIndex(iWptTo);
+
+						if ( !pFrom.hasFlags(W_FL_DELETED) && !pTo.hasFlags(W_FL_DELETED) )
+						{
+							int bit_num = (iWptFrom * MAX_WAYPOINTS) + iWptTo;
+							
+							bool bVisible =  UTIL_IsVisible ( pFrom.m_vOrigin, pTo.m_vOrigin, null );
+
+							bits.setBit(bit_num,bVisible);																			
+						}
+
+						iWptTo ++;
+					}
+				}
+				else
+				{
+					state = W_VIS_COMPLETE;
+					//@set_bits = null;
+
+				}
+
+				iLoops++;
+			}
+		}
+
+		return state;
+	}
+}
+
 class CWaypoints
 {
 	// Max waypoint is 1024 
@@ -433,9 +523,22 @@ class CWaypoints
 	int m_iNumWaypoints = 0;
 	int m_PathFrom;
 
+	CWaypointVisibility@ m_VisibilityTable = null;
+
 	CWaypoint@ getWaypointAtIndex ( uint idx )
 	{
 		return m_Waypoints[idx];
+	}
+
+	void runVisibility ()
+	{
+		if ( m_VisibilityTable !is null )
+		{
+			m_VisibilityTable.run();
+	
+		}
+	
+
 	}
 
 	void WaypointsOn ( bool on )
@@ -619,7 +722,7 @@ class CWaypoints
 		return wpts[Math.RandomLong( 0, wpts.length()-1 )];
 	}
 
-	int getNearestWaypointIndex ( Vector vecLocation, CBasePlayer@ player = null )
+	int getNearestWaypointIndex ( Vector vecLocation, CBasePlayer@ player = null, int iIgnore = -1 )
 	{
 		int nearestWptIdx = -1;
 		float distance = 0;
@@ -627,6 +730,9 @@ class CWaypoints
 		
 		for( int i = 0; i < m_iNumWaypoints; i ++ )
 		{
+			if ( i == iIgnore )
+				continue;
+
 			distance = m_Waypoints[i].distanceFrom(vecLocation);
 			
 			if ( (nearestWptIdx == -1 ) || ( distance < minDistance) )
@@ -716,7 +822,10 @@ class CWaypoints
 				m_Waypoints[i].Read(buf,i);
 			}
 
+			BotMessage("Num Waypoints = " + hdr.number_of_waypoints);
 			m_iNumWaypoints = hdr.number_of_waypoints;
+
+			@m_VisibilityTable = CWaypointVisibility(m_iNumWaypoints);
 
 			f.Close();
 		}
@@ -755,6 +864,127 @@ class CWaypoints
 		return ret;
 	}
 }
+
+class RCBotWaypointSorter
+{
+	void add ( int index, Vector vHideFrom )
+	{
+		int iInsertInto = m_pWaypoints.length;
+		CWaypoint@ other = g_Waypoints.getWaypointAtIndex(index);
+
+		for ( uint i = 0; i < m_pWaypoints.length; i ++ )
+		{
+			CWaypoint@ inList = m_pWaypoints[i];
+
+			if ( other.distanceFrom(vHideFrom) > inList.distanceFrom(vHideFrom) )
+			{
+				iInsertInto = i;
+				break;
+			}
+		}
+
+		m_pWaypoints.insertAt(iInsertInto,other);
+	}
+
+	array<CWaypoint@> m_pWaypoints;
+
+}
+
+final class RCBotCoverWaypointFinder
+{
+	int iStart;
+
+	int iDepth = 0;
+	Vector vHideFrom;
+	int iMaxDepth = 12;
+	int iHideFrom;
+	CBits@ closedWaypoints;
+	CWaypointVisibility@ m_visibility;
+	int state;
+	int m_iGoalWaypoint;
+
+	RCBotCoverWaypointFinder ( CWaypointVisibility@ visibility, RCBot@ bot, CBaseEntity@ hideFrom ) 
+	{
+		if ( visibility is null )
+		{
+			state = NavigatorState_Fail;
+			return;
+		}
+		
+		iStart = g_Waypoints.getNearestWaypointIndex(bot.origin(),bot.m_pPlayer,bot.m_iLastFailedWaypoint);
+		vHideFrom = hideFrom.pev.origin;
+		iHideFrom = g_Waypoints.getNearestWaypointIndex(vHideFrom);
+
+		if ( iHideFrom != -1 || iStart == -1 )
+		{
+			state = NavigatorState_InProgress;
+
+			@m_visibility = visibility;
+
+			@closedWaypoints = CBits(MAX_WAYPOINTS);
+		}
+		else
+			state = NavigatorState_Fail;
+	}
+
+	/**
+	 * FindCover
+	 *
+	 * Recursive function
+	 */
+	int FindCover ( int iWaypoint )
+	{
+		iDepth++;
+
+		if ( iDepth > iMaxDepth )
+			return -1;
+
+		if (m_visibility.VisibleFromTo(iHideFrom,iWaypoint) == false )
+			return iWaypoint;
+		else
+		{
+			CWaypoint@ wpt = g_Waypoints.getWaypointAtIndex(iWaypoint);
+			closedWaypoints.setBit(iWaypoint,true);
+
+			RCBotWaypointSorter@ paths = RCBotWaypointSorter();
+
+			for ( int i = 0; i < wpt.numPaths(); i ++ )
+			{			
+				int iWptIndex = wpt.getPath(i);
+
+				if ( closedWaypoints.getBit(iWptIndex) == false )
+				{
+					paths.add(iWptIndex,vHideFrom);		
+				}
+			}
+
+			for ( uint i = 0; i < paths.m_pWaypoints.length(); i ++ )
+			{
+				CWaypoint@ pWpt = paths.m_pWaypoints[i];
+
+				int iWptIndex = pWpt.iIndex;
+
+				if ( FindCover(iWptIndex) == iWptIndex )
+				{
+					return iWptIndex;
+				}			
+			}
+		}
+	
+		return -1;
+	}
+
+	bool execute ( )
+	{
+		BotMessage("FINDING COVER!!!!");
+
+		m_iGoalWaypoint = FindCover(iStart);
+
+		return m_iGoalWaypoint != -1;
+	}
+
+}
+
 	const int NavigatorState_Complete = 0;
 	const int NavigatorState_InProgress = 1;
 	const int NavigatorState_Fail = 2;
@@ -773,6 +1003,8 @@ final class RCBotNavigator
 
 	int iMaxLoops = 200;
 	int iLastNode;
+
+	float m_fNextTimeout;
 
 	int m_iCurrentWaypoint = -1;
 
@@ -807,8 +1039,8 @@ final class RCBotNavigator
 
 	RCBotNavigator ( RCBot@ bot , int iGoalWpt )
 	{
-		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer);
-
+		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer,bot.m_iLastFailedWaypoint);
+	m_fNextTimeout = 0;
 		if ( iStart == -1 || iGoalWpt == -1 )
 		{
 			BotMessage("IsTART == -1 OR GOAL == -1");
@@ -834,7 +1066,7 @@ final class RCBotNavigator
 	{
 		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer);
 		iGoal = g_Waypoints.getNearestWaypointIndex(vTo);
-
+m_fNextTimeout = 0;
 		if ( iStart == -1 || iGoal == -1 )
 		{
 			state = NavigatorState_Fail;
@@ -855,6 +1087,11 @@ final class RCBotNavigator
 
 	bool execute ( RCBot@ bot )
 	{
+		if ( m_fNextTimeout < g_Engine.time )
+		{
+			bot.m_iLastFailedWaypoint = m_iCurrentWaypoint;
+			return false;
+		}
 	
 		if ( m_currentRoute.length () == 0 )
 		{			
@@ -868,6 +1105,8 @@ final class RCBotNavigator
 		if ( (wpt.m_vOrigin - bot.origin()).Length() < 100 )
 		{
 			bot.touchedWpt(wpt);
+
+			m_fNextTimeout = g_Engine.time + 5.0;
 
 			m_currentRoute.removeAt(0);
 
@@ -890,10 +1129,8 @@ final class RCBotNavigator
 
 	array<int> m_currentRoute = {};
 
-
 	int run ()
 	{		
-		
 		switch ( state )
 		{
 			case NavigatorState_InProgress:
@@ -949,9 +1186,7 @@ final class RCBotNavigator
 								if ( iSucc == iLastNode )
 									continue;
 								if ( iSucc == iCurrentNode ) // argh?
-									continue;	
-
-									
+									continue;										
 
 								/*(if ( m_lastFailedPath.bValid )
 								{
@@ -1027,6 +1262,8 @@ final class RCBotNavigator
 
 					float fDistance = 0.0;
 					int iParent;
+
+					m_fNextTimeout = g_Engine.time + 5.0;
 
 					m_currentRoute.insertAt(0,iGoal);
 

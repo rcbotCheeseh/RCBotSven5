@@ -370,6 +370,8 @@ namespace BotManager
 				pBot.RunPlayerMove();
 			}
 
+			g_Waypoints.runVisibility();
+
 		}
 
 		void WaypointDisplay ()

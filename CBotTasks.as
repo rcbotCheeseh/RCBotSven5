@@ -111,6 +111,7 @@ class RCBotSchedule
 // TASKS / SCHEDULES - 	END
 // ------------------------------------
 
+
 final class CFindHealthTask : RCBotTask 
 {
     CFindHealthTask ( )
@@ -124,16 +125,13 @@ final class CFindHealthTask : RCBotTask
         CBaseEntity@ pent = null;
 
         BotMessage("CFindHealthTask");
-        
-        while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "*health")) !is null )
+
+        while( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_healthcharger")) !is null )
         {
-            // within reaching distance
             if ( bot.distanceFrom(pent) < 400 )
             {
                 if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
                 {
-                    if ( pent.GetClassname() == "func_healthcharger" )
-                    {
                         if ( pent.pev.frame != 0 )
                         {
                             BotMessage("func_healthcharger");
@@ -143,9 +141,17 @@ final class CFindHealthTask : RCBotTask
                             Complete();
                             return;
                         }
-                    }
-                    else if ( pent.GetClassname() == "item_healthkit" )
-                    {
+                }
+            }
+        }
+        
+        while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "item_healthkit")) !is null )
+        {
+            // within reaching distance
+            if ( bot.distanceFrom(pent) < 400 )
+            {
+                if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
+                {
                         if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW )
                         {
                             BotMessage("item_healthkit");
@@ -154,12 +160,13 @@ final class CFindHealthTask : RCBotTask
                             Complete();
                             return;
                         }
-                    }
                 }
             }
 
-            BotMessage("nothing FOUND");
         }
+
+        
+            BotMessage("nothing FOUND");
 
         Failed();
     }
@@ -372,6 +379,22 @@ final class CUseHealthChargerTask : RCBotTask
     }  
 }
 
+final class CBotButtonTask : RCBotTask 
+{
+    int m_iButton;
+
+    CBotButtonTask ( int button )
+    {
+        m_iButton = button;
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        bot.PressButton(m_iButton);
+        Complete();
+    }
+}
+
 final class CFindPathTask : RCBotTask
 {
     RCBotNavigator@ navigator;
@@ -427,6 +450,48 @@ class CFindPathSchedule : RCBotSchedule
         addTask(CFindPathTask(bot,iWpt));
     }
 }
+
+
+class CBotTaskFindCoverSchedule : RCBotSchedule
+{    
+    CBotTaskFindCoverSchedule ( RCBot@ bot, CBaseEntity@ hide_from )
+    {
+        addTask(CBotTaskFindCoverTask(bot,hide_from));
+        // reload when arrive at cover point
+        addTask(CBotButtonTask(IN_RELOAD));
+    }
+    
+}
+
+class CBotTaskFindCoverTask : RCBotTask
+{    
+    RCBotCoverWaypointFinder@ finder;
+
+    CBotTaskFindCoverTask ( RCBot@ bot, CBaseEntity@ hide_from )
+    {
+        @finder = RCBotCoverWaypointFinder(g_Waypoints.m_VisibilityTable,bot,hide_from);    
+
+        if ( finder.state == NavigatorState_Fail )
+        {
+            BotMessage("FINDING COVER FAILED!!!");
+            Failed();
+        }
+    }
+
+
+     void execute ( RCBot@ bot )
+     {
+         if ( finder.execute() )
+         {
+             m_pContainingSchedule.addTask(CFindPathTask(bot,finder.m_iGoalWaypoint));
+             BotMessage("FINDING COVER COMPLETE!!!");
+             Complete();
+         }
+         else
+            Failed();
+     }
+}
+
 
 /// UTIL
 
@@ -584,8 +649,8 @@ class CBotRoamUtil : CBotUtil
         int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_ENDLEVEL);
 
         if ( iRandomGoal == -1 )
-            iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT);
-        
+            iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT);    
+
         if ( iRandomGoal != -1 )
         {
             return CFindPathSchedule(bot,iRandomGoal);

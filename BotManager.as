@@ -8,6 +8,7 @@
 #include "CBotTasks"
 #include "UtilFuncs"
 #include "BotWeapons"
+#include "CBotBits"
 
 BotManager::BotManager g_BotManager( @CreateRCBot );
 
@@ -261,42 +262,7 @@ void PathWaypoint_Create2 ( const CCommand@ args )
 // COMMANDS - 	end
 // ------------------------------------
 
-class CBits
-{
-	CBits ( int length )
-	{
-		bits = array<int>((length/32) + 1);
-	}
 
-	bool getBit ( int longbit )
-	{
-		int bit = 1<<(longbit % 32);
-		int byte = longbit / 32;
-
-		return (bits[byte] & bit) == bit;
-	}
-
-	void setBit ( int longbit , bool val )
-	{
-		int bit = 1<<(longbit % 32);
-		int byte = longbit / 32;
-
-		if ( val )
-			bits[byte] |= bit;
-		else
-			bits[byte] &= ~bit;
-	}
-
-	void reset ()
-	{
-		for ( uint i = 0; i < bits.length(); i ++  )
-		{
-			bits[i] = 0;
-		}
-	}
-
-	array<int> bits;
-}
 
 class CBotVisibles
 {
@@ -398,8 +364,14 @@ final class RCBot : BotManager::BaseBot
 
 	CBasePlayerWeapon@ m_pCurrentWeapon;
 
-
 	CBotUtilities@ utils;
+
+	Vector m_vLastSeeEnemy;
+	bool m_bLastSeeEnemyValid = false;
+	CBaseEntity@ m_pLastEnemy = null;
+
+	int m_iPrevHealthArmor;
+	int m_iCurrentHealthArmor;
 
 	RCBot( CBasePlayer@ pPlayer )
 	{
@@ -410,8 +382,10 @@ final class RCBot : BotManager::BaseBot
 		@m_pVisibles = CBotVisibles(this);
 
 		@utils = CBotUtilities(this);
-		SpawnInit();		
+		SpawnInit();				
 
+		m_iPrevHealthArmor = 0;
+		m_iCurrentHealthArmor = 0;
 	}
 
 	bool IsEnemy ( CBaseEntity@ entity )
@@ -489,10 +463,14 @@ case 	CLASS_BARNACLE	:
 
 	}
 
+	float m_fNextTakeCover = 0;
+	int m_iLastFailedWaypoint = -1;
+
 	void Think()
 	{
 		//if ( m_fNextThink > g_Engine.time )
 		//	return;
+
 
 		m_iCurrentPriority = PRIORITY_NONE;
 
@@ -513,6 +491,28 @@ case 	CLASS_BARNACLE	:
 
 			return; // Dead , nothing else to do
 		}
+
+
+		m_iCurrentHealthArmor = int(m_pPlayer.pev.health + m_pPlayer.pev.armorvalue);
+
+		if ( m_iCurrentHealthArmor < m_iPrevHealthArmor )
+		{
+			int iDamage = m_iPrevHealthArmor - m_iCurrentHealthArmor;
+
+			if ( iDamage > 10 )	
+			{
+				if ( m_pEnemy !is null )
+				{
+					if ( m_fNextTakeCover < g_Engine.time )
+					{
+						@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,m_pEnemy);
+						m_fNextTakeCover = g_Engine.time + 5.0;
+					}				
+				}
+			}
+		}		
+
+		m_iPrevHealthArmor = m_iCurrentHealthArmor;
 
 		init = false;
 
@@ -594,6 +594,9 @@ case 	CLASS_BARNACLE	:
 	{
 		if ( m_pEnemy is ent )
 		{
+			@m_pLastEnemy = m_pEnemy;
+			m_vLastSeeEnemy = m_pEnemy.pev.origin;
+			m_bLastSeeEnemyValid = true;
 			@m_pEnemy = null;
 		}
 	}
@@ -602,12 +605,15 @@ case 	CLASS_BARNACLE	:
 	{
 		if ( init == true )
 			return;
-
+m_iLastFailedWaypoint = -1;
 		init = true;
 
 		@m_pCurrentSchedule = null;
 		@navigator = null;	
 		@m_pEnemy = null;
+
+	 m_bLastSeeEnemyValid = false;
+	@m_pLastEnemy = null;		
 		m_pVisibles.reset();
 		utils.reset();
 	}
@@ -630,6 +636,10 @@ case 	CLASS_BARNACLE	:
 		{
 			setLookAt(m_pEnemy.pev.origin);
 			//BotMessage("LOOKING AT ENEMY!!!\n");
+		}
+		else if ( m_bLastSeeEnemyValid )
+		{
+			setLookAt(m_vLastSeeEnemy);
 		}
 		else if (m_bMoveToValid )
 		{
