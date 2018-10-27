@@ -379,7 +379,7 @@ final class CPickupItemTask : RCBotTask
             Complete();
         }
 
-        if ( bot.distanceFrom(m_pItem) > 48 )
+        if ( bot.distanceFrom(m_pItem) > 56 )
         {
             bot.setMove(m_pItem.pev.origin);
 
@@ -574,6 +574,13 @@ final class CBotButtonTask : RCBotTask
 final class CFindPathTask : RCBotTask
 {
     RCBotNavigator@ navigator;
+    CBits@ m_pFailedGoals;
+
+    CFindPathTask ( CBits@ failedGoals = null )
+    {
+        @m_pFailedGoals = failedGoals;
+    }
+
     string DebugString ()
     {
         return "CFindPathTask";
@@ -595,28 +602,49 @@ final class CFindPathTask : RCBotTask
 */
     void execute ( RCBot@ bot )
     {
-        @bot.navigator = navigator;
+        //@bot.navigator = navigator;
 
-        switch ( bot.navigator.run() )
+
+        switch ( navigator.run() )
         {
+            case NavigatorState_Following:
+
+            navigator.execute(bot);
+
+            BotMessage("NavigatorState_Following");
+
+            break;
         case NavigatorState_Complete:
+ 
             // follow waypoint
-            //BotMessage("NavigatorState_Complete");
+            BotMessage("NavigatorState_Complete");
         break;
         case NavigatorState_InProgress:
             // waiting...
-           // BotMessage("NavigatorState_InProgress");
+             BotMessage("NavigatorState_InProgress");
         break;
         case NavigatorState_Fail:
-           // BotMessage("NavigatorState_Fail");
+             BotMessage("NavigatorState_Fail");
             Failed();
         break;
         case NavigatorState_ReachedGoal:
 
-           /// BotMessage("NavigatorState_ReachedGoal");
+             BotMessage("NavigatorState_ReachedGoal");
             Complete();
 
+            if ( m_pFailedGoals !is null )
+                m_pFailedGoals.reset();//setBit(m_iGoal,false);
+
             break;
+        }
+
+        
+
+        if ( m_bFailed )
+        {
+           
+            if ( m_pFailedGoals !is null )
+                m_pFailedGoals.setBit(navigator.iGoal,true);
         }
 
     }
@@ -835,10 +863,17 @@ class CBotGetArmorUtil : CBotUtil
 
 class CBotGotoObjectiveUtil : CBotUtil
 {
+    CFailedWaypointsList failed;
 
     float calculateUtility ( RCBot@ bot )
     {
         return 0.2;
+    }
+
+    void reset ()
+    {
+        failed.clear();
+        m_fNextDo = 0;
     }
 
     void setNextDo ()
@@ -848,7 +883,7 @@ class CBotGotoObjectiveUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT);
+        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT,failed);
 
         if ( iRandomGoal != -1 )
         {
@@ -858,6 +893,8 @@ class CBotGotoObjectiveUtil : CBotUtil
 
             return sched;
         }
+        else
+            failed.clear();
 
         return null;
     }
@@ -896,8 +933,16 @@ class CBotFindLastEnemyUtil : CBotUtil
 }
 
 
+
 class CBotGotoEndLevelUtil : CBotUtil
 {
+    CFailedWaypointsList failed;
+    void reset ()
+    {
+        failed.clear();
+        m_fNextDo = 0;
+    }
+
     float calculateUtility ( RCBot@ bot )
     {
         return 0.3;
@@ -905,7 +950,7 @@ class CBotGotoEndLevelUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_ENDLEVEL);    
+        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_ENDLEVEL,failed);    
 
         if ( iRandomGoal != -1 )
         {
@@ -915,6 +960,8 @@ class CBotGotoEndLevelUtil : CBotUtil
 
             return sched;
         }
+        else
+            failed.clear();
 
         return null;
     }
@@ -1007,6 +1054,8 @@ class CBotUtilities
                 }
             }
         }
+        else
+            reset();
 
         return null;
     }

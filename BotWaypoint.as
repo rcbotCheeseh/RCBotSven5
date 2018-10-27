@@ -363,9 +363,12 @@ class CWaypointTypes
 	{
 		for ( uint i = 0; i < m_Types.length(); i ++ )
 		{
+			BotMessage("FindTypeFlag('"+type+") against '"+m_Types[i].m_szName+"'" );
 			if ( m_Types[i].m_szName == type  )
+			{
+				BotMessage("FOUND returning "+ m_Types[i].m_iFlag);
 				return m_Types[i].m_iFlag;
-
+			}
 		}
 
 		return 0;
@@ -377,9 +380,18 @@ class CWaypointTypes
 
 		for ( uint i = 0; i < types.length(); i ++  )
 		{
-			flags |= findTypeFlag(types[i]);
-		}
+			int flag = findTypeFlag(types[i]);
 
+			if ( flag != 0 )
+			{
+				flags |= findTypeFlag(types[i]);
+				
+			}
+			else
+				BotMessage("Waypoint type " + types[i]+" not found");
+			
+		}
+		BotMessage("parseTypes returning " + flags);
 		return flags;
 	}
 }
@@ -819,7 +831,7 @@ class CWaypoints
 		return iIndex;
 	}
 	
-	int getRandomFlaggedWaypoint ( int iFlags )
+	int getRandomFlaggedWaypoint ( int iFlags, CFailedWaypointsList@ failed = null )
 	{
 		array<int> wpts;
 		
@@ -827,6 +839,9 @@ class CWaypoints
 		{
 			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
 				continue;	
+
+			if ( failed.contains(i) )
+				continue;
 
 			if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
 			{
@@ -1107,6 +1122,27 @@ final class RCBotCoverWaypointFinder
 
 }
 
+class CFailedWaypointsList
+{
+    void add ( int iwpt )
+    {
+        if ( !contains(iwpt) )
+            list.insertLast(iwpt);
+    }
+
+    bool contains ( int iwpt )
+    {
+        return list.find(iwpt) >= 0;
+    }
+
+    void clear ()
+    {
+        list = {};
+    }
+
+
+    array<int> list;
+}
 	const int NavigatorState_Complete = 0;
 	const int NavigatorState_InProgress = 1;
 	const int NavigatorState_Fail = 2;
@@ -1214,17 +1250,21 @@ m_fNextTimeout = 0;
 	float m_fLastSeeWaypoint = 0.0;
 	float m_fPreviousDistance = 9999;
 
-	bool execute ( RCBot@ bot )
+	void execute ( RCBot@ bot )
 	{
 		if ( m_fNextTimeout < g_Engine.time )
 		{
+			BotMessage("m_fNextTimeout < g_Engine.time");
 			bot.m_iLastFailedWaypoint = m_iCurrentWaypoint;
-			return false;
+			state = NavigatorState_Fail;
+			return;
 		}
 	
 		if ( m_currentRoute.length () == 0 )
 		{			
-			return false;
+			BotMessage("m_currentRoute.length () == 0");
+			state = NavigatorState_Fail;
+			return;
 		}
 
 		m_iCurrentWaypoint = m_currentRoute[0];
@@ -1232,6 +1272,8 @@ m_fNextTimeout = 0;
 		CWaypoint@ wpt = g_Waypoints.getWaypointAtIndex(m_iCurrentWaypoint);
 
 		float distance = (wpt.m_vOrigin - bot.origin()).Length();
+
+		BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
 
 		if ( (distance < 100) || (distance > (m_fPreviousDistance+64.0)) )
 		{
@@ -1247,13 +1289,14 @@ m_fNextTimeout = 0;
 
 			if ( m_currentRoute.length () == 0 )
 			{
-				state = NavigatorState_ReachedGoal;				
-				return true;
+				state = NavigatorState_ReachedGoal;			
+				BotMessage("m_currentRoute.length () == 0 ");			
+				return;
 			}
 		}
 		else
 		{
-			
+			BotMessage("FOLLOWING");
 			bot.followingWpt(wpt);
 			m_fPreviousDistance = distance;
 
@@ -1261,22 +1304,44 @@ m_fNextTimeout = 0;
 			{
 				m_fNextCheckVisible = g_Engine.time + 1.0;
 
-				if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin + bot.m_pPlayer.pev.view_ofs,wpt.m_vOrigin, bot.m_pPlayer) )				
+        		TraceResult tr;
+
+		        g_Utility.TraceLine( bot.m_pPlayer.pev.origin + bot.m_pPlayer.pev.view_ofs, wpt.m_vOrigin, ignore_monsters,dont_ignore_glass, bot.m_pPlayer.edict(), tr );
+
+				if ( tr.flFraction >= 1.0 )				
 					m_fLastSeeWaypoint = g_Engine.time;
 				else if ( m_fLastSeeWaypoint > 0 && ((g_Engine.time - m_fLastSeeWaypoint) > 3.0) )
 				{
 					BotMessage("BotNavigator FAIL");
 					m_fLastSeeWaypoint = 0;
 					// Fail
-					return false;
+					state = NavigatorState_Fail;
+					return;
+				}
+				else
+				{
+					if ( tr.pHit !is null )
+					{
+						if ( tr.pHit.vars.targetname != "" )
+						{
+							CBaseEntity@ button = UTIL_FindEntityByTarget(null,tr.pHit.vars.targetname);
+
+							if ( button !is null )
+							{
+								if ( button.GetClassname() == "func_button" )
+								{
+									// add Schedule to press button
+
+								}
+							}
+						}
+					}
 				}
 
 			}
 		}	
 
-		
-
-		return false;
+			return;
 	}
 
 	int iCurrentNode = -1;

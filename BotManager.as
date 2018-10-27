@@ -22,7 +22,7 @@ CConCommand@ m_pPathWaypointCreate1;
 CConCommand@ m_pPathWaypointCreate2;
 CConCommand@ m_pRCBotWaypointLoad;
 CConCommand@ m_pRCBotWaypointSave;
-CConCommand@ m_pRCBotKill;
+CConCommand@ m_pRCBotSearch;
 CConCommand@ GodMode;
 CConCommand@ NoClipMode;
 CConCommand@ m_pRCBotWaypointRemoveType;
@@ -64,9 +64,10 @@ void PluginInit()
 	@m_pDebugBot = @CConCommand ( "debug" , "debug messages toggle" , @DebugBot );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
-	@m_pRCBotKill = @CConCommand( "test", "test func", @RCBot_Kill );
+  
 	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
 
+	@m_pRCBotSearch = @CConCommand( "search", "test search func", @RCBotSearch );
 }
 
 
@@ -81,12 +82,15 @@ void WaypointGiveType ( const CCommand@ args )
 
 	CBasePlayer@ player = ListenPlayer();
 
-	for ( int i = 0 ; i < args.ArgC(); i ++ )
+	for ( int i = 1 ; i < args.ArgC(); i ++ )
 	{
 		types.insertLast(args.Arg(i));
 	}
 
 	int flags = g_WaypointTypes.parseTypes(types);
+
+	if ( flags > 0 )
+	{
 
 	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
 
@@ -96,6 +100,8 @@ void WaypointGiveType ( const CCommand@ args )
 
 		pWpt.m_iFlags |= flags;
 	}
+	}
+	
 }
 
 void WaypointRemoveType ( const CCommand@ args )
@@ -153,45 +159,16 @@ void NoClipModeFunc ( const CCommand@ args )
 	}
 }
 
-void RCBot_Kill ( const CCommand@ args )
+void RCBotSearch ( const CCommand@ args )
 {
 	Vector v = ListenPlayer().pev.origin;
-CBaseEntity@ pent = null;
+	CBaseEntity@ pent = null;
 
-//FindEntityInSphere(CBaseEntity@ pStartEntity, const Vector& in vecCenter, float flRadius,const string& in szValue = "", const string& in szKeyword = "targetname")
-
-        //while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, v, 512,"*", "classname"  )) !is null )
-
-		 while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_healthcharger"  )) !is null )
-        {
-				BotMessage(pent.GetClassname());			
-        }
-/*
-	CBasePlayer@ p = ListenPlayer();
-
-	BotMessage("MAX_ITEM_TYPES = " + MAX_ITEM_TYPES);
-
-	for ( uint i = 0; i < MAX_ITEM_TYPES; i ++ )
+	while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
 	{
-		CBasePlayerItem@ item = p.m_rgpPlayerItems(i);
-		
-		if ( item !is null )
-		{
-			CBasePlayerWeapon@ weapon = item.GetWeaponPtr();
-
-			if ( weapon !is null )
-			{
-				// this is a weapon
-				BotMessage("Weapon : " + item.GetClassname());
-
-				BotMessage(" Primary Ammo: " + p.m_rgAmmo(weapon.PrimaryAmmoIndex()));
-				if ( weapon.SecondaryAmmoIndex() >= 0)
-				BotMessage(" Secondary Ammo: " + p.m_rgAmmo(weapon.SecondaryAmmoIndex()));
-			}
-			else
-				BotMessage("Item : " + item.GetClassname());
-		}
-	}*/
+		if ( (UTIL_EntityOrigin(pent) - v).Length() < 200 )
+			BotMessage(pent.GetClassname());			
+	}
 }
 
 void RCBot_Killbots( const CCommand@ args )
@@ -215,12 +192,6 @@ void RCBot_Killbots( const CCommand@ args )
 // ------------------------------------
 void AddBotCallback( const CCommand@ args )
 {
-	/*if( args.ArgC() < 2 )
-	{
-		g_Game.AlertMessage( at_console, "Usage: addbot <name>" );
-		return;
-	}*/
-
 	BotManager::BaseBot@ pBot = g_BotManager.CreateBot( );
 
 }
@@ -373,7 +344,7 @@ final class RCBot : BotManager::BaseBot
 {	
 	private float m_fNextThink = 0;
 
-	RCBotNavigator@ navigator;
+	//RCBotNavigator@ navigator;
 
 	RCBotSchedule@ m_pCurrentSchedule;
 
@@ -409,6 +380,11 @@ final class RCBot : BotManager::BaseBot
 
 		m_iPrevHealthArmor = 0;
 		m_iCurrentHealthArmor = 0;
+	}
+
+	float HealthPercent ()
+	{
+		return (float(m_pPlayer.pev.health))/m_pPlayer.pev.max_health;
 	}
 
 	float totalHealth ()
@@ -621,13 +597,13 @@ case 	CLASS_BARNACLE	:
 		{
 			m_vecVelocity[ uiIndex ] = Math.RandomLong( -50, 50 );
 		}*/
-
+		DoTasks();
 		DoVisibles();
 		DoMove();
 		DoLook();
 		DoWeapons();
 		DoButtons();
-		DoTasks();
+		
 	}
 
 	void DoWeapons ()
@@ -694,7 +670,7 @@ m_iLastFailedWaypoint = -1;
 		init = true;
 
 		@m_pCurrentSchedule = null;
-		@navigator = null;	
+	//	@navigator = null;	
 		m_pEnemy = null;
 
 	 m_bLastSeeEnemyValid = false;
@@ -718,9 +694,8 @@ m_iLastFailedWaypoint = -1;
 
 	void DoMove ()
 	{
-		if ( navigator !is null )
-			navigator.execute(this);
-
+		//if ( navigator !is null )
+		//	navigator.execute(this);
 		
 		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.25*m_pPlayer.pev.maxspeed)) )
 		{
