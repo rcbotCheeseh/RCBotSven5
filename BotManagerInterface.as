@@ -42,12 +42,14 @@ namespace BotManager
 
 		void setMove ( Vector origin )
 		{
+			
 			if ( m_iCurrentPriority >= m_iMovePriority )
 			{
 				m_vMoveTo = origin;
 				m_bMoveToValid = true;
+				BotMessage("setMove !");
 			}
-			//BotMessage("setMove!");
+			BotMessage("setMove IGNORE");
 		}
 
 		void setLookAt ( Vector origin )

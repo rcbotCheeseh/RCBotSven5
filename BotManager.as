@@ -468,6 +468,7 @@ case 	CLASS_BARNACLE	:
 		if ( wpt.hasFlags(W_FL_CROUCH) )
 			PressButton(IN_DUCK);
 
+		BotMessage("Following Wpt");
 		setMove(wpt.m_vOrigin);
 
 		//drawBeam (ListenPlayer(), m_pPlayer.pev.origin, wpt.m_vOrigin, col, 1 );
