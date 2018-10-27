@@ -141,9 +141,9 @@ final class CFindHealthTask : RCBotTask
 
         while( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_healthcharger")) !is null )
         {
-            if ( bot.distanceFrom(pent) < 400 )
+            if ( bot.distanceFrom(pent) < 200 )
             {
-                if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
+                //if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
                 {
                         if ( pent.pev.frame == 0  )
                         {
@@ -310,7 +310,7 @@ final class CFindArmorTask : RCBotTask
             float dist =  bot.distanceFrom(pent);
             BotMessage("FUNC_RECHARD DIST == " + dist);
             // within reaching distance
-            if ( dist < 400 )
+            if ( dist < 200 )
             {
                 if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
                 {

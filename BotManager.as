@@ -54,7 +54,7 @@ void PluginInit()
 	@m_pRCBotWaypointOff = @CConCommand( "waypoint_off", "Display waypoints off", @WaypointOff );
 	@m_pRCBotWaypointOn = @CConCommand( "waypoint_on", "Displays waypoints on", @WaypointOn );
 	@m_pRCBotWaypointAdd = @CConCommand( "waypoint_add", "Adds a new waypoint", @WaypointAdd );
-	@m_pRCBotWaypointDelete = @CConCommand( "waypoint_delete", "Adds a new waypoint", @WaypointDelete );
+	@m_pRCBotWaypointDelete = @CConCommand( "waypoint_delete", "deletes a new waypoint", @WaypointDelete );
 	@m_pRCBotWaypointLoad = @CConCommand( "waypoint_load", "Loads waypoints", @WaypointLoad );
 	@m_pRCBotWaypointSave = @CConCommand( "waypoint_save", "Saves waypoints", @WaypointSave );
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
@@ -225,7 +225,15 @@ void WaypointOn ( const CCommand@ args )
 
 void WaypointDelete ( const CCommand@ args )
 {
-	//g_Waypoints.addWaypoint();
+CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+
+	if ( wpt != -1 )
+	{
+		g_Waypoints.deleteWaypoint(wpt);
+	}
+	
 }
 
 void WaypointSave ( const CCommand@ args )

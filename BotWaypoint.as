@@ -519,7 +519,7 @@ class CWaypoint
 	void Place ( int index, Vector loc )
 	{
 		m_vOrigin = loc;
-		
+		m_iFlags = 0;
 		iIndex = index;
 	}
 
