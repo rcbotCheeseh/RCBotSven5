@@ -38,6 +38,11 @@ class RCBotTask
         
     }
 
+    string DebugString ()
+    {
+        return "";
+    }
+
     bool timedOut ()
     {
         return g_Engine.time > m_fTimeout;
@@ -85,7 +90,7 @@ class RCBotSchedule
         {                
             BotMessage("m_pTasks.removeAt(0)");
             m_pTasks.removeAt(0);
-
+        BotMessage(m_pCurrentTask.DebugString()+" COMPLETE");
             if ( m_pTasks.length() == 0 )
             {
                 BotMessage("m_pTasks.length() == 0");
@@ -94,13 +99,16 @@ class RCBotSchedule
         }
         else if ( m_pCurrentTask.timedOut() )
         {
-            
+                    BotMessage(m_pCurrentTask.DebugString()+" FAILED");
+
             m_pCurrentTask.m_bFailed = true;
             // failed
             return true;
         }
         else if ( m_pCurrentTask.m_bFailed )
         {
+                    BotMessage(m_pCurrentTask.DebugString()+" FAILED");
+
             return true;
         }
 
@@ -118,6 +126,10 @@ final class CFindHealthTask : RCBotTask
     CFindHealthTask ( )
     {
 
+    }
+    string DebugString ()
+    {
+        return "CFindHealthTask";
     }
 
     void execute ( RCBot@ bot )
@@ -179,7 +191,10 @@ final class CFindAmmoWeaponTask : RCBotTask
     {
 
     }
-
+    string DebugString ()
+    {
+        return "CFindAmmoWeaponTask";
+    }
     void execute ( RCBot@ bot )
     {
         // Search for health to pick up or health dispenser
@@ -220,7 +235,10 @@ final class CFindArmorTask : RCBotTask
     {
 
     }
-
+    string DebugString ()
+    {
+        return "CFindArmorTask";
+    }
     void execute ( RCBot@ bot )
     {
         // Search for health to pick up or health dispenser
@@ -283,7 +301,10 @@ final class CFindArmorTask : RCBotTask
 final class CPickupItemTask : RCBotTask 
 {
     CBaseEntity@ m_pItem;
-
+    string DebugString ()
+    {
+        return "CPickupItemTask";
+    }
     CPickupItemTask ( RCBot@ bot, CBaseEntity@ item )
     {
         @m_pItem = item;
@@ -316,7 +337,10 @@ final class CFindButtonTask : RCBotTask
     {
 
     }
-
+    string DebugString ()
+    {
+        return "CFindButtonTask";
+    }
     void execute ( RCBot@ bot )
     {
         CBaseEntity@ pent = null;
@@ -345,7 +369,10 @@ final class CFindButtonTask : RCBotTask
 final class CUseButtonTask : RCBotTask
 {
     CBaseEntity@ m_pButton;
-
+    string DebugString ()
+    {
+        return "CUseButtonTask";
+    }
     CUseButtonTask ( CBaseEntity@ button )
     {
         @m_pButton = button;
@@ -379,7 +406,10 @@ final class CUseButtonTask : RCBotTask
 final class CUseArmorCharger : RCBotTask
 {
     CBaseEntity@ m_pCharger;
-
+    string DebugString ()
+    {
+        return "CUseArmorCharger";
+    }
     CUseArmorCharger ( RCBot@ bot, CBaseEntity@ charger )
     {
         @m_pCharger = charger;
@@ -425,7 +455,10 @@ final class CUseArmorCharger : RCBotTask
 final class CUseHealthChargerTask : RCBotTask
 {
     CBaseEntity@ m_pCharger;
-
+    string DebugString ()
+    {
+        return "CUseHealthChargerTask";
+    }
     CUseHealthChargerTask ( RCBot@ bot, CBaseEntity@ charger )
     {
         @m_pCharger = charger;
@@ -463,7 +496,10 @@ final class CUseHealthChargerTask : RCBotTask
 final class CBotButtonTask : RCBotTask 
 {
     int m_iButton;
-
+    string DebugString ()
+    {
+        return "CBotButtonTask";
+    }
     CBotButtonTask ( int button )
     {
         m_iButton = button;
@@ -479,7 +515,10 @@ final class CBotButtonTask : RCBotTask
 final class CFindPathTask : RCBotTask
 {
     RCBotNavigator@ navigator;
-
+    string DebugString ()
+    {
+        return "CFindPathTask";
+    }
     CFindPathTask ( RCBot@ bot, int wpt )
     {
         @navigator = RCBotNavigator(bot,wpt);
@@ -560,7 +599,10 @@ class CBotTaskFindCoverCompleteTask : RCBotTask
 class CBotTaskFindCoverTask : RCBotTask
 {    
     RCBotCoverWaypointFinder@ finder;
-
+    string DebugString ()
+    {
+        return "CBotTaskFindCoverTask";
+    }
     CBotTaskFindCoverTask ( RCBot@ bot, CBaseEntity@ hide_from )
     {
         @finder = RCBotCoverWaypointFinder(g_Waypoints.m_VisibilityTable,bot,hide_from);    
