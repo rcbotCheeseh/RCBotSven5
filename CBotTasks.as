@@ -406,6 +406,8 @@ final class CFindButtonTask : RCBotTask
 
         while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_button")) !is null )
         {            
+            if ( pent.pev.frame != 0 )
+                continue;
             // within reaching distance
             if ( bot.distanceFrom(pent) < 400 )
             {
@@ -435,11 +437,17 @@ final class CUseButtonTask : RCBotTask
     CUseButtonTask ( CBaseEntity@ button )
     {
         @m_pButton = button;
+        m_fDefaultTimeout = 4.0;
     } 
 
     void execute ( RCBot@ bot )
     {
         Vector vOrigin = UTIL_EntityOrigin(m_pButton);
+
+        if ( m_pButton.pev.frame != 0 )
+            Complete();
+
+        bot.setLookAt(vOrigin);
 
         if ( bot.distanceFrom(m_pButton) > 56 )
         {
@@ -449,13 +457,18 @@ final class CUseButtonTask : RCBotTask
         else
         {
             bot.StopMoving();
-            bot.setLookAt(vOrigin);
-            BotMessage("bot.PressButton(IN_USE)");
 
-            if ( Math.RandomLong(0,100) < 99 )
+            // within so many degrees of target
+           // if ( UTIL_DotProduct(bot.m_pPlayer.pev.v_angle,vOrigin) > 0.7 )    
             {
-                bot.PressButton(IN_USE);
-                Complete();
+
+                BotMessage("bot.PressButton(IN_USE)");
+
+                if ( Math.RandomLong(0,100) < 99 )
+                {
+                    bot.PressButton(IN_USE);
+                    Complete();
+                }
             }
         }
     }
@@ -491,6 +504,7 @@ final class CUseArmorCharger : RCBotTask
         }
 
         Vector vOrigin = UTIL_EntityOrigin(m_pCharger);
+ bot.setLookAt(vOrigin);
 
         if ( bot.distanceFrom(m_pCharger) > 56 )
         {
@@ -500,12 +514,16 @@ final class CUseArmorCharger : RCBotTask
         else
         {
             bot.StopMoving();
-            bot.setLookAt(vOrigin);
-            BotMessage("bot.PressButton(IN_USE)");
-
-            if ( Math.RandomLong(0,100) < 99 )
+           
+                        // within so many degrees of target
+            //if ( UTIL_DotProduct(bot.m_pPlayer.pev.v_angle,vOrigin) > 0.7 )    
             {
-                bot.PressButton(IN_USE);
+                BotMessage("bot.PressButton(IN_USE)");
+
+                if ( Math.RandomLong(0,100) < 99 )
+                {
+                    bot.PressButton(IN_USE);
+                }
             }
         }
     }  
@@ -536,17 +554,21 @@ final class CUseHealthChargerTask : RCBotTask
             Complete();
 
         Vector vOrigin = UTIL_EntityOrigin(m_pCharger);
+    bot.setLookAt(vOrigin);
 
         if ( bot.distanceFrom(m_pCharger) > 56 )
             bot.setMove(vOrigin);
         else
         {
             bot.StopMoving();
-            bot.setLookAt(vOrigin);
-
-            if ( Math.RandomLong(0,100) < 99 )
+        
+            //if ( UTIL_DotProduct(bot.m_pPlayer.pev.v_angle,vOrigin) > 0.7 )    
             {
-                bot.PressButton(IN_USE);
+
+                if ( Math.RandomLong(0,100) < 99 )
+                {
+                    bot.PressButton(IN_USE);
+                }
             }
         }
     }  

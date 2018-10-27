@@ -118,7 +118,7 @@ namespace BotManager
 
 			if ( m_vLookAtIsValid )
 			{
-				m_vLookAngles = Math.VecToAngles(m_vLookAt - m_pPlayer.pev.origin);
+				m_vLookAngles = Math.VecToAngles(m_vLookAt - (m_pPlayer.pev.origin+m_pPlayer.pev.view_ofs));
 
 				m_vLookAngles.x = UTIL_FixFloatAngle(m_vLookAngles.x);
 				m_vLookAngles.y = UTIL_FixFloatAngle(m_vLookAngles.y);
@@ -191,6 +191,7 @@ namespace BotManager
 			{
 				g_Hooks.RemoveHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
 				g_Hooks.RemoveHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
+				
 			}
 		}
 		
@@ -208,7 +209,7 @@ namespace BotManager
 				
 			g_Hooks.RegisterHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
-			
+			//g_Hooks.RegisterHook( Hooks::CEntityFuncs, DispatchKeyValueHook(this.DispatchKeyValue) );
 			@m_pScheduledFunction = g_Scheduler.SetInterval( @this, "Think", 0.1 );
 			@m_pWaypointDisplay = g_Scheduler.SetInterval(@this, "WaypointDisplay", 1);
 

@@ -35,6 +35,7 @@ int g_DebugLevel = 0;
 
 	const int PRIORITY_NONE = 0;
 	const int PRIORITY_TASK = 1;
+	const int PRIORITY_HURT = 2;
 	
 CBasePlayer@ ListenPlayer ()
 {
@@ -167,7 +168,7 @@ void RCBotSearch ( const CCommand@ args )
 	while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
 	{
 		if ( (UTIL_EntityOrigin(pent) - v).Length() < 200 )
-			BotMessage(pent.GetClassname());			
+			BotMessage(pent.GetClassname() + " frame="+pent.pev.frame);			
 	}
 }
 
@@ -426,7 +427,8 @@ final class RCBot : BotManager::BaseBot
 			if ( pBreakable.pev.target != "" )
 				return true;
 				
-				
+			if ( pBreakable.pev.targetname != "" )	
+				return false;
 			// w00tguy
 			//if ( (iClass == -1) || (iClass == 1) || (iClass == 2) || (iClass == 3) || (iClass == 10) )
 			//	return FALSE; // not an enemy
@@ -558,10 +560,9 @@ case 	CLASS_BARNACLE	:
 
 		if ( m_iCurrentHealthArmor < m_iPrevHealthArmor )
 		{
-			int iDamage = m_iPrevHealthArmor - m_iCurrentHealthArmor;
+			//int iDamage = m_iPrevHealthArmor - m_iCurrentHealthArmor;
 
-			if ( iDamage > 1 )	
-			{
+			
 				if ( m_pEnemy.GetEntity() !is null )
 				{
 					if ( m_fNextTakeCover < g_Engine.time )
@@ -570,7 +571,25 @@ case 	CLASS_BARNACLE	:
 						m_fNextTakeCover = g_Engine.time + 8.0;
 					}				
 				}
-			}
+				else
+				{
+					// no enemy ,, who shot me?
+
+					//w00tguy
+					if ( m_pPlayer.pev.dmg_inflictor !is null )
+					{
+						CBaseEntity@ attacker = g_EntityFuncs.Instance(m_pPlayer.pev.dmg_inflictor);
+
+						if ( attacker !is null )
+						{
+							m_iCurrentPriority = PRIORITY_HURT;
+							setLookAt(UTIL_EntityOrigin(attacker));
+							m_iCurrentPriority = PRIORITY_NONE;
+						}
+
+					}
+				}
+			
 		}		
 
 		m_iPrevHealthArmor = m_iCurrentHealthArmor;
