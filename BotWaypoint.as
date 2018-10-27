@@ -17,29 +17,24 @@ const int W_FL_ARMOR	= 	(1<<8);  /* armor (or HEV) location */
 const int W_FL_AMMO		=	(1<<9);  /* ammo location */
 const int W_FL_CHECK_LIFT	= (1<<10); /* checks for lift at this point */
 const int W_FL_IMPORTANT	= (1<<11);/* flag position (or hostage or president) */
-const int W_FL_DYNAMIC_TELEPORTER= ((1<<22)&(1<<21)); /* created automatically */
-const int W_FL_SCIENTIST_POINT= (1<<11);
-const int W_FL_TFC_FLAG_POINT=  (1<<11);
 const int W_FL_BARNEY_POINT  = (1<<12);
 const int W_FL_DEFEND_ZONE  =  (1<<13);
 const int W_FL_AIMING	= (1<<14); /* aiming waypoint */
-const int W_FL_CROUCHJUMP= 	(1<<16); // }
+const int W_FL_CROUCHJUMP = 	(1<<16); // }	
 const int W_FL_WAIT_FOR_LIFT= (1<<17);/* wait for lift to be down before approaching this waypoint */
 const int W_FL_PAIN	= (1<<18);
 const int W_FL_JUMP    = (1<<19);
 const int W_FL_WEAPON	= (1<<20); // Crouch and jump
 const int W_FL_TELEPORT  = (1<<21);
 const int W_FL_TANK	= (1<<22); // func_tank near waypoint
-const int W_FL_FLY = (1<<23);
 const int W_FL_GRAPPLE = (1<<23);
-const int W_FL_STAY_NEAR= (1<<24);
+const int W_FL_STAY_NEAR = (1<<24);
 const int W_FL_ENDLEVEL  = (1<<25); // end of level, in svencoop etc
 const int W_FL_OPENS_LATER  =(1<<26);
 const int W_FL_HUMAN_TOWER = (1<<27);// bot will crouch & wait for a player to jump on them
 const int W_FL_UNREACHABLE = (1<<28); // not reachable by bot, used as a reference point for visibility only
 const int W_FL_PUSHABLE  = (1<<29);
 const int W_FL_GREN_THROW  = (1<<30);
-const int W_FL_SNIPE = (1<<30);
 const int W_FL_DELETED = (1<<31); /* used by waypoint allocation code */
 
 const int MAX_WAYPOINTS = 1024;
@@ -191,13 +186,129 @@ class CWaypointTypes
 
 	CWaypointTypes ()
 	{
-		m_Types.insertLast(CWaypointType("jump",W_FL_JUMP,WptColor(255,255,255)));
-		m_Types.insertLast(CWaypointType("crouch",W_FL_CROUCH,WptColor(0,255,255)));
-		m_Types.insertLast(CWaypointType("end",W_FL_ENDLEVEL,WptColor(255,0,255)));
-		m_Types.insertLast(CWaypointType("ammo",W_FL_AMMO,WptColor(50,255,50)));
-		m_Types.insertLast(CWaypointType("health",W_FL_HEALTH,WptColor(255,50,50)));
-		m_Types.insertLast(CWaypointType("armor",W_FL_ARMOR,WptColor(255,255,0)));
-		m_Types.insertLast(CWaypointType("openslater",W_FL_OPENS_LATER,WptColor(200,200,255)));
+		int flag = 1;
+
+		for ( int r = 250; r >= 50; r -= 50 )
+		{
+			for ( int g = 250; g >= 50; g -= 50 )
+			{
+				for ( int b = 250; b >= 50; b -= 50 )
+				{
+					WptColor color = WptColor(r,g,b);
+					string name = "";
+
+					switch ( flag )
+					{
+						case W_FL_TEAM :
+							name = "team";
+							break;
+						case W_FL_TEAM_SPECIFIC :
+							name = "teamspecific";
+							break;
+						case W_FL_CROUCH :
+							name = "crouch";
+							break;
+						case W_FL_LADDER :
+						name = "ladder";
+						break;
+						case W_FL_LIFT :
+						name = "lift";
+						break;
+						case W_FL_DOOR :
+						name = "door";
+						break;
+						case W_FL_HEALTH :
+						name = "health";
+						break;
+						case W_FL_ARMOR :
+						name = "armor";
+						break;
+						case W_FL_AMMO :
+						name = "ammo";
+						break;
+						case W_FL_CHECK_LIFT :
+						name = "checklift";
+						break;
+						case W_FL_IMPORTANT :
+						name = "important";
+						break;
+						case W_FL_BARNEY_POINT :
+						name = "barney";
+						break;
+						case W_FL_DEFEND_ZONE :
+						name = "defend";
+						break;
+						case W_FL_AIMING :
+						name = "aiming";
+						break;
+						case W_FL_CROUCHJUMP :
+						name = "crouchjump";
+						break;
+						case W_FL_WAIT_FOR_LIFT :
+						name = "waitlift";
+						break;
+						case W_FL_PAIN :
+						name = "pain";
+						break;
+						case W_FL_JUMP :
+						name = "jump";
+						break;
+						case W_FL_WEAPON :
+						name = "weapon";
+						break;
+						case W_FL_TELEPORT :
+						name = "teleport";
+						break;
+						case W_FL_TANK :
+						name = "tank";
+						break;
+						case W_FL_GRAPPLE :
+						name = "grapple";
+						break;
+						case W_FL_STAY_NEAR :
+						name = "staynear";
+						break;
+						case W_FL_ENDLEVEL :
+						name = "end";
+						break;
+						case W_FL_OPENS_LATER :
+						name = "openslater";
+						break;
+						case W_FL_HUMAN_TOWER :
+						name = "humantower";
+						break;
+						case W_FL_UNREACHABLE :
+						name = "unreachable";
+						break;
+						case W_FL_PUSHABLE :
+						name = "pushable";
+						break;
+						case W_FL_GREN_THROW :
+						name = "grenthrow";
+						break;
+						case W_FL_DELETED :
+						name = "deleted";
+						break;
+						default:
+						break;
+					}
+
+					if ( name != "" )
+					{
+						m_Types.insertLast(CWaypointType(name,flag,color));
+						BotMessage("Added waypoint type ("+name+","+flag+")");
+					}
+					// finished
+					if ( flag == W_FL_DELETED )
+					{
+						return;
+					}
+					else 
+						flag *= 2;
+				}
+			}
+		}
+
 		//m_Types.insertLast(CWaypointType("button",W_FL_BUTTON,WptColor(200,200,255)));
 	}
 
@@ -207,13 +318,17 @@ class CWaypointTypes
 
 		for ( uint i = 0; i < m_Types.length(); i ++ )
 		{
-			if ( flags & m_Types[i].m_iFlag == m_Types[i].m_iFlag )
+			BotMessage("Searching Types in flags " + flags + "... against " + m_Types[i].m_iFlag );
+
+			if ( (flags & m_Types[i].m_iFlag) == m_Types[i].m_iFlag )
+			{
 				szflags += "," + m_Types[i].m_szName;
+			}
 		}
 
 		if ( szflags == "" )
 			szflags = "NO FLAGS";
-
+		BotMessage(szflags);
 		SayMessage(player,szflags);
 	}
 
@@ -453,7 +568,7 @@ final class CWaypointVisibility
 
 	bool VisibleFromTo ( int iFrom, int iTo )
 	{
-		int bit_num = (iFrom * m_iNumWaypoints) + iTo;
+		int bit_num = (iFrom * MAX_WAYPOINTS) + iTo;
 		
 		return bits.getBit(bit_num);
 	}
@@ -467,7 +582,7 @@ final class CWaypointVisibility
 
 			int Percent = (100 * ((iWptFrom * m_iNumWaypoints) + iWptTo)) / (m_iNumWaypoints * m_iNumWaypoints);
 
-			BotMessage("Visibility Calculating Percent = " + Percent + " complete" );
+			//BotMessage("Visibility Calculating Percent = " + Percent + " complete" );
 
 			while ( (iLoops < iMaxLoops) && (state == W_VIS_RUNNING) )
 			{				
@@ -937,6 +1052,10 @@ final class RCBotCoverWaypointFinder
 	 */
 	int FindCover ( int iWaypoint )
 	{
+		// failed before we started
+		if ( state == NavigatorState_Fail )
+			return -1;
+
 		iDepth++;
 
 		if ( iDepth > iMaxDepth )
@@ -1092,7 +1211,7 @@ m_fNextTimeout = 0;
 	}
 
 	float m_fNextCheckVisible = 0.0;
-	float m_fWaypointInvisibleTime = 0.0;
+	float m_fLastSeeWaypoint = 0.0;
 	float m_fPreviousDistance = 9999;
 
 	bool execute ( RCBot@ bot )
@@ -1124,7 +1243,7 @@ m_fNextTimeout = 0;
 
 			m_fPreviousDistance = 9999.0;
 
-			m_fWaypointInvisibleTime = 0;
+			m_fLastSeeWaypoint = g_Engine.time;
 
 			if ( m_currentRoute.length () == 0 )
 			{
@@ -1134,7 +1253,7 @@ m_fNextTimeout = 0;
 		}
 		else
 		{
-			BotMessage("Following Waypoint");
+			
 			bot.followingWpt(wpt);
 			m_fPreviousDistance = distance;
 
@@ -1143,11 +1262,11 @@ m_fNextTimeout = 0;
 				m_fNextCheckVisible = g_Engine.time + 1.0;
 
 				if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin + bot.m_pPlayer.pev.view_ofs,wpt.m_vOrigin, bot.m_pPlayer) )				
-					m_fWaypointInvisibleTime = g_Engine.time;
-				else if ( m_fWaypointInvisibleTime > 0 && ((g_Engine.time - m_fWaypointInvisibleTime) > 3.0) )
+					m_fLastSeeWaypoint = g_Engine.time;
+				else if ( m_fLastSeeWaypoint > 0 && ((g_Engine.time - m_fLastSeeWaypoint) > 3.0) )
 				{
 					BotMessage("BotNavigator FAIL");
-					m_fWaypointInvisibleTime = 0;
+					m_fLastSeeWaypoint = 0;
 					// Fail
 					return false;
 				}
@@ -1217,8 +1336,10 @@ m_fNextTimeout = 0;
 							for ( iPath = 0; iPath < iMaxPaths; iPath ++ )
 							{
 								int iSucc = currWpt.getPath(iPath);
+
+								BotMessage("PATH FROM " + iCurrentNode + " TO " + iSucc);
 								
-								if ( iSucc == iLastNode )
+								if ( iSucc == iLastNode ) // argh?
 									continue;
 								if ( iSucc == iCurrentNode ) // argh?
 									continue;										
@@ -1245,6 +1366,25 @@ m_fNextTimeout = 0;
 									if ( !UTIL_IsVisible(currWpt.m_vOrigin,succWpt.m_vOrigin) )
 										continue;
 								}
+								if ( succWpt.hasFlags(W_FL_PAIN) )
+								{
+				
+									CBaseEntity@ pent = null;
+									bool bFound = false;
+
+									while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, succWpt.m_vOrigin , 128,"trigger_hurt", "classname"  )) !is null )
+									{
+											if ( ((pent.pev.spawnflags & 8)!=8) && (pent.pev.solid == SOLID_TRIGGER) )
+											{
+												bFound = true;
+												break;
+											}
+									}
+
+									if ( bFound )
+										continue;
+																	
+								}
 
 								//if ( (iSucc != m_iGoalWaypoint) && !m_pBot.canGotoWaypoint(vOrigin,succWpt,currWpt) )
 							//		continue;
@@ -1268,6 +1408,7 @@ m_fNextTimeout = 0;
 								succ.unClose();
 
 								succ.setParent(iCurrentNode);
+								//BotMessage("Succ " + iSucc + " parent = " + iCurrentNode);
 
 								succ.setCost(fCost);	
 
@@ -1303,7 +1444,7 @@ m_fNextTimeout = 0;
 
 					m_fNextTimeout = g_Engine.time + 5.0;
 
-					m_currentRoute.insertAt(0,iGoal);
+					iCurrentNode = iGoal;
 
 					while ( (iCurrentNode != -1) && (iCurrentNode != m_iCurrentWaypoint ) && (iLoops <= g_Waypoints.m_iNumWaypoints) )
 					{
@@ -1316,22 +1457,39 @@ m_fNextTimeout = 0;
 						iCurrentNode = iParent;
 					}
 
-					if ( m_currentRoute.length () > 0 )
+					if ( iLoops < g_Waypoints.m_iNumWaypoints )
 					{
-						m_iCurrentWaypoint = m_currentRoute[0];
+
+						m_currentRoute.insertAt(0,m_iCurrentWaypoint);
+
+						if ( m_currentRoute.length () > 0 )
+						{
+							m_iCurrentWaypoint = m_currentRoute[0];
+
+							/*for ( uint i = 0; i < m_currentRoute.length(); i ++ )
+							{
+								BotMessage("ROUTE " + i + " - " + m_currentRoute[i]);
+							}		*/				
+
+							state = NavigatorState_Following;
+
+							BotMessage("Navigator State FOUND_GOAL...\n");
+						}
+						else
+						{
+
+							// error
+							//BotMessage("ERORRR");
+							state = NavigatorState_Fail;
+							break;
+						}
 
 					}
 					else
 					{
-						// error
-						//BotMessage("ERORRR");
 						state = NavigatorState_Fail;
-						break;
 					}
 
-					state = NavigatorState_Following;
-
-					BotMessage("Navigator State FOUND_GOAL...\n");
 			}
 			break;
 			default:

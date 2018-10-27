@@ -47,9 +47,9 @@ namespace BotManager
 			{
 				m_vMoveTo = origin;
 				m_bMoveToValid = true;
-				BotMessage("setMove !");
+				//BotMessage("setMove !");
 			}
-			BotMessage("setMove IGNORE");
+			//BotMessage("setMove IGNORE");
 		}
 
 		void setLookAt ( Vector origin )
