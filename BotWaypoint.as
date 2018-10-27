@@ -1211,7 +1211,7 @@ m_fNextTimeout = 0;
 	}
 
 	float m_fNextCheckVisible = 0.0;
-	float m_fWaypointInvisibleTime = 0.0;
+	float m_fLastSeeWaypoint = 0.0;
 	float m_fPreviousDistance = 9999;
 
 	bool execute ( RCBot@ bot )
@@ -1243,7 +1243,7 @@ m_fNextTimeout = 0;
 
 			m_fPreviousDistance = 9999.0;
 
-			m_fWaypointInvisibleTime = 0;
+			m_fLastSeeWaypoint = g_Engine.time;
 
 			if ( m_currentRoute.length () == 0 )
 			{
@@ -1262,11 +1262,11 @@ m_fNextTimeout = 0;
 				m_fNextCheckVisible = g_Engine.time + 1.0;
 
 				if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin + bot.m_pPlayer.pev.view_ofs,wpt.m_vOrigin, bot.m_pPlayer) )				
-					m_fWaypointInvisibleTime = g_Engine.time;
-				else if ( m_fWaypointInvisibleTime > 0 && ((g_Engine.time - m_fWaypointInvisibleTime) > 3.0) )
+					m_fLastSeeWaypoint = g_Engine.time;
+				else if ( m_fLastSeeWaypoint > 0 && ((g_Engine.time - m_fLastSeeWaypoint) > 3.0) )
 				{
 					BotMessage("BotNavigator FAIL");
-					m_fWaypointInvisibleTime = 0;
+					m_fLastSeeWaypoint = 0;
 					// Fail
 					return false;
 				}
