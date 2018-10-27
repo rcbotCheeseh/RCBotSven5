@@ -1366,6 +1366,25 @@ m_fNextTimeout = 0;
 									if ( !UTIL_IsVisible(currWpt.m_vOrigin,succWpt.m_vOrigin) )
 										continue;
 								}
+								if ( succWpt.hasFlags(W_FL_PAIN) )
+								{
+				
+									CBaseEntity@ pent = null;
+									bool bFound = false;
+
+									while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, succWpt.m_vOrigin , 128,"trigger_hurt", "classname"  )) !is null )
+									{
+											if ( ((pent.pev.spawnflags & 8)!=8) && (pent.pev.solid == SOLID_TRIGGER) )
+											{
+												bFound = true;
+												break;
+											}
+									}
+
+									if ( bFound )
+										continue;
+																	
+								}
 
 								//if ( (iSucc != m_iGoalWaypoint) && !m_pBot.canGotoWaypoint(vOrigin,succWpt,currWpt) )
 							//		continue;
