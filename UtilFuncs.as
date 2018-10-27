@@ -39,6 +39,11 @@
 	//return pEdict->v.origin;
 
 	}
+
+	CBaseEntity@ UTIL_FindEntityByTarget ( CBaseEntity@ pent, string target )
+	{
+		return g_EntityFuncs.FindEntityByString(pent,"target", target);
+	}
     
     void BotMessage ( string message )
     {
