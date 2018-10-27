@@ -12,6 +12,8 @@ Visual Studio Code: https://code.visualstudio.com/
 
 # Usage
 
+save all files to svencoop/scripts/plugins/BotManager (overwrite current scripts)
+
 open default_plugins.txt
 
 add "BotManager" plugin
