@@ -185,44 +185,103 @@ final class CFindHealthTask : RCBotTask
     }
 }
 
-final class CFindAmmoWeaponTask : RCBotTask 
+final class CFindAmmoTask : RCBotTask 
 {
-    CFindAmmoWeaponTask ( )
+    CFindAmmoTask ( )
     {
 
     }
     string DebugString ()
     {
-        return "CFindAmmoWeaponTask";
+        return "CFindAmmoTask";
     }
     void execute ( RCBot@ bot )
     {
         // Search for health to pick up or health dispenser
         CBaseEntity@ pent = null;
 
-        BotMessage("CFindAmmoWeaponTask");
+        BotMessage("CFindAmmoTask");
+
+        array<CBaseEntity@> pickup;
         
-        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 512,"weapon_*", "classname" )) !is null )
+        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 512,"ammo_*", "classname" )) !is null )
         {
             if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW )
-            {
-      
+            {      
                 if ( bot.m_pPlayer.HasNamedPlayerItem(pent.GetClassname()) is null )
                 {
                     if ( UTIL_IsVisible(bot.origin(),pent,bot.m_pPlayer) )
                     {
-
-
-                        BotMessage(pent.GetClassname());	
-                        m_pContainingSchedule.addTask(CPickupItemTask(bot,pent));
-                        Complete();
-                        return;                    
+                        pickup.insertLast(pent);                  
                     }
                 }
             }						
         }
 
-BotMessage("NADA");
+        if ( pickup.length() > 0 )
+        {
+            @pent = pickup[Math.RandomLong(0,pickup.length()-1)];
+
+            BotMessage(pent.GetClassname());	
+
+            m_pContainingSchedule.addTask(CPickupItemTask(bot,pent));
+
+            Complete();            
+            return;
+        }
+
+        Failed();
+        return;
+    }
+}
+
+
+final class CFindWeaponTask : RCBotTask 
+{
+    CFindWeaponTask ( )
+    {
+
+    }
+    string DebugString ()
+    {
+        return "CFindWeaponTask";
+    }
+    void execute ( RCBot@ bot )
+    {
+        // Search for health to pick up or health dispenser
+        CBaseEntity@ pent = null;
+
+        array<CBaseEntity@> pickup;
+
+
+        BotMessage("CFindWeaponTask");
+        
+        
+        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 512,"weapon_*", "classname" )) !is null )
+        {
+            if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW )
+            {      
+                if ( bot.m_pPlayer.HasNamedPlayerItem(pent.GetClassname()) is null )
+                {
+                    if ( UTIL_IsVisible(bot.origin(),pent,bot.m_pPlayer) )
+                    {
+                        pickup.insertLast(pent);                  
+                    }
+                }
+            }						
+        }
+
+        if ( pickup.length() > 0 )
+        {
+            @pent = pickup[Math.RandomLong(0,pickup.length()-1)];
+
+            BotMessage(pent.GetClassname());	
+
+            m_pContainingSchedule.addTask(CPickupItemTask(bot,pent));
+            
+            Complete();            
+            return;
+        }
 
         Failed();
         return;
@@ -264,8 +323,8 @@ final class CFindArmorTask : RCBotTask
                         Complete();
                         return;
                     }          
-                    else
-                     BotMessage("FRAME != 0!!!");          
+                    //else
+                    // BotMessage("FRAME != 0!!!");          
                 }
             }
         }
@@ -700,12 +759,37 @@ class CBotGetHealthUtil : CBotUtil
     }
 }
 
+class CBotGetWeapon : CBotUtil
+{
+
+   float calculateUtility ( RCBot@ bot )
+    {
+        // TO DO calculate on bots current weapons collection
+        return 0.5;
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_WEAPON);				
+
+        if ( iWpt != -1 )
+        {
+            RCBotSchedule@ sched = CFindPathSchedule(bot,iWpt);
+            sched.addTask(CFindWeaponTask());
+            return sched;
+        }
+
+        return null;
+    }    
+}
+
 class CBotGetAmmo : CBotUtil
 {
 
    float calculateUtility ( RCBot@ bot )
     {
-        return 0.5;
+        // TO DO Calculate based on bots current weapon / ammo inventory
+        return 0.45;
     }
 
     RCBotSchedule@ execute ( RCBot@ bot )
@@ -715,7 +799,7 @@ class CBotGetAmmo : CBotUtil
         if ( iWpt != -1 )
         {
             RCBotSchedule@ sched = CFindPathSchedule(bot,iWpt);
-            sched.addTask(CFindAmmoWeaponTask());
+            sched.addTask(CFindAmmoTask());
             return sched;
         }
 
@@ -880,6 +964,7 @@ class CBotUtilities
             m_Utils.insertLast(CBotGotoObjectiveUtil());
             m_Utils.insertLast(CBotGotoEndLevelUtil());
             m_Utils.insertLast(CBotGetAmmo());
+            m_Utils.insertLast(CBotGetWeapon());
             m_Utils.insertLast(CBotFindLastEnemyUtil());
     }
 

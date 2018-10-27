@@ -455,7 +455,7 @@ case 	CLASS_BARNACLE	:
 		return m_pPlayer.pev.origin;
 	}
 
-	void touchedWpt ( CWaypoint@ wpt )
+	void touchedWpt ( CWaypoint@ wpt )                       
 	{
 		if ( wpt.hasFlags(W_FL_JUMP) )
 			PressButton(IN_JUMP);
@@ -468,7 +468,7 @@ case 	CLASS_BARNACLE	:
 		if ( wpt.hasFlags(W_FL_CROUCH) )
 			PressButton(IN_DUCK);
 
-		BotMessage("Following Wpt");
+		//BotMessage("Following Wpt");	
 		setMove(wpt.m_vOrigin);
 
 		//drawBeam (ListenPlayer(), m_pPlayer.pev.origin, wpt.m_vOrigin, col, 1 );
@@ -665,7 +665,9 @@ m_iLastFailedWaypoint = -1;
 	{
 		if ( m_pEnemy.GetEntity() !is null )
 		{
-			setLookAt(m_pEnemy.GetEntity().pev.origin);
+			CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
+
+			setLookAt(pEnemy.pev.origin + pEnemy.pev.view_ofs/2);
 			//BotMessage("LOOKING AT ENEMY!!!\n");
 		}
 		else if ( m_bLastSeeEnemyValid )
