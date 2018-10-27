@@ -1052,6 +1052,10 @@ final class RCBotCoverWaypointFinder
 	 */
 	int FindCover ( int iWaypoint )
 	{
+		// failed before we started
+		if ( state == NavigatorState_Fail )
+			return -1;
+
 		iDepth++;
 
 		if ( iDepth > iMaxDepth )
@@ -1385,7 +1389,7 @@ m_fNextTimeout = 0;
 								succ.unClose();
 
 								succ.setParent(iCurrentNode);
-								BotMessage("Succ " + iSucc + " parent = " + iCurrentNode);
+								//BotMessage("Succ " + iSucc + " parent = " + iCurrentNode);
 
 								succ.setCost(fCost);	
 
@@ -1443,10 +1447,10 @@ m_fNextTimeout = 0;
 						{
 							m_iCurrentWaypoint = m_currentRoute[0];
 
-							for ( uint i = 0; i < m_currentRoute.length(); i ++ )
+							/*for ( uint i = 0; i < m_currentRoute.length(); i ++ )
 							{
 								BotMessage("ROUTE " + i + " - " + m_currentRoute[i]);
-							}						
+							}		*/				
 
 							state = NavigatorState_Following;
 

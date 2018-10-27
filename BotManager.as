@@ -399,8 +399,64 @@ final class RCBot : BotManager::BaseBot
 		return (float(m_pPlayer.pev.health + m_pPlayer.pev.armorvalue))/(m_pPlayer.pev.max_health + m_pPlayer.pev.armortype);
 	}
 
+	bool BreakableIsEnemy ( CBaseEntity@ pBreakable )
+	{
+	// i. explosives required to blow breakable
+	// ii. OR is not a world brush (non breakable) and can be broken by shooting
+		if ( ((pBreakable.pev.flags & FL_WORLDBRUSH) != FL_WORLDBRUSH) && ((pBreakable.pev.spawnflags & 1)!=1) )
+		{
+			int iClass;
+			
+			if ( pBreakable.pev.effects & EF_NODRAW == EF_NODRAW )
+				return false;
+
+			iClass = pBreakable.Classify();
+
+			switch ( iClass )
+			{
+				case -1:
+				case 1:
+				case 2:
+				case 3:
+				case 10:
+				case 11:
+				return false;
+				default:
+				break;
+			}
+
+
+			// forget it!!!
+			if ( pBreakable.pev.health > 9999 )
+				return false;
+
+			if ( pBreakable.pev.target != "" )
+				return true;
+				
+				
+			// w00tguy
+			//if ( (iClass == -1) || (iClass == 1) || (iClass == 2) || (iClass == 3) || (iClass == 10) )
+			//	return FALSE; // not an enemy
+
+			Vector vSize = pBreakable.pev.size;
+			Vector vMySize = m_pPlayer.pev.size;
+			
+			if ( (vSize.x >= vMySize.x) ||
+				(vSize.y >= vMySize.y) ||
+				(vSize.z >= (vMySize.z/2)) )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}	
+
 	bool IsEnemy ( CBaseEntity@ entity )
 	{
+		if ( entity.GetClassname() == "func_breakable" )
+			return BreakableIsEnemy(entity);
+
 		if ( entity.pev.deadflag != DEAD_NO )
 			return false;
 
