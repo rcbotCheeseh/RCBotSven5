@@ -28,6 +28,7 @@ CConCommand@ NoClipMode;
 CConCommand@ m_pRCBotWaypointRemoveType;
 CConCommand@ m_pRCBotWaypointGiveType;
 CConCommand@ m_pDebugBot;
+CConCommand@ m_pRCBotKillbots;
 
 bool g_DebugOn;
 int g_DebugLevel = 0;
@@ -64,7 +65,7 @@ void PluginInit()
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
 	@m_pRCBotKill = @CConCommand( "test", "test func", @RCBot_Kill );
-	
+	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
 
 }
 
@@ -191,6 +192,22 @@ CBaseEntity@ pent = null;
 				BotMessage("Item : " + item.GetClassname());
 		}
 	}*/
+}
+
+void RCBot_Killbots( const CCommand@ args )
+{
+	for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+	{
+		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+		
+		if( pPlayer is null )
+			continue;
+			
+		if( ( pPlayer.pev.flags & FL_FAKECLIENT ) == 0 )
+			continue;
+			
+		pPlayer.Killed(pPlayer.pev, 0);
+	}
 }
 
 // ------------------------------------
