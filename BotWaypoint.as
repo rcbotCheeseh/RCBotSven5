@@ -506,8 +506,16 @@ class CWaypoint
 
 	void addPath ( int wpt )
 	{
-		if ( m_PathsTo.length() < 32 )
-			m_PathsTo.insertLast(wpt);
+		if ( m_PathsTo.find(wpt) < 0 )
+		{
+			CWaypoint@ pwpt = g_Waypoints.getWaypointAtIndex(wpt);
+			
+			if ( pwpt.hasFlags(W_FL_DELETED) )
+				return;
+
+			if ( m_PathsTo.length() < 32 )
+				m_PathsTo.insertLast(wpt);
+		}
 	}
 
 	int getPath ( int i )
@@ -781,6 +789,9 @@ class CWaypoints
 				{
 					CWaypoint@ other = getWaypointAtIndex(i);
 					float zDiff = other.m_vOrigin.z - added.m_vOrigin.z;
+
+					if ( other.hasFlags(W_FL_DELETED))
+						continue;
 
 					if ( zDiff < 0 )
 						zDiff = -zDiff;
