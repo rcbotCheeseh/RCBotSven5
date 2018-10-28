@@ -766,6 +766,7 @@ class CWaypoints
 		if ( index != -1 )
 		{	
 			m_Waypoints[index].Place(index,vecLocation);
+			m_Waypoints[index].m_iFlags = flags;
 
 			BotMessage("OK! index " + formatInt(index));
 		
@@ -954,6 +955,9 @@ class CWaypoints
 		{
 			m_Waypoints[i].Clear();
 		}
+		m_iNumWaypoints = 0 ;
+		m_PathFrom = -1;
+		@m_VisibilityTable = null;
 	}
 
 	bool Load ()

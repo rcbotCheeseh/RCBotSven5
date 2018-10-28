@@ -24,6 +24,7 @@ CConCommand@ m_pPathWaypointRemove1;
 CConCommand@ m_pPathWaypointRemove2;
 CConCommand@ m_pRCBotWaypointLoad;
 CConCommand@ m_pRCBotWaypointSave;
+CConCommand@ m_pRCBotWaypointClear;
 CConCommand@ m_pRCBotSearch;
 CConCommand@ GodMode;
 CConCommand@ NoClipMode;
@@ -58,6 +59,7 @@ void PluginInit()
 	@m_pRCBotWaypointAdd = @CConCommand( "waypoint_add", "Adds a new waypoint", @WaypointAdd );
 	@m_pRCBotWaypointDelete = @CConCommand( "waypoint_delete", "deletes a new waypoint", @WaypointDelete );
 	@m_pRCBotWaypointLoad = @CConCommand( "waypoint_load", "Loads waypoints", @WaypointLoad );
+	@m_pRCBotWaypointClear = @CConCommand( "waypoint_clear", "Clears waypoints", @WaypointClear );
 	@m_pRCBotWaypointSave = @CConCommand( "waypoint_save", "Saves waypoints", @WaypointSave );
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
 	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
@@ -109,6 +111,11 @@ void WaypointGiveType ( const CCommand@ args )
 	}
 	}
 	
+}
+
+void WaypointClear ( const CCommand@ args )
+{
+	g_Waypoints.ClearWaypoints();
 }
 
 void WaypointRemoveType ( const CCommand@ args )
@@ -216,7 +223,12 @@ void WaypointAdd ( const CCommand@ args )
 {
 	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 
-	g_Waypoints.addWaypoint(player.pev.origin);
+	int flags = 0;
+
+	if ( player.pev.flags & FL_DUCKING == FL_DUCKING )
+		flags = W_FL_CROUCH;
+
+	g_Waypoints.addWaypoint(player.pev.origin,flags);
 }
 
 void WaypointOff ( const CCommand@ args )
