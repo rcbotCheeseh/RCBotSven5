@@ -32,13 +32,17 @@ CConCommand@ m_pRCBotWaypointRemoveType;
 CConCommand@ m_pRCBotWaypointGiveType;
 CConCommand@ m_pDebugBot;
 CConCommand@ m_pRCBotKillbots;
+CConCommand@ m_pNotouchMode;
+CConCommand@ m_pNoTargetMode;
 
-bool g_DebugOn;
+bool g_DebugOn = false;
+bool g_NoTouch = false;
 int g_DebugLevel = 0;
 
 	const int PRIORITY_NONE = 0;
 	const int PRIORITY_TASK = 1;
 	const int PRIORITY_HURT = 2;
+	const int PRIORITY_ATTACK = 3;
 	
 CBasePlayer@ ListenPlayer ()
 {
@@ -73,16 +77,46 @@ void PluginInit()
 	@m_pDebugBot = @CConCommand ( "debug" , "debug messages toggle" , @DebugBot );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
+	@m_pNotouchMode = @CConCommand("notouch","no touch mode",@NoTouchFunc);
+	@m_pNoTargetMode = @CConCommand("notarget","monsters dont shoot",@NoTargetMode);
   
 	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
 
 	@m_pRCBotSearch = @CConCommand( "search", "test search func", @RCBotSearch );
 }
 
+void NoTargetMode ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+
+	if ( player.pev.flags & FL_NOTARGET == FL_NOTARGET )
+	{
+		player.pev.flags &= ~FL_NOTARGET;
+		SayMessageAll(player,"No target mode disabled");
+	}
+	else
+	{
+		player.pev.flags |= FL_NOTARGET;
+		SayMessageAll(player,"No target mode enabled");
+	}
+}
+
+void NoTouchFunc ( const CCommand@ args )
+{
+	// not doing anything yet
+	g_NoTouch = !g_NoTouch;	
+}
 
 void DebugBot ( const CCommand@ args )
 {
+	CBasePlayer@ player = ListenPlayer();
+
 	g_DebugOn = !g_DebugOn;
+
+	if ( g_DebugOn )
+		SayMessageAll(player,"Debug on");
+	else
+		SayMessageAll(player,"Debug off");
 }
 
 void WaypointGiveType ( const CCommand@ args )
@@ -301,6 +335,24 @@ class CBotVisibles
 		@m_pBot = bot;
 	}
 
+	EHandle m_pNearestAvoid = null;
+	float m_fNearestAvoidDist = 0;
+
+	bool CanAvoid ( CBaseEntity@ ent )
+	{
+		if ( m_pBot.distanceFrom(ent) > 200 )
+			return false;
+		if ( ent == m_pBot.m_pPlayer )
+			return false;
+		if ( ent.pev.flags & FL_CLIENT == FL_CLIENT )
+			return true;
+		if ( ent.pev.flags & FL_MONSTER == FL_MONSTER )
+			return true;
+
+		return false;
+		
+	}
+
 	bool isVisible ( int iIndex )
 	{
 		return bits.getBit(iIndex);
@@ -313,13 +365,19 @@ class CBotVisibles
 			// ARG?
 			return;
 		}
+		
 		int iIndex = ent.entindex();
 		bool wasVisible = isVisible(iIndex);
+
 
 		//BotMessage("setVisible iIndex = " + iIndex + ", bVisible = " + bVisible + "\n");
 
 		if ( !bVisible )
 		{
+
+			if ( m_pNearestAvoid == ent )
+				m_pNearestAvoid = null;
+
 			if ( wasVisible )
 				m_pBot.lostVisible(ent);
 		}
@@ -343,6 +401,14 @@ class CBotVisibles
 		int iLoops = 0;
 		CBaseEntity@ pStart = m_pCurrentEntity;
 
+		if ( m_pNearestAvoid.GetEntity() !is null )
+		{
+			if ( CanAvoid(m_pNearestAvoid) )
+				m_fNearestAvoidDist = m_pBot.distanceFrom(m_pNearestAvoid);
+			else
+				m_pNearestAvoid = null;
+		}
+
 		do
 		{
    			@m_pCurrentEntity = g_EntityFuncs.FindEntityByClassname(m_pCurrentEntity, "*"); 
@@ -353,6 +419,9 @@ class CBotVisibles
 			{
 				continue;
 			}
+
+			if ( m_pCurrentEntity is player )
+				continue;
 
 			if ( !player.FInViewCone(m_pCurrentEntity) )
 			{
@@ -366,9 +435,35 @@ class CBotVisibles
 				continue;		
 			}
 
+			if ( CanAvoid(m_pCurrentEntity) )
+			{
+				if ( m_pNearestAvoid.GetEntity() is null || (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist) )
+				{
+					m_pNearestAvoid =  m_pCurrentEntity;
+				}
+			}
+
 			setVisible(m_pCurrentEntity,true);
 		}while ( iLoops < iMaxLoops );
 
+		if ( isAvoiding() )
+		{
+			m_pBot.setAvoiding(true);;
+			m_pBot.setAvoidVector(getAvoidVector());
+		}
+		else
+			m_pBot.setAvoiding(false);
+
+	}
+
+	bool isAvoiding ()
+	{
+		return m_pNearestAvoid.GetEntity() !is null;
+	}
+
+	Vector getAvoidVector ()
+	{
+		return UTIL_EntityOrigin(m_pNearestAvoid.GetEntity());
 	}
 
 	CBaseEntity@ m_pCurrentEntity = null;
@@ -489,6 +584,10 @@ final class RCBot : BotManager::BaseBot
 
 	bool IsEnemy ( CBaseEntity@ entity )
 	{
+		// can't attack this enemy
+		if ( findBestWeapon(m_pPlayer,UTIL_EntityOrigin(entity),entity) is null ) 
+			return false;
+
 		if ( entity.GetClassname() == "func_breakable" )
 			return BreakableIsEnemy(entity);
 
@@ -552,12 +651,19 @@ case 	CLASS_BARNACLE	:
 			PressButton(IN_JUMP);
 	}
 
+	bool IsOnLadder ( ) 
+	{ 
+		return (m_pPlayer.pev.movetype == MOVETYPE_FLY);
+	};			
+
 	WptColor@ col = WptColor(255,255,255);
 
 	void followingWpt ( CWaypoint@ wpt )
 	{
 		if ( wpt.hasFlags(W_FL_CROUCH) )
 			PressButton(IN_DUCK);
+		if ( IsOnLadder() )
+			PressButton(IN_FORWARD);
 
 		//BotMessage("Following Wpt");	
 		setMove(wpt.m_vOrigin);
@@ -671,7 +777,7 @@ case 	CLASS_BARNACLE	:
 		{
 			CBasePlayerWeapon@ desiredWeapon = null;
 
-			@desiredWeapon = findBestWeapon(m_pPlayer,m_pEnemy.GetEntity().pev.origin,m_pEnemy.GetEntity() );
+			@desiredWeapon = findBestWeapon(m_pPlayer,UTIL_EntityOrigin(m_pEnemy.GetEntity()),m_pEnemy.GetEntity() );
 
 			if ( desiredWeapon !is null )
 			{
@@ -765,16 +871,24 @@ m_iLastFailedWaypoint = -1;
 		{
 			PressButton(IN_JUMP);
 			m_flStuckTime = 0;
-		}
+			// reset last enemy could cause lok issues
+			m_pLastEnemy = null;
+			m_bLastSeeEnemyValid = false;
+		}		
 	}
 
 	void DoLook ()
 	{
 		if ( m_pEnemy.GetEntity() !is null )
 		{
+			
 			CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
 
+			m_iCurrentPriority = PRIORITY_ATTACK;
+
 			setLookAt(pEnemy.pev.origin + pEnemy.pev.view_ofs/2);
+
+			m_iCurrentPriority = PRIORITY_NONE;
 			//BotMessage("LOOKING AT ENEMY!!!\n");
 		}
 		else if ( m_bLastSeeEnemyValid )

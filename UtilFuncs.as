@@ -28,6 +28,11 @@
 			return fAngle;
 	}
 
+	Vector UTIL_CrossProduct ( Vector a , Vector b )
+	{
+		return Vector( a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x );
+	}
+
 	Vector UTIL_EntityOrigin ( CBaseEntity@ entity )
 	{
 

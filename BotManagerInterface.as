@@ -68,6 +68,19 @@ namespace BotManager
 		float m_fDesiredSpeed = 320;	
 
 		Vector m_vLookAngles = Vector(0,0,0);
+
+		bool m_bIsAvoiding = false;
+		Vector m_vAvoidVector;
+
+		void setAvoiding ( bool bIsAvoiding )
+		{
+			m_bIsAvoiding = bIsAvoiding;
+		}
+
+		void setAvoidVector ( Vector vAvoidVector )
+		{
+			m_vAvoidVector = vAvoidVector;
+		}
 		
 		CBasePlayer@ Player
 		{
@@ -136,7 +149,24 @@ namespace BotManager
 
 			if ( m_bMoveToValid )
 			{				
-				yaw = UTIL_yawAngleFromEdict(m_vMoveTo,m_pPlayer.pev.v_angle,m_pPlayer.pev.origin);
+				Vector vMoveTo = m_vMoveTo;
+
+				if ( m_bIsAvoiding )
+				{
+					Vector vComp = vMoveTo - m_pPlayer.pev.origin;
+					Vector vAvoidComp = m_vAvoidVector - m_pPlayer.pev.origin;
+					Vector vCross;
+
+					vComp = vComp / vComp.Length();
+					
+					vCross = UTIL_CrossProduct(vComp,Vector(0,0,1));
+
+					vComp = vComp * (vAvoidComp.Length()+32);
+
+					vMoveTo = m_pPlayer.pev.origin + vComp + (vCross*32);				
+				}
+
+				yaw = UTIL_yawAngleFromEdict(vMoveTo,m_pPlayer.pev.v_angle,m_pPlayer.pev.origin);
 
 				//BotMessage("Yaw = " + yaw + "\n");
 
