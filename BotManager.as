@@ -20,6 +20,8 @@ CConCommand@ m_pRCBotWaypointOff;
 CConCommand@ m_pRCBotWaypointOn;
 CConCommand@ m_pPathWaypointCreate1;
 CConCommand@ m_pPathWaypointCreate2;
+CConCommand@ m_pPathWaypointRemove1;
+CConCommand@ m_pPathWaypointRemove2;
 CConCommand@ m_pRCBotWaypointLoad;
 CConCommand@ m_pRCBotWaypointSave;
 CConCommand@ m_pRCBotSearch;
@@ -59,6 +61,10 @@ void PluginInit()
 	@m_pRCBotWaypointSave = @CConCommand( "waypoint_save", "Saves waypoints", @WaypointSave );
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
 	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
+
+	@m_pPathWaypointRemove1 = @CConCommand( "pathwaypoint_remove1", "removes a new path from", @PathWaypoint_Remove1 );
+	@m_pPathWaypointRemove2 = @CConCommand( "pathwaypoint_remove2", "removed a new path to", @PathWaypoint_Remove2 );
+
 	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
 	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type",@WaypointGiveType);
 	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type",@WaypointRemoveType);
@@ -253,6 +259,20 @@ void PathWaypoint_Create2 ( const CCommand@ args )
 	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 	
 	g_Waypoints.PathWaypoint_Create2(player);
+}
+
+void PathWaypoint_Remove1 ( const CCommand@ args )
+{
+	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+
+	g_Waypoints.PathWaypoint_Remove1(player);
+}
+
+void PathWaypoint_Remove2 ( const CCommand@ args )
+{
+	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	
+	g_Waypoints.PathWaypoint_Remove2(player);
 }
 // ------------------------------------
 // COMMANDS - 	end

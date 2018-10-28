@@ -79,18 +79,21 @@ class CWaypointHeader
    // 32 characters
    string mapname;  // name of map for these waypoints
 	
-	void Read ( FileBuffer@ file )
+	bool Read ( FileBuffer@ file )
 	{
 		filetype = file.ReadString(8);
-		BotMessage(filetype+"\n");
+		BotMessage("FILETYPE = " + filetype);
 		waypoint_file_version = file.ReadInt32();
-		BotMessage("VERSION = " + formatInt(waypoint_file_version)+"\n");
+		BotMessage("VERSION = " + formatInt(waypoint_file_version));
 		waypoint_file_flags = file.ReadInt32();
-		BotMessage("FLAGS = " + formatInt(waypoint_file_flags)+"\n");
+		BotMessage("FLAGS = " + formatInt(waypoint_file_flags));
 		number_of_waypoints = file.ReadInt32();
-		BotMessage("NUM WPTS = " + formatInt(number_of_waypoints)+"\n");
+		BotMessage("NUM WPTS = " + formatInt(number_of_waypoints));
 
-		mapname = file.ReadString(32);
+		mapname = file.ReadString(32);		
+		BotMessage("MAPNAME = " + mapname);
+
+		return number_of_waypoints < MAX_WAYPOINTS;
 	}
 
 	CWaypointHeader ( )
@@ -421,7 +424,7 @@ class CWaypoint
 		return m_iFlags & flags == flags;
 	}
 
-	void Read ( FileBuffer@ file, int index )
+	bool Read ( FileBuffer@ file, int index )
 	{
 		m_iFlags = file.ReadInt32();
 		BotMessage("m_iFlags = " + m_iFlags + "\n");
@@ -434,13 +437,22 @@ class CWaypoint
 		BotMessage("m_vOrigin.z = " + m_vOrigin.z + "\n");
 
 		int numPaths = file.ReadInt32();
-		BotMessage("numPaths = " + numPaths + "\n");
+
 		m_PathsTo = {};
-
-		for (int i = 0; i < numPaths; i ++ )
-			m_PathsTo.insertLast(file.ReadInt32());
-
 		iIndex = index;
+
+		if ( numPaths < 32 )
+		{
+			BotMessage("numPaths = " + numPaths + "\n");			
+
+			for (int i = 0; i < numPaths; i ++ )
+				m_PathsTo.insertLast(file.ReadInt32());
+
+			return true;
+		}
+		else
+			return false;
+		
 	}
 
 	void Save ( FileBuffer@ file )
@@ -484,9 +496,18 @@ class CWaypoint
 		return m_PathsTo.length();
 	}
 
+	void removePath ( int wpt )
+	{
+		int idx = m_PathsTo.find(wpt);
+
+		if ( idx >= 0 )
+			m_PathsTo.removeAt(idx);
+	}
+
 	void addPath ( int wpt )
 	{
-		m_PathsTo.insertLast(wpt);
+		if ( m_PathsTo.length() < 32 )
+			m_PathsTo.insertLast(wpt);
 	}
 
 	int getPath ( int i )
@@ -534,26 +555,6 @@ class CWaypoint
 
 }
 
-
-CWaypoint@ ReadWaypoint ( int index, string line )
-{
-	array<string> csv = line.Split(",");
-
-	Vector vecLoc;
-	int iFlags;
-
-	vecLoc.x = atof(csv[0]);
-	vecLoc.y = atof(csv[1]);
-	vecLoc.z = atof(csv[2]);
-	iFlags = atoi(csv[3]);
-
-	CWaypoint@ wpt = CWaypoint();
-
-	wpt.Place(index, vecLoc);
-	wpt.m_iFlags = iFlags;
-
-	return wpt;
-}	
 
 const int W_VIS_RUNNING = 0;
 const int W_VIS_COMPLETE = 1;
@@ -705,6 +706,30 @@ class CWaypoints
 	}
 
 
+	void PathWaypoint_Remove1 ( CBasePlayer@ player )
+	{
+		int wpt = getNearestWaypointIndex(player.pev.origin,player);
+
+		BotMessage("Nearest waypoint is " + wpt + "\n");
+
+		m_PathFrom = wpt;
+	}
+
+	void PathWaypoint_Remove2 ( CBasePlayer@ player )
+	{
+		int wpt = getNearestWaypointIndex(player.pev.origin,player);
+
+		BotMessage("Nearest waypoint is " + wpt + "\n");
+
+		if ( wpt != -1 && m_PathFrom != -1 )
+		{
+			CWaypoint@ pWpt = getWaypointAtIndex(m_PathFrom);
+
+			pWpt.removePath(wpt);
+		}
+	}
+
+
 	void DrawWaypoints ( CBasePlayer@ player )
 	{
 		if ( g_WaypointsOn )
@@ -712,6 +737,9 @@ class CWaypoints
 			for ( int i = 0; i < m_iNumWaypoints; i ++ )
 			{
 				CWaypoint@ wpt = m_Waypoints[i];
+
+				if ( wpt.m_iFlags & W_FL_DELETED == W_FL_DELETED )
+					continue;					
 
 				float dist = wpt.distanceFrom(player.pev.origin);
 
@@ -866,6 +894,9 @@ class CWaypoints
 			if ( i == iIgnore )
 				continue;
 
+			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
+				continue;					
+
 			distance = m_Waypoints[i].distanceFrom(vecLocation);
 			
 			if ( (nearestWptIdx == -1 ) || ( distance < minDistance) )
@@ -928,8 +959,21 @@ class CWaypoints
 	bool Load ()
 	{
 		bool ret = false;
-		string filename = "scripts/plugins/BotManager/rcw/" + g_Engine.mapname + ".rcwa";
-		File@ f = g_FileSystem.OpenFile( filename, OpenFile::READ);
+		string filename = g_Engine.mapname;
+		
+		filename += ".rcwa";
+		
+		File@ f;
+
+		// try to open custom waypoint first		
+		@f  = g_FileSystem.OpenFile( "scripts/plugins/store/" + filename , OpenFile::READ);
+
+		// no custom waypoint exists
+		if ( @f is null )
+		{
+			// open default waypoint 
+			@f = g_FileSystem.OpenFile( "scripts/plugins/BotManager/rcw/" + filename , OpenFile::READ);
+		}
 
 		// Open the file in 'read' mode
 		if( f !is null ) 
@@ -943,7 +987,12 @@ class CWaypoints
 
 			CWaypointHeader@ hdr = CWaypointHeader();
 
-			hdr.Read(buf);
+			if ( !hdr.Read(buf) )
+			{
+				f.Close();
+				BotMessage("WAYPOINT FILE CORRUPT");
+				return false;
+			}
 
 			BotMessage("Waypoint Header : " + hdr.number_of_waypoints + "\n");
 
@@ -952,7 +1001,11 @@ class CWaypoints
 
 			for ( int i = 0; i < hdr.number_of_waypoints ; i ++ )
 			{
-				m_Waypoints[i].Read(buf,i);
+				if ( !m_Waypoints[i].Read(buf,i) )
+				{
+					BotMessage("WAYPOINT " + i + " CORRUPT!");
+					return false;
+				}
 			}
 
 			BotMessage("Num Waypoints = " + hdr.number_of_waypoints);
@@ -971,7 +1024,7 @@ class CWaypoints
 	bool Save ()
 	{
 		bool ret = false;
-		string filename = "scripts/plugins/BotManager/rcw/" + g_Engine.mapname + ".rcwa";
+		string filename = "scripts/plugins/store/" + g_Engine.mapname + ".rcwa";
 		File@ f = g_FileSystem.OpenFile( filename, OpenFile::WRITE);
 		// Open the file in 'read' mode
 		if( f !is null ) 
@@ -981,7 +1034,7 @@ class CWaypoints
 			FileBuffer buf;
 
 			hdr.Save(buf);			
-			
+
 			for ( int i = 0; i < m_iNumWaypoints; i ++ )
 			{
 				m_Waypoints[i].Save(buf);
