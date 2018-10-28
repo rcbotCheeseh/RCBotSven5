@@ -59,7 +59,7 @@ then go to the second waypoint and use the command:
 
     as_command rcbot.pathwaypoint create2
 
-#Remove a path
+# Remove a path
 
 Go to the first waypoint and use the command
 
@@ -69,7 +69,7 @@ then go to the second waypoint and use the command:
 
     as_command rcbot.pathwaypoint remove2
 
-#Deleting a waypoint
+# Deleting a waypoint
 
     as_command rcbot.waypoint_delete
 
