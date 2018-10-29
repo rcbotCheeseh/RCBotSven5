@@ -36,12 +36,12 @@
 	Vector UTIL_EntityOrigin ( CBaseEntity@ entity )
 	{
 
-	if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
-		return entity.pev.origin + (entity.pev.view_ofs/2);
+	//if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+	//	return entity.pev.origin + (entity.pev.view_ofs/2);
 
-	return entity.pev.absmin + (entity.pev.size / 2);
+	return (entity.pev.absmin + entity.pev.absmax)/2;// (entity.pev.size / 2);
 
-	//return pEdict->v.origin;
+	//return entity.pev.origin;
 
 	}
 

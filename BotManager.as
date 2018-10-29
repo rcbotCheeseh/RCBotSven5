@@ -37,6 +37,7 @@ CConCommand@ m_pNoTargetMode;
 
 bool g_DebugOn = false;
 bool g_NoTouch = false;
+bool g_NoTouchChange = false;
 int g_DebugLevel = 0;
 
 	const int PRIORITY_NONE = 0;
@@ -103,8 +104,35 @@ void NoTargetMode ( const CCommand@ args )
 
 void NoTouchFunc ( const CCommand@ args )
 {
+	CBasePlayer@ player = ListenPlayer();
+
+	g_NoTouchChange = true;
+
 	// not doing anything yet
 	g_NoTouch = !g_NoTouch;	
+
+	if ( player !is null )
+	{
+		Observer@ o = player.GetObserver();	
+
+		if ( o !is null )
+		{
+				if ( g_NoTouch == false )
+				{
+					o.StopObserver(true);
+				}
+				else
+				{
+					o.StartObserver(player.pev.origin, player.pev.angles, false);
+				}
+			
+		}
+	}
+
+	if ( g_NoTouch )
+		SayMessageAll(player,"No touch mode disabled");
+	else 	
+		SayMessageAll(player,"No touch mode enabled");			
 }
 
 void DebugBot ( const CCommand@ args )
@@ -584,6 +612,7 @@ final class RCBot : BotManager::BaseBot
 
 	bool IsEnemy ( CBaseEntity@ entity )
 	{
+	//	return entity.pev.flags & FL_CLIENT == FL_CLIENT; (FOR TESTING)
 		// can't attack this enemy
 		if ( findBestWeapon(m_pPlayer,UTIL_EntityOrigin(entity),entity) is null ) 
 			return false;
@@ -623,6 +652,11 @@ case 	CLASS_BARNACLE	:
 		}
 
 		return false;
+	}
+
+	bool needToReload ()
+	{
+		return m_pCurrentWeapon !is null && m_pCurrentWeapon.m_iClip == 0;
 	}
 
 	float distanceFrom ( Vector vOrigin )
@@ -903,7 +937,14 @@ m_iLastFailedWaypoint = -1;
 
 	void DoButtons ()
 	{
-		if ( m_pEnemy.GetEntity() !is null )
+		if ( needToReload() )
+			{
+			// attack
+			if( Math.RandomLong( 0, 100 ) < 99 )
+				PressButton(IN_RELOAD);
+
+			}
+		else if ( m_pEnemy.GetEntity() !is null )
 		{
 			// attack
 			if( Math.RandomLong( 0, 100 ) < 99 )

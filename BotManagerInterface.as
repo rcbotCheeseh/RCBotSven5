@@ -404,7 +404,38 @@ namespace BotManager
 			}
 
 			g_Waypoints.runVisibility();
+		
+			/*CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 
+			if ( player !is null )
+			{
+				Observer@ o = player.GetObserver();	
+
+				if ( o !is null )
+				{
+					if ( g_NoTouchChange )
+					{
+						g_NoTouchChange = false;	
+
+						if ( g_NoTouch == false )
+						{
+							o.StopObserver(true);
+						}
+						else
+						{
+							o.StartObserver(player.pev.origin, player.pev.angles, false);
+						}
+					}
+					else if ( g_NoTouch )
+					{
+						
+						o.SetMode(OBS_ENTERING);
+						o.SetObserverModeControlEnabled(true);	
+					}
+				}
+			}*/
+				
+			
 		}
 
 		void WaypointDisplay ()
