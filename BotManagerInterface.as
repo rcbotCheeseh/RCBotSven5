@@ -67,8 +67,6 @@ namespace BotManager
 
 		float m_fDesiredSpeed = 320;	
 
-		Vector m_vLookAngles = Vector(0,0,0);
-
 		bool m_bIsAvoiding = false;
 		Vector m_vAvoidVector;
 
@@ -129,22 +127,27 @@ namespace BotManager
 		{
 		 	float yaw = 0;
 
+			 m_pPlayer.pev.flags |= FL_GODMODE;
+
 			if ( m_vLookAtIsValid )
 			{
-				m_vLookAngles = Math.VecToAngles(m_vLookAt - (m_pPlayer.pev.origin+m_pPlayer.pev.view_ofs));
+				Vector v_Player = m_pPlayer.pev.origin + m_pPlayer.pev.view_ofs;
+				Vector v_Aim = m_vLookAt - v_Player;
 
-				m_vLookAngles.x = UTIL_FixFloatAngle(m_vLookAngles.x);
-				m_vLookAngles.y = UTIL_FixFloatAngle(m_vLookAngles.y);
-				m_vLookAngles.z = UTIL_FixFloatAngle(m_vLookAngles.z);
+				Vector vAngles = Math.VecToAngles(v_Aim);
 
-				m_pPlayer.pev.v_angle = m_vLookAngles;
+				vAngles.x = UTIL_FixFloatAngle(vAngles.x);
+				vAngles.y = UTIL_FixFloatAngle(vAngles.y);
+				vAngles.z = 0;				
+
+				m_pPlayer.pev.idealpitch = -vAngles.x;
+				m_pPlayer.pev.ideal_yaw = vAngles.y;
+
+				m_pPlayer.pev.v_angle.y = m_pPlayer.pev.ideal_yaw;
+				m_pPlayer.pev.v_angle.x = m_pPlayer.pev.idealpitch;
 				
-				m_pPlayer.pev.idealpitch = -m_vLookAngles.x;
-				m_pPlayer.pev.ideal_yaw = m_vLookAngles.y;
-
-				m_pPlayer.pev.angles.x = m_pPlayer.pev.v_angle.x/3;
-				m_pPlayer.pev.angles.y = m_pPlayer.pev.v_angle.y;
-				m_pPlayer.pev.angles.z = 0;
+				m_pPlayer.pev.angles.x = -m_pPlayer.pev.v_angle.x/3;
+				m_pPlayer.pev.angles.y = m_pPlayer.pev.v_angle.y;//*/
 			}
 
 			if ( m_bMoveToValid )
