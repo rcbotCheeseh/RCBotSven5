@@ -8,7 +8,7 @@ const int WEAP_FL_SECONDARY = 4;
 const int WEAP_FL_PRIMARY_EXPLOSIVE = 8;
 const int WEAP_FL_SECONDARY_EXPLOSIVE = 16;
 const int WEAP_FL_GRENADE = 32;
-const int WEAP_FL_SNIPE = 32;
+const int WEAP_FL_SNIPE = 64;
 
 final class CBotWeaponInfo
 {
