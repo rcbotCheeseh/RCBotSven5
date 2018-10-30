@@ -41,9 +41,10 @@ bool g_NoTouchChange = false;
 int g_DebugLevel = 0;
 
 	const int PRIORITY_NONE = 0;
-	const int PRIORITY_TASK = 1;
-	const int PRIORITY_HURT = 2;
-	const int PRIORITY_ATTACK = 3;
+	const int PRIORITY_LADDER = 1;
+	const int PRIORITY_TASK = 2;
+	const int PRIORITY_HURT = 3;
+	const int PRIORITY_ATTACK = 2;
 	
 CBasePlayer@ ListenPlayer ()
 {
@@ -914,8 +915,7 @@ m_iLastFailedWaypoint = -1;
 	void DoLook ()
 	{
 		if ( m_pEnemy.GetEntity() !is null )
-		{
-			
+		{			
 			CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
 
 			m_iCurrentPriority = PRIORITY_ATTACK;
@@ -923,7 +923,14 @@ m_iLastFailedWaypoint = -1;
 			setLookAt(pEnemy.pev.origin + pEnemy.pev.view_ofs/2);
 
 			m_iCurrentPriority = PRIORITY_NONE;
+
 			//BotMessage("LOOKING AT ENEMY!!!\n");
+		}
+		else if ( IsOnLadder() )		
+		{
+			m_iCurrentPriority = PRIORITY_LADDER;
+			setLookAt(m_vMoveTo);
+			m_iCurrentPriority = PRIORITY_NONE;
 		}
 		else if ( m_bLastSeeEnemyValid )
 		{
