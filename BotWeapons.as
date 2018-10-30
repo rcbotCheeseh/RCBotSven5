@@ -72,10 +72,15 @@ final class CBotWeaponsInfo
 
 class CBotWeapon 
 {
-    CBotWeapon ( CBotWeapoinInfo@ info )
+    CBotWeapon ( CBotWeaponInfo@ info )
     {
-        m_pWeaponInfo = info;
+        @m_pWeaponInfo = info;
         @m_pWeaponEntity = null;
+    }
+
+    bool isOtherBetterChoiceThan ( CBotWeapon@ other )
+    {
+        return other.m_pWeaponInfo.m_iPriority > m_pWeaponInfo.m_iPriority;
     }
 
     string GetClassname ()
@@ -85,7 +90,7 @@ class CBotWeapon
 
     void setWeaponEntity ( CBasePlayerWeapon@ pWeapon )
     {
-        m_pWeaponEntity = pWeapon;
+        @m_pWeaponEntity = pWeapon;
     }
 
     bool HasWeapon ()
@@ -105,14 +110,9 @@ class CBotWeapon
         return (index >= 0) && (player.m_rgAmmo(index) == 0);
     }
 
-    int getCurrentAmmo ()
+    int getMaxPrimaryAmmo ()
     {
-    
-    }
-
-    int getMaxAmmo ()
-    {
-    
+        return m_pWeaponEntity.iMaxAmmo1();
     }
 
     bool withinRange ( float distance )
@@ -120,7 +120,16 @@ class CBotWeapon
         return (distance > m_pWeaponInfo.m_fMinDistance) && (distance < m_pWeaponInfo.m_fMaxDistance);
     }
 
-    CBotWeapoinInfo@ m_pWeaponInfo;
+    int getPrimaryAmmo( RCBot@ bot )
+    {
+        int index = m_pWeaponEntity.PrimaryAmmoIndex();
+
+        if ( index >= 0 )
+            return bot.m_pPlayer.m_rgAmmo(index);
+        return 0;
+    }    
+
+    CBotWeaponInfo@ m_pWeaponInfo;
     CBasePlayerWeapon@ m_pWeaponEntity;
 
 }
@@ -132,17 +141,21 @@ class CBotWeapons
 
     CBotWeapons ()
     {
-        for ( uint i = 0; i < g_WeaponInfo.numWeapons(); i ++ )
+        for ( int i = 0; i < g_WeaponInfo.numWeapons(); i ++ )
         {
-            CBasePlayerWeapon@ weap = g_WeaponInfo.getWeapon(i);
+            CBotWeaponInfo@ weapon = g_WeaponInfo.getWeapon(i);
 
-            m_pWeapons.insertLast(CBotWeapon(weap));                        
+            m_pWeapons.insertLast(CBotWeapon(weapon));                        
         }
+
+        @m_pCurrentWeapon = null;
     }
 
     void selectWeapon ( RCBot@ bot, CBotWeapon@ pWeapon )
     {
         bot.m_pPlayer.SelectItem(pWeapon.GetClassname());
+        @m_pCurrentWeapon = pWeapon;        
+        BotMessage("SELECT " + pWeapon.GetClassname());        
     }    
 
     void updateWeapons ( RCBot@ bot )
@@ -150,39 +163,79 @@ class CBotWeapons
         for ( uint i = 0; i < m_pWeapons.length(); i ++ )
         {
             CBotWeapon@ weapon = m_pWeapons[i];
-            CBasePlayerItem@ item = pBot.HasNamedPlayerItem(weapon.GetClassname()); 
+            CBasePlayerItem@ item = bot.m_pPlayer.HasNamedPlayerItem(weapon.GetClassname()); 
             CBasePlayerWeapon@ pWeaponEntity = null;
 
             if ( item !is null )
             {
-                pWeaponEntity =  item.GetWeaponPtr();    
+                @pWeaponEntity =  item.GetWeaponPtr();    
+
+                
             }
 
-            weapon.setWeaponEntity(pWeaponEntity)          
+            weapon.setWeaponEntity(pWeaponEntity);         
         }
     }
 
-    float getAmmoPercent ( RCBot@ pBot )
+    float getNumWeaponsPercent ( RCBot@ bot )
     {
-        CBasePlayer@ botPlayer = bot.m_pPlayer;
+        int iTotalWeapons = m_pWeapons.length();
+        int iHasWeapons = 0;
+        CBotWeapon@ weapon = null;
+        
+        for ( uint i = 0; i < m_pWeapons.length(); i ++ )
+        {
+            @weapon = m_pWeapons[i];
+
+            if ( weapon.HasWeapon() )
+            {
+                iHasWeapons++;
+            }
+        }   
+
+        if ( iTotalWeapons > 0 )
+            return float(iHasWeapons)/iTotalWeapons;
+
+        return 0;
+    }
+
+
+    float getPrimaryAmmoPercent ( RCBot@ pBot )
+    {
+        CBasePlayer@ botPlayer = pBot.m_pPlayer;
+        int iTotalAmmo = 0;
+        int iTotalMaxAmmo = 0;
+        CBotWeapon@ weapon;
 
         for ( uint i = 0; i < m_pWeapons.length(); i ++ )
         {
-            
+            @weapon = m_pWeapons[i];
+
+            if ( weapon.HasWeapon() )
+            {
+                iTotalAmmo += weapon.getPrimaryAmmo(pBot);
+                iTotalMaxAmmo += weapon.getMaxPrimaryAmmo();
+            }
         }
- 
+
+        if ( iTotalMaxAmmo > 0 ) 
+            return float(iTotalAmmo) / iTotalMaxAmmo;
+
+        return 0;
     }
 
-    CBasePlayerWeapon@ findBestWeapon ( RCBot@ pBot, Vector targetOrigin, CBaseEntity@ target = null )
+    CBotWeapon@ findBestWeapon ( RCBot@ pBot, Vector targetOrigin, CBaseEntity@ target = null )
     {
-        CBasePlayerWeapon@ weaponOfChoice = null;
+        CBotWeapon@ weaponOfChoice = null;
         CBasePlayer@ botPlayer = pBot.m_pPlayer;
-        int priority = 0;
 
         for ( uint i = 0; i < m_pWeapons.length(); i ++ )
         {
             CBotWeapon@ weapon = m_pWeapons[i];
             float distance;
+
+            if ( weapon.HasWeapon() == false )
+                continue;
 
             // out of ammo
             if ( weapon.outOfAmmo(botPlayer) )
@@ -199,17 +252,39 @@ class CBotWeapons
             if ( !weapon.withinRange(distance) )
                 continue;
 
-            if ( weaponInfo.m_iPriority <= priority )
-                continue;
-            
-            priority = weaponInfo.m_iPriority;
-            @weaponOfChoice = tmpWeapon;
+            if ( weaponOfChoice is null || weaponOfChoice.isOtherBetterChoiceThan(weapon) )
+            {
+                @weaponOfChoice = weapon;
+            }
         }
 
         return weaponOfChoice;
     }
-}
 
+    void DoWeapons ( RCBot@ bot, CBaseEntity@ pEnemy )
+    {
+        if ( pEnemy is null )
+            return;
+
+        CBotWeapon@ desiredWeapon = findBestWeapon(bot,UTIL_EntityOrigin(pEnemy),pEnemy );
+
+        if ( desiredWeapon !is null )
+        {
+            if ( desiredWeapon !is m_pCurrentWeapon )
+            {
+                selectWeapon(bot,desiredWeapon);
+            }
+        }
+        else
+            @m_pCurrentWeapon = null;
+    }
+
+    void spawnInit ()
+    {
+         @m_pCurrentWeapon = null;
+    }
+}
+/*
 bool Weapon_hasAmmo ( CBasePlayer@ player, CBasePlayerWeapon@ weapon )
 {
     int index = weapon.PrimaryAmmoIndex();
@@ -260,3 +335,4 @@ CBasePlayerWeapon@ findBestWeapon ( CBasePlayer@ pBot, Vector targetOrigin, CBas
 
     return weapon;
 }
+*/

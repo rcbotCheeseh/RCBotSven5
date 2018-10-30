@@ -815,7 +815,9 @@ class CBotGetWeapon : CBotUtil
    float calculateUtility ( RCBot@ bot )
     {
         // TO DO calculate on bots current weapons collection
-        return 0.5;
+        float ret = 1.0 - bot.m_pWeapons.getNumWeaponsPercent(bot);
+        BotMessage("CBotGetWeapon UTILILTY = " + ret);
+        return ret;
     }
 
     RCBotSchedule@ execute ( RCBot@ bot )
@@ -838,8 +840,11 @@ class CBotGetAmmo : CBotUtil
 
    float calculateUtility ( RCBot@ bot )
     {
+        float ret = 1.0 - bot.m_pWeapons.getPrimaryAmmoPercent(bot);
+        BotMessage("CBotGetAmmo UTILILTY = " + ret);
+        return ret;
         // TO DO Calculate based on bots current weapon / ammo inventory
-        return 0.45;
+        //return 0.45;
     }
 
     RCBotSchedule@ execute ( RCBot@ bot )

@@ -127,7 +127,7 @@ namespace BotManager
 		{
 		 	float yaw = 0;
 
-			 m_pPlayer.pev.flags |= FL_GODMODE;
+			 //m_pPlayer.pev.flags |= FL_GODMODE;
 
 			if ( m_vLookAtIsValid )
 			{

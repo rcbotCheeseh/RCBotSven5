@@ -552,6 +552,8 @@ final class RCBot : BotManager::BaseBot
 
 	CBotUtilities@ utils;
 
+	CBotWeapons@ m_pWeapons;
+
 	float m_flStuckTime = 0;
 
 	Vector m_vLastSeeEnemy;
@@ -570,6 +572,8 @@ final class RCBot : BotManager::BaseBot
 		@m_pVisibles = CBotVisibles(this);
 
 		@utils = CBotUtilities(this);
+
+		@m_pWeapons = CBotWeapons();
 		SpawnInit();				
 
 		m_iPrevHealthArmor = 0;
@@ -644,7 +648,7 @@ final class RCBot : BotManager::BaseBot
 	{
 	//	return entity.pev.flags & FL_CLIENT == FL_CLIENT; (FOR TESTING)
 		// can't attack this enemy
-		if ( findBestWeapon(m_pPlayer,UTIL_EntityOrigin(entity),entity) is null ) 
+		if ( m_pWeapons.findBestWeapon(this,UTIL_EntityOrigin(entity),entity) is null ) 
 			return false;
 
 		if ( entity.GetClassname() == "func_breakable" )
@@ -738,6 +742,7 @@ case 	CLASS_BARNACLE	:
 
 	float m_fNextTakeCover = 0;
 	int m_iLastFailedWaypoint = -1;
+	
 
 	void Think()
 	{
@@ -746,6 +751,7 @@ case 	CLASS_BARNACLE	:
 
 
 		m_iCurrentPriority = PRIORITY_NONE;
+		m_pWeapons.updateWeapons(this);
 
 		ReleaseButtons();
 
@@ -837,22 +843,7 @@ case 	CLASS_BARNACLE	:
 
 	void DoWeapons ()
 	{	
-		if ( m_pEnemy.GetEntity()  !is null )
-		{
-			CBasePlayerWeapon@ desiredWeapon = null;
-
-			@desiredWeapon = findBestWeapon(m_pPlayer,UTIL_EntityOrigin(m_pEnemy.GetEntity()),m_pEnemy.GetEntity() );
-
-			if ( desiredWeapon !is null )
-			{
-				if ( desiredWeapon !is m_pCurrentWeapon )
-				{
-					@m_pCurrentWeapon = desiredWeapon;
-					m_pPlayer.SelectItem(m_pCurrentWeapon.GetClassname());
-					BotMessage("SELECT " + m_pCurrentWeapon.GetClassname());
-				}
-			}
-		}
+		m_pWeapons.DoWeapons(this,m_pEnemy);
 	}
 
 	float getEnemyFactor ( CBaseEntity@ entity )
@@ -895,7 +886,9 @@ case 	CLASS_BARNACLE	:
 	{
 		if ( init == true )
 			return;
-m_iLastFailedWaypoint = -1;
+
+		m_pWeapons.spawnInit();
+		m_iLastFailedWaypoint = -1;
 		init = true;
 
 		@m_pCurrentSchedule = null;
