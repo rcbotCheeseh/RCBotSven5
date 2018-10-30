@@ -171,9 +171,9 @@ void WaypointToggleType ( const CCommand@ args )
 			CWaypoint@ pWpt =  g_Waypoints.getWaypointAtIndex(wpt);
 			
 			if ( pWpt.hasFlags(flags) )
-				pWpt.m_iFlags &= ~flag_to_check;
+				pWpt.m_iFlags &= ~flags;
 			else
-				pWpt.m_iFlags |= flag_to_check;
+				pWpt.m_iFlags |= flags;
 		}
 	}
 }
