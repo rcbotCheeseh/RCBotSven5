@@ -34,6 +34,7 @@ CConCommand@ m_pDebugBot;
 CConCommand@ m_pRCBotKillbots;
 CConCommand@ m_pNotouchMode;
 CConCommand@ m_pNoTargetMode;
+CConCommand@ m_pRCBotWaypointToggleType;
 
 bool g_DebugOn = false;
 bool g_NoTouch = false;
@@ -74,8 +75,9 @@ void PluginInit()
 	@m_pPathWaypointRemove2 = @CConCommand( "pathwaypoint_remove2", "removed a new path to", @PathWaypoint_Remove2 );
 
 	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
-	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type",@WaypointGiveType);
-	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type",@WaypointRemoveType);
+	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type(s)",@WaypointGiveType);
+	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type(s)",@WaypointRemoveType);
+	@m_pRCBotWaypointToggleType = @CConCommand ( "waypoint_toggletype", "toggle waypoint type(s)",@WaypointToggleType);
 	@m_pDebugBot = @CConCommand ( "debug" , "debug messages toggle" , @DebugBot );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
@@ -148,6 +150,35 @@ void DebugBot ( const CCommand@ args )
 		SayMessageAll(player,"Debug off");
 }
 
+void WaypointToggleType ( const CCommand@ args )
+{
+	array<string> types;
+
+	CBasePlayer@ player = ListenPlayer();
+
+	for ( int i = 1 ; i < args.ArgC(); i ++ )
+	{
+		types.insertLast(args.Arg(i));
+	}
+
+	int flags = g_WaypointTypes.parseTypes(types);
+
+	if ( flags > 0 )
+	{
+		int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+
+		if ( wpt != -1 )
+		{
+			CWaypoint@ pWpt =  g_Waypoints.getWaypointAtIndex(wpt);
+			
+			if ( pWpt.hasFlags(flags) )
+				pWpt.m_iFlags &= ~flags;
+			else
+				pWpt.m_iFlags |= flags;
+		}
+	}
+}
+
 void WaypointGiveType ( const CCommand@ args )
 {
 	array<string> types;
@@ -163,17 +194,15 @@ void WaypointGiveType ( const CCommand@ args )
 
 	if ( flags > 0 )
 	{
+		int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
 
-	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+		if ( wpt != -1 )
+		{
+			CWaypoint@ pWpt =  g_Waypoints.getWaypointAtIndex(wpt);
 
-	if ( wpt != -1 )
-	{
-		CWaypoint@ pWpt =  g_Waypoints.getWaypointAtIndex(wpt);
-
-		pWpt.m_iFlags |= flags;
-	}
-	}
-	
+			pWpt.m_iFlags |= flags;
+		}
+	}	
 }
 
 void WaypointClear ( const CCommand@ args )
