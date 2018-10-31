@@ -1517,13 +1517,20 @@ m_fNextTimeout = 0;
 				
 									CBaseEntity@ pent = null;
 									bool bFound = false;
+									Vector vSucc = succWpt.m_vOrigin;
 
-									while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, succWpt.m_vOrigin , 128,"trigger_hurt", "classname"  )) !is null )
-									{
+									while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "trigger_hurt")) !is null )
+									//while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, succWpt.m_vOrigin , 128,"trigger_hurt", "classname"  )) !is null )
+									{										
 											if ( ((pent.pev.spawnflags & 8)!=8) && (pent.pev.solid == SOLID_TRIGGER) )
 											{
-												bFound = true;
-												break;
+												if ( vSucc.x > pent.pev.absmin.x && vSucc.y > pent.pev.absmin.y && vSucc.z > pent.pev.absmin.z &&
+												     vSucc.x < pent.pev.absmax.x && vSucc.y < pent.pev.absmax.y && vSucc.z < pent.pev.absmax.z )
+												{
+													BotMessage("TRIGGET HURT DETECTED!!!");
+													bFound = true;
+													break;
+												}
 											}
 									}
 

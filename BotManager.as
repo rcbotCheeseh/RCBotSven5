@@ -273,7 +273,7 @@ void RCBotSearch ( const CCommand@ args )
 	while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
 	{
 		if ( (UTIL_EntityOrigin(pent) - v).Length() < 200 )
-			BotMessage(pent.GetClassname() + " frame="+pent.pev.frame);			
+			BotMessage(pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (UTIL_EntityOrigin(pent)-v).Length());			
 	}
 }
 
@@ -920,6 +920,9 @@ case 	CLASS_BARNACLE	:
 	{
 		//if ( navigator !is null )
 		//	navigator.execute(this);
+
+		if ( m_pPlayer.pev.flags & FL_FLY == FL_FLY )
+			PressButton(IN_DUCK);
 		
 		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.25*m_fDesiredMoveSpeed)) )
 		{

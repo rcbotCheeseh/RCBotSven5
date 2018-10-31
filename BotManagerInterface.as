@@ -170,6 +170,12 @@ namespace BotManager
 
 				yaw = UTIL_yawAngleFromEdict(vMoveTo,m_pPlayer.pev.v_angle,m_pPlayer.pev.origin);
 
+				float z_dist = (m_vMoveTo.z - m_pPlayer.pev.origin.z );
+
+				if ( z_dist > 0 )
+					m_fUpMove = m_fDesiredMoveSpeed;
+				else 
+					m_fUpMove = -m_fDesiredMoveSpeed;
 				//BotMessage("Yaw = " + yaw + "\n");
 			}
 			else
@@ -185,7 +191,9 @@ namespace BotManager
 			//BotMessage("m_fForwardMove = " + m_fForwardMove + "\n");	
 			//BotMessage("m_fSideMove = " + m_fSideMove + "\n");	
 			//m_fUpMove = cos(v_angles.z*0.01745329252) * m_fDesiredSpeed;
-			m_fUpMove = 0;			
+
+			
+			
 			
 			g_EngineFuncs.RunPlayerMove( m_pPlayer.edict(), m_pPlayer.pev.angles, 
 				m_fForwardMove, m_fSideMove, m_fUpMove, 
