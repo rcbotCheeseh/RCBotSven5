@@ -742,6 +742,9 @@ class CWaypoints
 	{
 		if ( g_WaypointsOn )
 		{
+			CWaypoint@ pNearestWpt = null;
+			float m_fNearest = 96;
+
 			for ( int i = 0; i < m_iNumWaypoints; i ++ )
 			{
 				CWaypoint@ wpt = m_Waypoints[i];
@@ -751,12 +754,17 @@ class CWaypoints
 
 				float dist = wpt.distanceFrom(player.pev.origin);
 
-				if ( dist < 512 )
+				if ( dist < m_fNearest )
 				{
-
-					wpt.draw(player,dist<64);
+					@pNearestWpt = wpt;
+					m_fNearest = dist;					
 				}
+				
+				wpt.draw(player,false);
 			}
+
+			if ( pNearestWpt !is null )
+				pNearestWpt.draw(player,true);
 		}
 	}	
 
@@ -1341,9 +1349,14 @@ m_fNextTimeout = 0;
 
 		float distance = (wpt.m_vOrigin - bot.origin()).Length();
 
+		float touch_distance = 64;
+
+		if ( wpt.hasFlags(W_FL_STAY_NEAR) )
+			touch_distance = 40;
+
 		BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
 
-		if ( (distance < 100) || (distance > (m_fPreviousDistance+64.0)) )
+		if ( (distance < 64) || (distance > (m_fPreviousDistance+64.0)) )
 		{
 			bot.touchedWpt(wpt);
 

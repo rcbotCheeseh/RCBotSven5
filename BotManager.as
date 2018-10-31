@@ -732,7 +732,8 @@ case 	CLASS_BARNACLE	:
 			PressButton(IN_DUCK);
 		if ( IsOnLadder() )
 			PressButton(IN_FORWARD);
-
+		if ( wpt.hasFlags(W_FL_STAY_NEAR))
+			m_fDesiredMoveSpeed = m_pPlayer.pev.maxspeed/2;
 		//BotMessage("Following Wpt");	
 		setMove(wpt.m_vOrigin);
 
@@ -742,7 +743,6 @@ case 	CLASS_BARNACLE	:
 
 	float m_fNextTakeCover = 0;
 	int m_iLastFailedWaypoint = -1;
-	
 
 	void Think()
 	{
@@ -754,6 +754,8 @@ case 	CLASS_BARNACLE	:
 		m_pWeapons.updateWeapons(this);
 
 		ReleaseButtons();
+
+		m_fDesiredMoveSpeed = m_pPlayer.pev.maxspeed;
 
 		// 100 ms think
 		//m_fNextThink = g_Engine.time + 0.1;
@@ -919,7 +921,7 @@ case 	CLASS_BARNACLE	:
 		//if ( navigator !is null )
 		//	navigator.execute(this);
 		
-		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.25*m_pPlayer.pev.maxspeed)) )
+		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.25*m_fDesiredMoveSpeed)) )
 		{
 			m_flStuckTime = g_Engine.time;
 		}

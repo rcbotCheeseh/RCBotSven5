@@ -64,8 +64,7 @@ namespace BotManager
 		float m_fUpMove;
 		float m_fSideMove;
 		float m_fForwardMove;		
-
-		float m_fDesiredSpeed = 320;	
+		float m_fDesiredMoveSpeed = 0;
 
 		bool m_bIsAvoiding = false;
 		Vector m_vAvoidVector;
@@ -172,18 +171,16 @@ namespace BotManager
 				yaw = UTIL_yawAngleFromEdict(vMoveTo,m_pPlayer.pev.v_angle,m_pPlayer.pev.origin);
 
 				//BotMessage("Yaw = " + yaw + "\n");
-
-				m_fDesiredSpeed = m_pPlayer.pev.maxspeed;
 			}
 			else
-				m_fDesiredSpeed = 0.0f;
+				m_fDesiredMoveSpeed = 0.0f;
 				
 			UpdateMSec();
 			
 			m_flLastRunMove = g_Engine.time;
 
-			m_fForwardMove = cos(yaw*0.01745329252) * m_fDesiredSpeed;
-			m_fSideMove = sin(yaw*0.01745329252) * m_fDesiredSpeed;		
+			m_fForwardMove = cos(yaw*0.01745329252) * m_fDesiredMoveSpeed;
+			m_fSideMove = sin(yaw*0.01745329252) * m_fDesiredMoveSpeed;		
 
 			//BotMessage("m_fForwardMove = " + m_fForwardMove + "\n");	
 			//BotMessage("m_fSideMove = " + m_fSideMove + "\n");	
