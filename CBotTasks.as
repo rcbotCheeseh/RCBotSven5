@@ -691,20 +691,14 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
     }
     
 }
+
 /*
-class CBotTaskFindCoverCompleteTask : RCBotTask
+T O D O
+class CBotHumanTowerTask : RCBotTask
 {
-    CBotTaskFindCoverCompleteTask ( )
-    {
 
-    }
+}*/
 
-     void execute ( RCBot@ bot )
-     {
-         Complete
-     }
-}
-*/
 class CBotTaskFindCoverTask : RCBotTask
 {    
     RCBotCoverWaypointFinder@ finder;

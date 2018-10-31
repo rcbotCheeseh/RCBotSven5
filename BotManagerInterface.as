@@ -149,6 +149,8 @@ namespace BotManager
 				m_pPlayer.pev.angles.y = m_pPlayer.pev.v_angle.y;//*/
 			}
 
+			m_fUpMove = 0;
+
 			if ( m_bMoveToValid )
 			{				
 				Vector vMoveTo = m_vMoveTo;
@@ -171,11 +173,14 @@ namespace BotManager
 				yaw = UTIL_yawAngleFromEdict(vMoveTo,m_pPlayer.pev.v_angle,m_pPlayer.pev.origin);
 
 				float z_dist = (m_vMoveTo.z - m_pPlayer.pev.origin.z );
-
+				
+				if ( m_pPlayer.pev.waterlevel > 1 )
+				{
 				if ( z_dist > 0 )
 					m_fUpMove = m_fDesiredMoveSpeed;
 				else 
 					m_fUpMove = -m_fDesiredMoveSpeed;
+				}
 				//BotMessage("Yaw = " + yaw + "\n");
 			}
 			else

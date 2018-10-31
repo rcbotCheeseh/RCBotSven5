@@ -911,6 +911,11 @@ case 	CLASS_BARNACLE	:
 		m_pVisibles.update();
 	}
 
+	bool HasWeapon ( string classname )
+	{
+		return m_pPlayer.HasNamedPlayerItem(classname) !is null;
+	}
+
 	void StopMoving ()
 	{
 		m_bMoveToValid = false;
