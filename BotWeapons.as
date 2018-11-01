@@ -46,6 +46,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_9mmhandgun",0.0,1500.0,WEAP_FL_UNDERWATER,1));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_shotgun",0.0,768.0,WEAP_FL_NONE,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_357",0.0,2000.0,WEAP_FL_NONE,7));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_eagle",0.0,2000.0,WEAP_FL_NONE,6));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_9mmAR",0.0,2000.0,WEAP_FL_NONE|WEAP_FL_SECONDARY|WEAP_FL_SECONDARY_EXPLOSIVE,10));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_crossbow",0.0,4000.0,WEAP_FL_SNIPE|WEAP_FL_UNDERWATER,14));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_egon",100.0,2000.0,WEAP_FL_NONE,12));
@@ -57,6 +58,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_snark",300.0,2000.0,WEAP_FL_GRENADE,10));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_uzi",100.0,2000.0,WEAP_FL_NONE|WEAP_FL_UNDERWATER,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_medkit",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_grapple",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
     }    
 
     int numWeapons ()

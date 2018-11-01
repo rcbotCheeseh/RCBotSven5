@@ -389,6 +389,33 @@ final class CPickupItemTask : RCBotTask
             Complete();
     }
 }
+/* T O D O
+class CUseGrappleTask : RCBotTask
+{
+    CWaypoint@ m_pWpt;
+
+    enum state
+    {
+        find_aiming,
+        change_weapon,
+    }
+
+    CUseGrappleTask ( CWaypoint@ pWpt, CWaypoint@ pNext )
+    {
+
+    }
+
+    string DebugString ()
+    {
+        return "CUseGrappleTask";
+    } 
+
+    void execute ( RCBot@ bot )
+    {
+        StopMoving();
+    }
+}
+*/
 
 final class CFindButtonTask : RCBotTask
 {
@@ -593,20 +620,30 @@ final class CBotButtonTask : RCBotTask
     }
 }
 
+final class CRemoveLastEnemy : RCBotTask
+{
+    
+    string DebugString ()
+    {
+        return "CRemoveLastEnemy";
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        bot.RemoveLastEnemy();
+        Complete();
+    }
+}
+
 final class CFindPathTask : RCBotTask
 {
     RCBotNavigator@ navigator;
-    CBits@ m_pFailedGoals;
-
-    CFindPathTask ( CBits@ failedGoals = null )
-    {
-        @m_pFailedGoals = failedGoals;
-    }
 
     string DebugString ()
     {
         return "CFindPathTask";
     }
+
     CFindPathTask ( RCBot@ bot, int wpt )
     {
         @navigator = RCBotNavigator(bot,wpt);
@@ -626,8 +663,7 @@ final class CFindPathTask : RCBotTask
     {
         //@bot.navigator = navigator;
 
-
-        switch ( navigator.run() )
+        switch ( navigator.run(bot) )
         {
             case NavigatorState_Following:
 
@@ -651,24 +687,10 @@ final class CFindPathTask : RCBotTask
         break;
         case NavigatorState_ReachedGoal:
 
-             BotMessage("NavigatorState_ReachedGoal");
+            BotMessage("NavigatorState_ReachedGoal");
             Complete();
-
-            if ( m_pFailedGoals !is null )
-                m_pFailedGoals.reset();//setBit(m_iGoal,false);
-
             break;
         }
-
-        
-
-        if ( m_bFailed )
-        {
-           
-            if ( m_pFailedGoals !is null )
-                m_pFailedGoals.setBit(navigator.iGoal,true);
-        }
-
     }
 }
 
@@ -912,6 +934,8 @@ class CBotGotoObjectiveUtil : CBotUtil
 
             sched.addTask(CFindButtonTask());
 
+            failed.add(iRandomGoal);
+
             return sched;
         }
         else
@@ -944,7 +968,7 @@ class CBotFindLastEnemyUtil : CBotUtil
         {
             RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal);
 
-          //  sched.addTask(CFindButtonTask());
+            sched.addTask(CRemoveLastEnemy());
 
             return sched;
         }
@@ -958,6 +982,7 @@ class CBotFindLastEnemyUtil : CBotUtil
 class CBotGotoEndLevelUtil : CBotUtil
 {
     CFailedWaypointsList failed;
+    
     void reset ()
     {
         failed.clear();
@@ -979,6 +1004,8 @@ class CBotGotoEndLevelUtil : CBotUtil
 
             sched.addTask(CFindButtonTask());
 
+            failed.add(iRandomGoal);
+
             return sched;
         }
         else
@@ -987,17 +1014,12 @@ class CBotGotoEndLevelUtil : CBotUtil
         return null;
     }
 }
-/*
+
 class CBotRoamUtil : CBotUtil
 {
-    CBotRoamUtil( RCBot@ bot )
-    {
-        super(bot);
-    }
-
     float calculateUtility ( RCBot@ bot )
     {
-        return (0.1);
+        return (0.01);
     }
 
     void setNextDo ()
@@ -1007,19 +1029,19 @@ class CBotRoamUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_ENDLEVEL);
+        if ( g_Waypoints.m_iNumWaypoints == 0 )
+            return null;
 
-        if ( iRandomGoal == -1 )
-            iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT);    
+        int iRandomGoal = Math.RandomLong(0,g_Waypoints.m_iNumWaypoints-1);
 
-        if ( iRandomGoal != -1 )
-        {
-            return CFindPathSchedule(bot,iRandomGoal);
-        }
+        CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(iRandomGoal);
 
-        return null;
+        if ( pWpt.hasFlags(W_FL_DELETED) )
+            return null;
+
+        return CFindPathSchedule(bot,iRandomGoal);
     }
-}*/
+}
 
 class CBotUtilities 
 {
@@ -1034,6 +1056,7 @@ class CBotUtilities
             m_Utils.insertLast(CBotGetAmmo());
             m_Utils.insertLast(CBotGetWeapon());
             m_Utils.insertLast(CBotFindLastEnemyUtil());
+            m_Utils.insertLast(CBotRoamUtil());
     }
 
     void reset ()

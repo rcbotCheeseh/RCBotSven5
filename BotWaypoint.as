@@ -1215,16 +1215,17 @@ class CFailedWaypointsList
     {
         list = {};
     }
-
-
+	
     array<int> list;
 }
-	const int NavigatorState_Complete = 0;
-	const int NavigatorState_InProgress = 1;
-	const int NavigatorState_Fail = 2;
-	const int NavigatorState_ReachedGoal = 3;
-	const int NavigatorState_FoundGoal = 4;
-	const int NavigatorState_Following = 5;
+
+const int NavigatorState_Complete = 0;
+const int NavigatorState_InProgress = 1;
+const int NavigatorState_Fail = 2;
+const int NavigatorState_ReachedGoal = 3;
+const int NavigatorState_FoundGoal = 4;
+const int NavigatorState_Following = 5;
+
 // ------------------------------------
 // NAVIGATOR - 	START (WIP)
 // ------------------------------------
@@ -1429,7 +1430,7 @@ m_fNextTimeout = 0;
 
 	array<int> m_currentRoute = {};
 
-	int run ()
+	int run (RCBot@ bot)
 	{		
 		switch ( state )
 		{
@@ -1506,11 +1507,34 @@ m_fNextTimeout = 0;
 								@succ = @paths[iSucc];
 								@succWpt = g_Waypoints.getWaypointAtIndex(iSucc);
 
+								if ( succWpt.hasFlags(W_FL_GRAPPLE) )
+								{
+									if ( !bot.HasWeapon("weapon_grapple") )	
+										continue;
+								}
 								if ( succWpt.hasFlags(W_FL_OPENS_LATER) )
 								{
-									// make sure path is visible from current to succ
-									if ( !UTIL_IsVisible(currWpt.m_vOrigin,succWpt.m_vOrigin) )
-										continue;
+									TraceResult tr;
+
+									g_Utility.TraceLine( currWpt.m_vOrigin, succWpt.m_vOrigin, ignore_monsters,dont_ignore_glass, null, tr );
+
+									if ( tr.flFraction < 1.0f )
+									{
+										if ( tr.pHit is null )
+											continue;
+									
+										CBaseEntity@ ent = g_EntityFuncs.Instance(tr.pHit);
+
+										// mght be closed but is not locked
+										if ( ent.GetClassname() == "func_door")
+										{
+								
+											if ( ent.IsLockedByMaster() )
+												continue;
+										}
+										else
+											continue;
+									}			
 								}
 								if ( succWpt.hasFlags(W_FL_PAIN) )
 								{

@@ -469,8 +469,10 @@ class CBotVisibles
 
 		do
 		{
-   			@m_pCurrentEntity = g_EntityFuncs.FindEntityByClassname(m_pCurrentEntity, "*"); 
+			CBaseEntity@ groundEntity = g_EntityFuncs.Instance(player.pev.groundentity);
 
+   			@m_pCurrentEntity = g_EntityFuncs.FindEntityByClassname(m_pCurrentEntity, "*"); 
+			
 			iLoops ++;
 			
 			if ( m_pCurrentEntity is null )
@@ -481,23 +483,26 @@ class CBotVisibles
 			if ( m_pCurrentEntity is player )
 				continue;
 
-			if ( !player.FInViewCone(m_pCurrentEntity) )
+			if ( groundEntity !is m_pCurrentEntity )
 			{
-				setVisible(m_pCurrentEntity,false);
-				continue;
-			}			
-		
-			if ( !player.FVisible(m_pCurrentEntity,false) )
-			{
-				setVisible(m_pCurrentEntity,false);
-				continue;		
-			}
-
-			if ( CanAvoid(m_pCurrentEntity) )
-			{
-				if ( m_pNearestAvoid.GetEntity() is null || (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist) )
+				if ( !player.FInViewCone(m_pCurrentEntity) )
 				{
-					m_pNearestAvoid =  m_pCurrentEntity;
+					setVisible(m_pCurrentEntity,false);
+					continue;
+				}			
+			
+				if ( !player.FVisible(m_pCurrentEntity,false) )
+				{
+					setVisible(m_pCurrentEntity,false);
+					continue;		
+				}
+
+				if ( CanAvoid(m_pCurrentEntity) )
+				{
+					if ( m_pNearestAvoid.GetEntity() is null || (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist) )
+					{
+						m_pNearestAvoid =  m_pCurrentEntity;
+					}
 				}
 			}
 
@@ -911,6 +916,12 @@ case 	CLASS_BARNACLE	:
 		m_pVisibles.update();
 	}
 
+	void RemoveLastEnemy ()
+	{
+		m_pLastEnemy = null;
+		m_bLastSeeEnemyValid = false;
+
+	}
 	bool HasWeapon ( string classname )
 	{
 		return m_pPlayer.HasNamedPlayerItem(classname) !is null;
@@ -952,7 +963,7 @@ case 	CLASS_BARNACLE	:
 
 			m_iCurrentPriority = PRIORITY_ATTACK;
 
-			setLookAt(pEnemy.pev.origin + pEnemy.pev.view_ofs/2);
+			setLookAt(UTIL_EntityOrigin(pEnemy));
 
 			m_iCurrentPriority = PRIORITY_NONE;
 
@@ -985,12 +996,18 @@ case 	CLASS_BARNACLE	:
 			}
 		else if ( m_pEnemy.GetEntity() !is null )
 		{
+			CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);
 			// attack
 			if( Math.RandomLong( 0, 100 ) < 99 )
 				PressButton(IN_ATTACK);
 
+			if ( groundEntity is m_pEnemy.GetEntity() )
+				PressButton(IN_DUCK);
+
 			//BotMessage("SHOOTING ENEMY!!!\n");
 		}
+
+		
 	}
 
 	void DoTasks ()
