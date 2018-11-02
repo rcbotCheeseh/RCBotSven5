@@ -715,6 +715,11 @@ case 	CLASS_BARNACLE	:
 	{
 		if ( wpt.hasFlags(W_FL_JUMP) )
 			PressButton(IN_JUMP);
+		if ( wpt.hasFlags(W_FL_CROUCHJUMP) )
+			{
+				PressButton(IN_JUMP);
+				PressButton(IN_DUCK);
+			}
 	}
 
 	bool IsOnLadder ( ) 

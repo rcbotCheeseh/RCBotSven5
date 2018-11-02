@@ -111,6 +111,12 @@
 		}*/
 	}
 
+	bool UTIL_VectorInsideEntity ( CBaseEntity@ pent, Vector v )
+	{
+		return ( v.x > pent.pev.absmin.x && v.y > pent.pev.absmin.y && v.z > pent.pev.absmin.z &&
+				 v.x < pent.pev.absmax.x && v.y < pent.pev.absmax.y && v.z < pent.pev.absmax.z );
+	}
+
     bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
     {
         TraceResult tr;

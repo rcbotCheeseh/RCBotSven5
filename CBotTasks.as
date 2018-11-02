@@ -450,6 +450,25 @@ final class CFindButtonTask : RCBotTask
             
         }
 
+        while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_rot_button")) !is null )
+        {            
+            if ( pent.pev.frame != 0 )
+                continue;
+            // within reaching distance
+            if ( bot.distanceFrom(pent) < 400 )
+            {
+                if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
+                {
+                        BotMessage("func_button");
+                        // add Task to pick up health
+                        m_pContainingSchedule.addTask(CUseButtonTask(pent));
+                        Complete();
+                        return;                                    
+                }
+            }
+            
+        }        
+
         Failed();
     }
 }
@@ -669,7 +688,7 @@ final class CFindPathTask : RCBotTask
 
             navigator.execute(bot);
 
-            BotMessage("NavigatorState_Following");
+           // BotMessage("NavigatorState_Following");
 
             break;
         case NavigatorState_Complete:

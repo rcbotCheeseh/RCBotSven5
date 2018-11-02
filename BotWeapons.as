@@ -217,7 +217,7 @@ class CBotWeapons
     {
         bot.m_pPlayer.SelectItem(pWeapon.GetClassname());
         @m_pCurrentWeapon = pWeapon;        
-        BotMessage("SELECT " + pWeapon.GetClassname());        
+       // BotMessage("SELECT " + pWeapon.GetClassname());        
     }    
 
     void updateWeapons ( RCBot@ bot )

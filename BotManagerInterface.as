@@ -271,6 +271,8 @@ namespace BotManager
 					
 				m_Bots.insertLast( @CreateBot( @pPlayer ) );
 			}
+
+			g_Waypoints.Load();
 		}
 		
 		HookReturnCode PlayerSpawn( CBasePlayer@ pPlayer )

@@ -826,29 +826,39 @@ class CWaypoints
 
 				CBaseEntity@ pent = null;
 				
-				while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, added.m_vOrigin , 96,"*", "classname"  )) !is null )
+				while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
 				{					
 					string classname = pent.GetClassname();
 
-					if ( pent.pev.owner !is null )
+					float dist = (added.m_vOrigin - UTIL_EntityOrigin(pent)).Length();
+
+					if ( dist > 96 )
 						continue;
 
-					if ( classname.SubString(0,7) == "weapon_")
-						flags |= W_FL_WEAPON;
-					else if ( classname.SubString(0,5) == "ammo_")
-						flags |= W_FL_AMMO;
-					else if ( classname.SubString(0,11) == "item_health")
-						flags |= W_FL_HEALTH;
-					else if ( classname.SubString(0,12) == "item_battery")
-						flags |= W_FL_ARMOR;
-					else if ( classname.SubString(0,11) == "func_button")
+					if ( pent.pev.owner is null )
+					{					
+						if ( classname.SubString(0,7) == "weapon_")
+							flags |= W_FL_WEAPON;
+						else if ( classname.SubString(0,5) == "ammo_")
+							flags |= W_FL_AMMO;
+						else if ( classname.SubString(0,11) == "item_health")
+							flags |= W_FL_HEALTH;
+						else if ( classname.SubString(0,12) == "item_battery")
+							flags |= W_FL_ARMOR;
+					}
+
+					if ( classname.SubString(0,11) == "func_button")
 						flags |= W_FL_IMPORTANT;
+					else if ( classname.SubString(0,15) == "func_rot_button")
+						flags |= W_FL_IMPORTANT;						
 					else if ( classname.SubString(0,11) == "func_health" )
 						flags |= W_FL_HEALTH;
 					else if ( classname.SubString(0,13) == "func_recharge" )
 						flags |= W_FL_ARMOR;
 					else if ( classname.SubString(0,12) == "trigger_hurt" )
-						flags |= W_FL_PAIN;						
+						flags |= W_FL_PAIN;			
+
+					BotMessage(classname)			;
 				}
 
 
@@ -1580,8 +1590,7 @@ m_fNextTimeout = 0;
 									{										
 											if ( ((pent.pev.spawnflags & 8)!=8) && (pent.pev.solid == SOLID_TRIGGER) )
 											{
-												if ( vSucc.x > pent.pev.absmin.x && vSucc.y > pent.pev.absmin.y && vSucc.z > pent.pev.absmin.z &&
-												     vSucc.x < pent.pev.absmax.x && vSucc.y < pent.pev.absmax.y && vSucc.z < pent.pev.absmax.z )
+												if ( UTIL_VectorInsideEntity(pent,vSucc) )
 												{
 													BotMessage("TRIGGET HURT DETECTED!!!");
 													bFound = true;
