@@ -760,7 +760,8 @@ class CWaypoints
 					m_fNearest = dist;					
 				}
 				
-				wpt.draw(player,false);
+				if ( dist < 512 )
+					wpt.draw(player,false);
 			}
 
 			if ( pNearestWpt !is null )
@@ -773,7 +774,7 @@ class CWaypoints
 		return pWpt.iIndex;
 	}
 	
-	void addWaypoint ( Vector vecLocation, int flags = 0 )
+	void addWaypoint ( Vector vecLocation, int flags = 0, CBaseEntity@ ignore = null )
 	{
 		int index = freeWaypointIndex();
 
@@ -782,7 +783,6 @@ class CWaypoints
 		if ( index != -1 )
 		{	
 			m_Waypoints[index].Place(index,vecLocation);
-			m_Waypoints[index].m_iFlags = flags;
 
 			BotMessage("OK! index " + formatInt(index));
 		
@@ -792,17 +792,17 @@ class CWaypoints
 				BotMessage("Num waypoints = "+m_iNumWaypoints);
 
 				CWaypoint@ added = getWaypointAtIndex(index);
+				
+				TraceResult tr;
+
+
 				// auto path waypoint
 				for ( int i = 0; i < m_iNumWaypoints; i ++ )
 				{
 					CWaypoint@ other = getWaypointAtIndex(i);
-					float zDiff = other.m_vOrigin.z - added.m_vOrigin.z;
 
 					if ( other.hasFlags(W_FL_DELETED))
 						continue;
-
-					if ( zDiff < 0 )
-						zDiff = -zDiff;
 
 					if ( i == index )
 						continue;					
@@ -810,12 +810,10 @@ class CWaypoints
 					if ( added.distanceFrom(other.m_vOrigin) > 512 )
 						continue;
 
-					if ( zDiff > 64 )
-					{
-						continue;
-					}
+					g_Utility.TraceHull(added.m_vOrigin, other.m_vOrigin, ignore_monsters,human_hull,  ignore is null ? null : ignore.edict(), tr);
+
 					
-					if ( !UTIL_IsVisible(other.m_vOrigin,added.m_vOrigin) )
+					if ( tr.flFraction < 1.0 ) // !UTIL_IsVisible(other.m_vOrigin,added.m_vOrigin) )
 					{
 						continue;
 					}
@@ -825,6 +823,37 @@ class CWaypoints
 					other.addPath(index);
 					added.addPath(i);
 				}
+
+				CBaseEntity@ pent = null;
+				
+				while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, added.m_vOrigin , 96,"*", "classname"  )) !is null )
+				{					
+					string classname = pent.GetClassname();
+
+					if ( pent.pev.owner !is null )
+						continue;
+
+					if ( classname.SubString(0,7) == "weapon_")
+						flags |= W_FL_WEAPON;
+					else if ( classname.SubString(0,5) == "ammo_")
+						flags |= W_FL_AMMO;
+					else if ( classname.SubString(0,11) == "item_health")
+						flags |= W_FL_HEALTH;
+					else if ( classname.SubString(0,12) == "item_battery")
+						flags |= W_FL_ARMOR;
+					else if ( classname.SubString(0,11) == "func_button")
+						flags |= W_FL_IMPORTANT;
+					else if ( classname.SubString(0,11) == "func_health" )
+						flags |= W_FL_HEALTH;
+					else if ( classname.SubString(0,13) == "func_recharge" )
+						flags |= W_FL_ARMOR;
+					else if ( classname.SubString(0,12) == "trigger_hurt" )
+						flags |= W_FL_PAIN;						
+				}
+
+
+			m_Waypoints[index].m_iFlags = flags;
+
 		}
 	}
 
@@ -984,9 +1013,12 @@ class CWaypoints
 		bool ret = false;
 		string filename = g_Engine.mapname;
 		
+		File@ f;
+
 		filename += ".rcwa";
 		
-		File@ f;
+
+		ClearWaypoints();
 
 		// try to open custom waypoint first		
 		@f  = g_FileSystem.OpenFile( "scripts/plugins/store/" + filename , OpenFile::READ);

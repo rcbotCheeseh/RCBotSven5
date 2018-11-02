@@ -320,7 +320,7 @@ void WaypointAdd ( const CCommand@ args )
 	if ( player.pev.flags & FL_DUCKING == FL_DUCKING )
 		flags = W_FL_CROUCH;
 
-	g_Waypoints.addWaypoint(player.pev.origin,flags);
+	g_Waypoints.addWaypoint(player.pev.origin,flags,player);
 }
 
 void WaypointOff ( const CCommand@ args )
@@ -553,8 +553,6 @@ final class RCBot : BotManager::BaseBot
 
 	CBotVisibles@ m_pVisibles;
 
-	CBasePlayerWeapon@ m_pCurrentWeapon;
-
 	CBotUtilities@ utils;
 
 	CBotWeapons@ m_pWeapons;
@@ -691,11 +689,6 @@ case 	CLASS_BARNACLE	:
 		}
 
 		return false;
-	}
-
-	bool needToReload ()
-	{
-		return m_pCurrentWeapon !is null && m_pCurrentWeapon.m_iClip == 0;
 	}
 
 	float distanceFrom ( Vector vOrigin )
@@ -987,18 +980,28 @@ case 	CLASS_BARNACLE	:
 
 	void DoButtons ()
 	{
-		if ( needToReload() )
-			{
+		CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
+
+		if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload() )
+		{
 			// attack
 			if( Math.RandomLong( 0, 100 ) < 99 )
 				PressButton(IN_RELOAD);
 
-			}
+		}
 		else if ( m_pEnemy.GetEntity() !is null )
 		{
 			CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);
+
+			if ( pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary() )
+			{
+				if ( Math.RandomLong(0,100) < 95 )
+					PressButton(IN_ATTACK);
+				else
+					PressButton(IN_ATTACK2);
+			}
 			// attack
-			if( Math.RandomLong( 0, 100 ) < 99 )
+			else if( Math.RandomLong( 0, 100 ) < 99 )
 				PressButton(IN_ATTACK);
 
 			if ( groundEntity is m_pEnemy.GetEntity() )
