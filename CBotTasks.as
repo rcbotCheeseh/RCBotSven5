@@ -1058,6 +1058,9 @@ class CBotRoamUtil : CBotUtil
         if ( pWpt.hasFlags(W_FL_DELETED) )
             return null;
 
+        if ( pWpt.hasFlags(W_FL_UNREACHABLE) )
+            return null;
+            
         return CFindPathSchedule(bot,iRandomGoal);
     }
 }
