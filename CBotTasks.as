@@ -738,6 +738,35 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
     
 }
 
+class CBotTaskHealPlayer : RCBotTask 
+{
+    CBotTaskHealPlayer ( Vector vOrigin )
+    {
+        setTimeout(15.0f);
+    }
+
+     void execute ( RCBot@ bot )
+     {
+         CBaseEntity@ pent = bot.m_pHeal.GetEntity();
+
+         if ( pent is null )
+            Complete();
+
+         if (!bot.CanHeal(pent) )
+            Complete();
+
+            CBotWeapon@ medikit = bot.getMedikit();
+
+
+            bot.selectWeapon(medikit);             
+
+        // walk towards player
+        //bot.selectWeapon();
+        // use medikit
+        bot.PressButton(IN_ATTACK);
+     }
+}
+
 class CBotHumanTowerTask : RCBotTask
 {
     Vector m_vOrigin;

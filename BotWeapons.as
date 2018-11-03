@@ -59,7 +59,9 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_uzi",100.0,2000.0,WEAP_FL_NONE|WEAP_FL_UNDERWATER,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_medkit",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_grapple",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
-        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_grenade",50.0,512.0,WEAP_FL_PRIMARY_EXPLOSIVE,1)); 
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_handgrenade",50.0,512.0,WEAP_FL_GRENADE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,1)); 
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_sniperrifle",512.0,8000.0,WEAP_FL_SNIPE,10)); 
+        
     }    
 
     int numWeapons ()
@@ -84,6 +86,28 @@ class CBotWeapon
     bool isOtherBetterChoiceThan ( CBotWeapon@ other )
     {
         return other.m_pWeaponInfo.m_iPriority > m_pWeaponInfo.m_iPriority;
+    }
+
+    CBasePlayerWeapon@ getWeaponPtr ()
+    {
+         return cast<CBasePlayerWeapon@>(m_pWeaponEntity.GetEntity());
+    }
+
+    bool IsMelee()
+    {
+        return m_pWeaponInfo.m_iFlags & WEAP_FL_MELEE == WEAP_FL_MELEE;
+    }
+
+    bool IsZoomed ()
+    {
+        CBasePlayerWeapon@ weap = getWeaponPtr();
+
+        return weap !is null && weap.m_fInZoom;
+    }
+
+    bool IsSniperRifle ()
+    {
+        return m_pWeaponInfo.m_iFlags & WEAP_FL_SNIPE == WEAP_FL_SNIPE;
     }
 
     string GetClassname ()
@@ -208,9 +232,49 @@ class CBotWeapons
         @m_pCurrentWeapon = null;
     }
 
-    CBotWeapon@ getCurrentWeapon () 
+    CBotWeapon@ findBotWeapon ( CBasePlayerWeapon@ weapon )
     {
+        for ( uint i = 0; i < m_pWeapons.length(); i ++ )
+        {
+            CBotWeapon@ botweapon = m_pWeapons[i];
+
+            if ( botweapon.m_pWeaponEntity.GetEntity() is weapon )
+                return botweapon;                
+        }
+
+        return null;     
+    }
+
+    CBotWeapon@ findBotWeapon ( string name )
+    {
+
+        for ( uint i = 0; i < m_pWeapons.length(); i ++ )
+        {        
+            CBotWeapon@ weapon = null;
+        
+            @weapon = m_pWeapons[i];
+
+            if ( weapon.GetClassname() == name )
+            {
+                return weapon;
+            }
+        }   
+
+        return null;
+
+    }
+    
+    CBotWeapon@ getCurrentWeapon ( ) 
+    {        
         return m_pCurrentWeapon;
+    }
+
+
+    private CBotWeapon@ findCurrentWeapon ( RCBot@ bot ) 
+    {        
+        CBasePlayerWeapon@ activeWeapon = cast<CBasePlayerWeapon@>(bot.m_pPlayer.m_hActiveItem.GetEntity());
+
+        return findBotWeapon(activeWeapon);
     }
 
     void selectWeapon ( RCBot@ bot, CBotWeapon@ pWeapon )
@@ -235,6 +299,9 @@ class CBotWeapons
 
             weapon.setWeaponEntity(pWeaponEntity);         
         }
+
+         @m_pCurrentWeapon = findCurrentWeapon(bot);
+
     }
 
     float getNumWeaponsPercent ( RCBot@ bot )
@@ -337,20 +404,18 @@ class CBotWeapons
 
     void DoWeapons ( RCBot@ bot, CBaseEntity@ pEnemy )
     {
-        if ( pEnemy is null )
-            return;
-
-        CBotWeapon@ desiredWeapon = findBestWeapon(bot,UTIL_EntityOrigin(pEnemy),pEnemy );
-
-        if ( desiredWeapon !is null )
+        if ( pEnemy !is null )
         {
-            if ( desiredWeapon !is m_pCurrentWeapon )
+            CBotWeapon@ desiredWeapon = findBestWeapon(bot,UTIL_EntityOrigin(pEnemy),pEnemy);
+        
+            if ( desiredWeapon !is null )
             {
-                selectWeapon(bot,desiredWeapon);
+                if ( desiredWeapon !is m_pCurrentWeapon )
+                {
+                    selectWeapon(bot,desiredWeapon);
+                }
             }
         }
-        else
-            @m_pCurrentWeapon = null;
     }
 
     void spawnInit ()

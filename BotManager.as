@@ -384,12 +384,17 @@ void PathWaypoint_Remove2 ( const CCommand@ args )
 
 
 
+const int VIS_FL_NONE = 0;
+const int VIS_FL_BODY = 1;
+const int VIS_FL_HEAD = 2;
+
 class CBotVisibles
 {
 	CBotVisibles ( RCBot@ bot )
 	{
 		@m_pCurrentEntity = null;
-		@bits = CBits(g_Engine.maxEntities+1);
+		@bits_body = CBits(g_Engine.maxEntities+1);
+		@bits_head = CBits(g_Engine.maxEntities+1);
 		@m_pBot = bot;
 	}
 
@@ -407,16 +412,28 @@ class CBotVisibles
 		if ( ent.pev.flags & FL_MONSTER == FL_MONSTER )
 			return true;
 
-		return false;
-		
+		return false;		
 	}
 
-	bool isVisible ( int iIndex )
+	int getFlags ( bool bBodyVisible, bool bHeadVisible )
 	{
-		return bits.getBit(iIndex);
+		int ret = 0;
+
+		if ( bBodyVisible )
+			ret |= VIS_FL_BODY;
+		
+		if ( bHeadVisible )
+			ret |= VIS_FL_HEAD;
+
+		return ret;
 	}
 
-	void setVisible ( CBaseEntity@ ent, bool bVisible)
+	int isVisible ( int iIndex )
+	{
+		return getFlags(bits_body.getBit(iIndex),bits_head.getBit(iIndex));
+	}
+
+	void setVisible ( CBaseEntity@ ent, bool bBodyVisible, bool bHeadVisible )
 	{
 		if ( ent is null )
 		{
@@ -424,19 +441,20 @@ class CBotVisibles
 			return;
 		}
 		
+		int flags = getFlags(bBodyVisible,bHeadVisible);
 		int iIndex = ent.entindex();
-		bool wasVisible = isVisible(iIndex);
-
+		bool wasVisible = isVisible(iIndex) > 0;
 
 		//BotMessage("setVisible iIndex = " + iIndex + ", bVisible = " + bVisible + "\n");
 
-		if ( !bVisible )
+		// not visible now
+		if ( flags == 0 )
 		{
-
 			if ( m_pNearestAvoid == ent )
 				m_pNearestAvoid = null;
 
-			if ( wasVisible )
+			// was visible before
+			if ( wasVisible ) // indicate state change
 				m_pBot.lostVisible(ent);
 		}
 		else 
@@ -445,12 +463,14 @@ class CBotVisibles
 				m_pBot.newVisible(ent);
 		}
 
-		bits.setBit(iIndex,bVisible);
+		bits_body.setBit(iIndex,bBodyVisible);
+		bits_head.setBit(iIndex,bHeadVisible);
 	}	
 
 	void reset ()
 	{
-		bits.reset();
+		bits_body.reset();
+		bits_head.reset();
 	}
 
 	void update (  )
@@ -470,7 +490,10 @@ class CBotVisibles
 		do
 		{
 			CBaseEntity@ groundEntity = g_EntityFuncs.Instance(player.pev.groundentity);
-
+			int flags = 0;
+			bool bBodyVisible = false;
+			bool bHeadVisible = false;
+				
    			@m_pCurrentEntity = g_EntityFuncs.FindEntityByClassname(m_pCurrentEntity, "*"); 
 			
 			iLoops ++;
@@ -485,15 +508,23 @@ class CBotVisibles
 
 			if ( groundEntity !is m_pCurrentEntity )
 			{
+				
 				if ( !player.FInViewCone(m_pCurrentEntity) )
 				{
-					setVisible(m_pCurrentEntity,false);
+					setVisible(m_pCurrentEntity,false,false);
 					continue;
 				}			
+
+				bBodyVisible = UTIL_IsVisible(player.EyePosition(),UTIL_EntityOrigin(m_pCurrentEntity));
+
+				if ( m_pCurrentEntity.pev.flags & FL_MONSTER == FL_MONSTER )
+					bHeadVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity.EyePosition());
 			
-				if ( !player.FVisible(m_pCurrentEntity,false) )
+				flags = getFlags(bBodyVisible,bHeadVisible);
+
+				if ( flags == 0 )
 				{
-					setVisible(m_pCurrentEntity,false);
+					setVisible(m_pCurrentEntity,false,false);
 					continue;		
 				}
 
@@ -506,7 +537,8 @@ class CBotVisibles
 				}
 			}
 
-			setVisible(m_pCurrentEntity,true);
+			setVisible(m_pCurrentEntity,bBodyVisible,bHeadVisible);
+
 		}while ( iLoops < iMaxLoops );
 
 		if ( isAvoiding() )
@@ -532,7 +564,8 @@ class CBotVisibles
 	CBaseEntity@ m_pCurrentEntity = null;
 	//array<int> m_VisibleList;
 	int iMaxLoops = 200;
-	CBits@ bits;
+	CBits@ bits_body;
+	CBits@ bits_head;
 	RCBot@ m_pBot;
 	
 };
@@ -704,7 +737,7 @@ case 	CLASS_BARNACLE	:
 
 	bool FVisible ( CBaseEntity@ pent )
 	{
-		return m_pVisibles.isVisible(pent.entindex());
+		return m_pVisibles.isVisible(pent.entindex()) > 0;
 	}
 
 	Vector origin ()
@@ -755,6 +788,43 @@ case 	CLASS_BARNACLE	:
 
 	float m_fNextTakeCover = 0;
 	int m_iLastFailedWaypoint = -1;
+	EHandle m_pHeal;
+
+	bool isCurrentWeapon ( CBotWeapon@ weap )
+	{
+		return m_pWeapons.m_pCurrentWeapon is weap;
+	}
+
+	CBotWeapon@ getMedikit ()
+	{
+		return m_pWeapons.findBotWeapon("weapon_medikit");
+	}
+
+	void selectWeapon ( CBotWeapon@ weapon )
+	{
+		m_pWeapons.selectWeapon(this,weapon);
+	}
+
+	bool CanHeal ( CBaseEntity@ entity )
+	{
+        // select medikit
+        CBotWeapon@ medikit = getMedikit();
+
+        if ( medikit is null )
+            return false;
+
+        if ( medikit.getPrimaryAmmo(this) == 0 )
+        {
+            return false;
+        }
+
+		return ( entity.pev.flags & FL_CLIENT == FL_CLIENT ) && (entity.pev.health < entity.pev.max_health);
+	}
+
+	float getHealFactor ( CBaseEntity@ player )
+	{
+		return distanceFrom(player) * (1.0 - (float(player.pev.health) / player.pev.max_health));
+	}
 
 	void Think()
 	{
@@ -862,7 +932,7 @@ case 	CLASS_BARNACLE	:
 
 	float getEnemyFactor ( CBaseEntity@ entity )
 	{
-		return distanceFrom(entity.pev.origin);
+		return distanceFrom(entity.pev.origin) * entity.pev.size.Length();
 	}
 
 	void newVisible ( CBaseEntity@ ent )
@@ -871,6 +941,14 @@ case 	CLASS_BARNACLE	:
 		{
 			// WTFFFFF!!!!!!!
 			return;
+		}
+
+		if ( CanHeal(ent) )
+		{
+			if ( m_pHeal.GetEntity() is null )
+				m_pHeal = ent;
+			else if ( getHealFactor(ent) < getHealFactor(m_pHeal) )
+				m_pHeal = ent;
 		}
 
 		//BotMessage("New Visible " + ent.pev.classname + "\n");
@@ -894,6 +972,11 @@ case 	CLASS_BARNACLE	:
 			m_bLastSeeEnemyValid = true;
 			m_pEnemy = null;
 		}
+
+		if ( m_pHeal.GetEntity() is ent )
+		{
+			m_pHeal = null;
+		}
 	}
 
 	void SpawnInit ()
@@ -915,6 +998,7 @@ case 	CLASS_BARNACLE	:
 		utils.reset();
 
 		m_flStuckTime = 0;
+		m_pHeal = null;
 	}
 
 	void DoVisibles ()
@@ -964,13 +1048,16 @@ case 	CLASS_BARNACLE	:
 
 	void DoLook ()
 	{
-		if ( m_pEnemy.GetEntity() !is null )
-		{			
-			CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
+		CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
 
+		if ( pEnemy !is null )
+		{						
 			m_iCurrentPriority = PRIORITY_ATTACK;
 
-			setLookAt(UTIL_EntityOrigin(pEnemy));
+			if ( m_pVisibles.isVisible(pEnemy.entindex()) & VIS_FL_HEAD == VIS_FL_HEAD )
+				setLookAt(pEnemy.EyePosition());
+			else
+				setLookAt(UTIL_EntityOrigin(pEnemy));
 
 			m_iCurrentPriority = PRIORITY_NONE;
 
@@ -1005,21 +1092,24 @@ case 	CLASS_BARNACLE	:
 		}
 		else if ( m_pEnemy.GetEntity() !is null )
 		{
-			CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);
+			bool bPressAttack1 = Math.RandomLong(0,100) < 95;
+			bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary();
 
-			if ( pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary() )
+			CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);		
+
+			if ( pCurrentWeapon !is null )
 			{
-				if ( Math.RandomLong(0,100) < 95 )
-					PressButton(IN_ATTACK);
-				else
-					PressButton(IN_ATTACK2);
-			}
-			// attack
-			else if( Math.RandomLong( 0, 100 ) < 99 )
-				PressButton(IN_ATTACK);
+				if ( pCurrentWeapon.IsMelee() && groundEntity is m_pEnemy.GetEntity() )
+					PressButton(IN_DUCK);
 
-			if ( groundEntity is m_pEnemy.GetEntity() )
-				PressButton(IN_DUCK);
+				if ( pCurrentWeapon.IsSniperRifle() && !pCurrentWeapon.IsZoomed() )
+					bPressAttack2 = true;
+			}
+			
+			if ( bPressAttack1 )
+				PressButton(IN_ATTACK);
+			if ( bPressAttack2 )
+				PressButton(IN_ATTACK2);
 
 			//BotMessage("SHOOTING ENEMY!!!\n");
 		}
