@@ -581,6 +581,7 @@ final class RCBot : BotManager::BaseBot
 
 		m_iPrevHealthArmor = 0;
 		m_iCurrentHealthArmor = 0;
+
 	}
 
 	float HealthPercent ()
@@ -719,6 +720,14 @@ case 	CLASS_BARNACLE	:
 			{
 				PressButton(IN_JUMP);
 				PressButton(IN_DUCK);
+			}
+
+			if( wpt.hasFlags(W_FL_HUMAN_TOWER) )
+			{
+				if ( m_pCurrentSchedule !is null )
+				{
+					m_pCurrentSchedule.addTaskFront(CBotHumanTowerTask(wpt.m_vOrigin));
+				}
 			}
 	}
 

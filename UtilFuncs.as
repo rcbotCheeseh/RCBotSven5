@@ -45,6 +45,87 @@
 
 	}
 
+	CBasePlayer@ UTIL_FindNearestPlayerOnTop ( CBasePlayer@ pOnTopOf, float minDistance = 512.0f )
+	{
+		CBasePlayer@ ret = null;
+		Vector vOrigin = UTIL_EntityOrigin(pOnTopOf);
+
+			//If the plugin was reloaded, find all bots and add them again.
+			for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+			{
+				CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+				float dist;
+
+				if( pPlayer is null )
+					continue;
+				
+				if ( pPlayer is pOnTopOf )
+					continue;
+
+				if ( pPlayer.pev.groundentity is null )
+					continue;
+
+				if ( pPlayer.pev.groundentity !is pOnTopOf.edict() )
+					continue;
+
+				dist  = (pPlayer.pev.origin - vOrigin).Length();
+									
+
+				if ( dist < minDistance )
+				{
+					minDistance = dist;
+					@ret = pPlayer;
+				}
+			}
+
+			return ret;
+	}	
+
+	CBasePlayer@ UTIL_FindNearestPlayer ( Vector vOrigin, float minDistance = 512.0f, CBasePlayer@ ignore = null, bool onGroundOnly = false )
+	{
+		CBasePlayer@ ret = null;
+
+			//If the plugin was reloaded, find all bots and add them again.
+			for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+			{
+				CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+				float dist;
+				
+				if( pPlayer is null )
+					continue;
+				
+				if ( pPlayer is ignore )
+					continue;				
+
+				if ( onGroundOnly )
+				{
+					if ( pPlayer.pev.groundentity !is null )
+					{
+					CBaseEntity@ gnd = g_EntityFuncs.Instance(pPlayer.pev.groundentity);
+
+					if ( gnd.GetClassname() != "worldspawn" )
+						continue;
+					}
+
+					if ( pPlayer.pev.flags & FL_DUCKING != FL_DUCKING )
+						continue;
+
+					if ( pPlayer.pev.movetype == MOVETYPE_FLY )
+						continue;
+				}
+
+					dist = (pPlayer.pev.origin - vOrigin).Length();
+
+				if ( dist < minDistance )
+				{
+					minDistance = dist;
+					@ret = pPlayer;
+				}
+			}
+
+			return ret;
+	}
+
 	CBaseEntity@ UTIL_FindEntityByTarget ( CBaseEntity@ pent, string target )
 	{
 		return g_EntityFuncs.FindEntityByString(pent,"target", target);

@@ -6,12 +6,14 @@
 		string m_Name;
 		int m_Skill;
 		bool m_bUsed;
+		string skin;
 
-		BotProfile ( string name, int skill )
+		BotProfile ( string name, int skill, string model = "gordon" )
 		{
 			m_Name = name;
 			m_Skill = skill;
 			m_bUsed = false;
+			skin = model;
 		}	
 	}
 
@@ -21,13 +23,13 @@
 		
 		BotProfiles()
 		{
-			m_Profiles.insertLast(BotProfile("[m00]m1lk",1));
-			m_Profiles.insertLast(BotProfile("[m00]wh3y",2));
-			m_Profiles.insertLast(BotProfile("[m00]y0ghur7",3));
-			m_Profiles.insertLast(BotProfile("[m00]ch33s3",4));
-            m_Profiles.insertLast(BotProfile("[m00]3gg",4));
-            m_Profiles.insertLast(BotProfile("[m00]h3n",3));
-            m_Profiles.insertLast(BotProfile("[m00]c0w",2));
+			m_Profiles.insertLast(BotProfile("[m00]m1lk",1,"freeman"));
+			m_Profiles.insertLast(BotProfile("[m00]wh3y",2,"scientist6"));
+			m_Profiles.insertLast(BotProfile("[m00]y0ghur7",3,"OP4_Lance"));
+			m_Profiles.insertLast(BotProfile("[m00]ch33s3",4,"betagordon"));
+            m_Profiles.insertLast(BotProfile("[m00]3gg",4,"aswat"));
+            m_Profiles.insertLast(BotProfile("[m00]h3n",3,"OP4_Sniper"));
+            m_Profiles.insertLast(BotProfile("[m00]c0w",2,"th_jack"));
 		}
 
 		BotProfile@ getRandomProfile ()

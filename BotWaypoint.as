@@ -321,7 +321,7 @@ class CWaypointTypes
 
 		for ( uint i = 0; i < m_Types.length(); i ++ )
 		{
-			BotMessage("Searching Types in flags " + flags + "... against " + m_Types[i].m_iFlag );
+			//BotMessage("Searching Types in flags " + flags + "... against " + m_Types[i].m_iFlag );
 
 			if ( (flags & m_Types[i].m_iFlag) == m_Types[i].m_iFlag )
 			{
@@ -331,7 +331,7 @@ class CWaypointTypes
 
 		if ( szflags == "" )
 			szflags = "NO FLAGS";
-		BotMessage(szflags);
+		//BotMessage(szflags);
 		SayMessage(player,szflags);
 	}
 
@@ -366,10 +366,10 @@ class CWaypointTypes
 	{
 		for ( uint i = 0; i < m_Types.length(); i ++ )
 		{
-			BotMessage("FindTypeFlag('"+type+") against '"+m_Types[i].m_szName+"'" );
+			//BotMessage("FindTypeFlag('"+type+") against '"+m_Types[i].m_szName+"'" );
 			if ( m_Types[i].m_szName == type  )
 			{
-				BotMessage("FOUND returning "+ m_Types[i].m_iFlag);
+				//BotMessage("FOUND returning "+ m_Types[i].m_iFlag);
 				return m_Types[i].m_iFlag;
 			}
 		}
@@ -394,7 +394,7 @@ class CWaypointTypes
 				BotMessage("Waypoint type " + types[i]+" not found");
 			
 		}
-		BotMessage("parseTypes returning " + flags);
+		//BotMessage("parseTypes returning " + flags);
 		return flags;
 	}
 }
@@ -427,14 +427,14 @@ class CWaypoint
 	bool Read ( FileBuffer@ file, int index )
 	{
 		m_iFlags = file.ReadInt32();
-		BotMessage("m_iFlags = " + m_iFlags + "\n");
+		//BotMessage("m_iFlags = " + m_iFlags + "\n");
 		m_vOrigin.x = file.ReadFloat();		
 		m_vOrigin.y = file.ReadFloat();
 		m_vOrigin.z = file.ReadFloat();
 
-		BotMessage("m_vOrigin.x = " + m_vOrigin.x + "\n");
-		BotMessage("m_vOrigin.y = " + m_vOrigin.y + "\n");
-		BotMessage("m_vOrigin.z = " + m_vOrigin.z + "\n");
+		//BotMessage("m_vOrigin.x = " + m_vOrigin.x + "\n");
+		////BotMessage("m_vOrigin.y = " + m_vOrigin.y + "\n");
+		//BotMessage("m_vOrigin.z = " + m_vOrigin.z + "\n");
 
 		int numPaths = file.ReadInt32();
 
@@ -443,7 +443,7 @@ class CWaypoint
 
 		if ( numPaths < 32 )
 		{
-			BotMessage("numPaths = " + numPaths + "\n");			
+			//BotMessage("numPaths = " + numPaths + "\n");			
 
 			for (int i = 0; i < numPaths; i ++ )
 				m_PathsTo.insertLast(file.ReadInt32());
@@ -579,7 +579,7 @@ final class CWaypointVisibility
 
 	CWaypointVisibility ( int iNumWaypoints )
 	{
-		BotMessage("SET STATE");
+		//BotMessage("SET STATE");
 		state = W_VIS_RUNNING;
 		iWptFrom = 0;
 		iWptTo = 0;
@@ -818,7 +818,7 @@ class CWaypoints
 						continue;
 					}
 
-					BotMessage("ADDED PATH\n");
+					//BotMessage("ADDED PATH\n");
 
 					other.addPath(index);
 					added.addPath(i);
@@ -1291,6 +1291,10 @@ final class RCBotNavigator
 	CWaypoint@ pStartWpt;
 	CWaypoint@ pGoalWpt;
 
+	float m_fNextCheckVisible = 0.0;
+	float m_fLastSeeWaypoint = 0.0;
+	float m_fPreviousDistance = 9999;
+
 	AStarOpenList m_theOpenList;
 
 	void open ( AStarNode@ pNode )
@@ -1364,10 +1368,6 @@ m_fNextTimeout = 0;
 			iLastNode = iStart;
 		}
 	}
-
-	float m_fNextCheckVisible = 0.0;
-	float m_fLastSeeWaypoint = 0.0;
-	float m_fPreviousDistance = 9999;
 
 	void execute ( RCBot@ bot )
 	{
@@ -1526,7 +1526,7 @@ m_fNextTimeout = 0;
 							{
 								int iSucc = currWpt.getPath(iPath);
 
-								BotMessage("PATH FROM " + iCurrentNode + " TO " + iSucc);
+							//	BotMessage("PATH FROM " + iCurrentNode + " TO " + iSucc);
 								
 								if ( iSucc == iLastNode ) // argh?
 									continue;

@@ -102,6 +102,14 @@ namespace BotManager
 		}
 
 
+		
+		void setMoveSpeed ( float speed )
+		{
+			m_fDesiredMoveSpeed = speed;
+		}
+
+
+
 		void Disconnected ()
 		{
 			// free stuff
@@ -362,6 +370,10 @@ namespace BotManager
 			if ( pBot !is null )
 			{
 				@pBot.m_pProfile = profile;
+
+				KeyValueBuffer@ infoBuffer = g_EngineFuncs.GetInfoKeyBuffer(pPlayer.edict());
+
+				infoBuffer.SetValue("model",profile.skin);				
 
 				m_Bots.insertLast( pBot );
 				

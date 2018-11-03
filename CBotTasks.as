@@ -18,6 +18,11 @@ class RCBotTask
 		m_bComplete = true;	
 	}
 
+    void setTimeout ( float timeout )
+    {
+        m_fDefaultTimeout = timeout;
+    }
+
 	void Failed ()
 	{
 		m_bFailed = true;
@@ -733,12 +738,78 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
     
 }
 
-/*
-T O D O
 class CBotHumanTowerTask : RCBotTask
 {
+    Vector m_vOrigin;
 
-}*/
+    CBotHumanTowerTask ( Vector vOrigin )
+    {
+        m_vOrigin = vOrigin;
+
+        setTimeout(15.0f);
+    }
+
+     void execute ( RCBot@ bot )
+     {
+         CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
+
+        bot.setMoveSpeed(bot.m_pPlayer.pev.maxspeed/2);
+
+         if ( groundPlayer !is null )
+         {
+            Vector vPlayer = UTIL_EntityOrigin(groundPlayer);
+
+            
+
+            if ( UTIL_yawAngleFromEdict(vPlayer,bot.m_pPlayer.pev.v_angle,bot.m_pPlayer.pev.origin) < 15 )    
+                bot.setMove(vPlayer);
+
+            bot.setLookAt(vPlayer);
+
+            if ( bot.m_pPlayer.pev.groundentity is groundPlayer.edict() )
+                {
+                    bot.StopMoving();
+
+                    Complete();
+                }
+
+            else if ( bot.distanceFrom(groundPlayer) < 96 )
+            {
+                if ( Math.RandomLong(0,100) > 50 )
+                    bot.PressButton(IN_JUMP);
+            }
+         }
+         else
+         {
+
+            if ( bot.distanceFrom(m_vOrigin) > 96 )
+            {
+                bot.setMove(m_vOrigin);
+
+                BotMessage("bot.distanceFrom(m_vOrigin) > 96");
+            }
+            else 
+            {
+                CBaseEntity@ playerOnTop = UTIL_FindNearestPlayerOnTop(bot.m_pPlayer);
+
+                if ( playerOnTop !is null  )
+                {
+                    BotMessage("playerOnTop !is null");
+
+                    // stand up 
+                    // look at player
+                    bot.setLookAt(UTIL_EntityOrigin(playerOnTop));
+                }
+                else 
+                {
+                    bot.PressButton(IN_DUCK);
+                }
+
+                bot.StopMoving();
+            }
+         }
+     }
+}
 
 class CBotTaskFindCoverTask : RCBotTask
 {    
