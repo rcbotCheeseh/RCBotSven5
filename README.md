@@ -68,7 +68,19 @@ Go to the first waypoint and use the command
 then go to the second waypoint and use the command:
 
     as_command rcbot.pathwaypoint remove2
+    
+   # Remove all paths to a waypoint
+   
+   Go to the waypoint and use the command
 
+    as_command rcbot.pathwaypoint_remove_to
+
+   # Remove all paths from a waypoint
+   
+   Go to the waypoint and use the command
+
+    as_command rcbot.pathwaypoint_remove_from
+    
 # Deleting a waypoint
 
     as_command rcbot.waypoint_delete
@@ -122,6 +134,12 @@ you can give a waypoint multiple types. Use the type names in the table above.
     as_command rcbot.waypoint_removetype <type1> [type2] [type3]
 
 you can remove multiple types. Use the type names in the table above.
+
+# Toggling a waypoint type
+
+    as_command rcbot.waypoint_toggletype <type1> [type2] [type3]
+
+you can toggle multiple types. Use the type names in the table above.
 
 # Viewing current waypoint types
 
