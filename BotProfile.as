@@ -24,13 +24,6 @@
 		
 		BotProfiles()
 		{
-			/*m_Profiles.insertLast(BotProfile("[m00]m1lk",1,"freeman"));
-			m_Profiles.insertLast(BotProfile("[m00]wh3y",2,"scientist6"));
-			m_Profiles.insertLast(BotProfile("[m00]y0ghur7",3,"OP4_Lance"));
-			m_Profiles.insertLast(BotProfile("[m00]ch33s3",4,"betagordon"));
-            m_Profiles.insertLast(BotProfile("[m00]3gg",4,"aswat"));
-            m_Profiles.insertLast(BotProfile("[m00]h3n",3,"OP4_Sniper"));
-            m_Profiles.insertLast(BotProfile("[m00]c0w",2,"th_jack"));*/
 			readProfiles();
 		}
 
