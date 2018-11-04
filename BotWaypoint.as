@@ -803,8 +803,6 @@ class CWaypoints
 
 				if ( flags & W_FL_UNREACHABLE  != W_FL_UNREACHABLE )
 				{
-
-
 					// auto path waypoint
 					for ( int i = 0; i < m_iNumWaypoints; i ++ )
 					{
@@ -1598,6 +1596,67 @@ m_fNextTimeout = 0;
 								}
 								if ( succWpt.hasFlags(W_FL_OPENS_LATER) )
 								{
+									/*TraceResult tr;
+
+									g_Utility.TraceLine( currWpt.m_vOrigin, succWpt.m_vOrigin, ignore_monsters,dont_ignore_glass, null, tr );
+
+									if ( tr.flFraction < 1.0f )
+									{
+										if ( tr.pHit is null )
+											continue;
+
+										CBaseEntity@ pentArea;
+										CBaseEntity@ pentActivator;
+										string szClassname;
+										eMasterType iMasterVal;
+
+										if ( tr.pHit is null )
+											continue; // hit something we can't check
+										if ( tr.pHit.GetClassname() == "worldspawn" )
+											continue; // hit a wall that can't be opened
+										
+										pentArea = g_EntityFuncs.Instance(tr.pHit);
+									
+										pentActivator = bot.m_pPlayer;
+										
+										if ( pentArea && pentActivator && !pentArea->IsTriggered(pentActivator) )
+											continue; // it can't be opened yet..
+										
+										// get master value
+										iMasterVal = gBotGlobals.m_Masters.EntityCanFire(tr.pHit,pBot->m_pEdict);
+															
+										switch ( iMasterVal )
+										{
+										case MASTER_NONE:
+											// bot cant open it without using something?
+											{
+												char *szTargetname = (char*)STRING(tr.pHit->v.targetname);
+												
+												if ( szTargetname && *szTargetname )
+												{
+													edict_t *pTarget = UTIL_FindEntityByTarget(NULL,szTargetname);
+														
+													if ( pTarget )
+													{
+														if ( gBotGlobals.m_Masters.EntityCanFire(pTarget,pBot->m_pEdict) == MASTER_TRIGGERED )
+															break;										
+													}
+
+													continue;
+												}
+											}
+											break;
+										case MASTER_FAULT:
+										case MASTER_NOT_TRIGGERED:
+											continue;
+										case MASTER_TRIGGERED:
+											break;
+										default:
+											break;
+
+										}	
+									}*/
+																		
 									TraceResult tr;
 
 									g_Utility.TraceLine( currWpt.m_vOrigin, succWpt.m_vOrigin, ignore_monsters,dont_ignore_glass, null, tr );
@@ -1613,14 +1672,13 @@ m_fNextTimeout = 0;
 										if ( ent.GetClassname() == "func_door")
 										{
 											CBaseDoor@ door = cast<CBaseDoor@>( ent );
-										
-											// can't continue if locked
-											if ( door.IsLockedByMaster() || door.IsToggleLockedByMaster() )
+
+											if ( !UTIL_DoorIsOpen(door,bot.m_pPlayer) )
 												continue;
 										}
 										else
 											continue;
-									}			
+									}		
 								}
 								if ( succWpt.hasFlags(W_FL_PAIN) )
 								{

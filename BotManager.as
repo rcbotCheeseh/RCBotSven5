@@ -205,7 +205,10 @@ void WaypointGiveType ( const CCommand@ args )
 			CWaypoint@ pWpt =  g_Waypoints.getWaypointAtIndex(wpt);
 
 			if ( flags & W_FL_UNREACHABLE == W_FL_UNREACHABLE )
-				pWpt.removePaths();
+			{
+				g_Waypoints.PathWaypoint_RemovePathsFrom(wpt);
+				g_Waypoints.PathWaypoint_RemovePathsTo(wpt);
+			}
 
 			pWpt.m_iFlags |= flags;
 		}
@@ -280,7 +283,19 @@ void RCBotSearch ( const CCommand@ args )
 	while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
 	{
 		if ( (UTIL_EntityOrigin(pent) - v).Length() < 200 )
+		{
+			if ( pent.GetClassname() == "func_door" )
+				{
+				CBaseDoor@ door = cast<CBaseDoor@>( pent );
+				bool open = UTIL_DoorIsOpen(door,ListenPlayer());
+
+				if ( open )
+					BotMessage("func_door UNLOCKED");
+				else 
+					BotMessage("func_door LOCKED!!");
+				}
 			BotMessage(pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (UTIL_EntityOrigin(pent)-v).Length());			
+		}
 	}
 }
 
@@ -611,6 +626,8 @@ final class RCBot : BotManager::BaseBot
 
 	RCBotSchedule@ m_pCurrentSchedule;
 
+	float m_fNextShoutMedic;
+
 	bool init;
 
 	EHandle m_pEnemy;
@@ -646,6 +663,19 @@ final class RCBot : BotManager::BaseBot
 		m_iPrevHealthArmor = 0;
 		m_iCurrentHealthArmor = 0;
 
+	}
+
+    // anggara_nothing  
+	void ClientCommand ( string command )
+	{
+		/*CBasePlayer@ pPlayer = m_pPlayer;
+
+		NetworkMessage m(MSG_ONE, NetworkMessages::NetworkMessageType(9), pPlayer.edict());
+			m.WriteString( command );
+		m.End();*/
+
+
+		//g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCENTER, command );		
 	}
 
 	float HealthPercent ()
@@ -1022,6 +1052,8 @@ case 	CLASS_BARNACLE	:
 		if ( init == true )
 			return;
 
+		m_fNextShoutMedic = 0.0f;
+
 		m_pWeapons.spawnInit();
 		m_iLastFailedWaypoint = -1;
 		init = true;
@@ -1124,6 +1156,11 @@ case 	CLASS_BARNACLE	:
 	{
 		CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
 
+		if ( (m_fNextShoutMedic < g_Engine.time) && (HealthPercent() < 0.5f) )
+		{
+			ClientCommand("medic");
+			m_fNextShoutMedic = g_Engine.time + 30.0f;
+		}
 		if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload() )
 		{
 			// attack

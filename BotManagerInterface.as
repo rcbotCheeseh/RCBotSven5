@@ -306,6 +306,8 @@ namespace BotManager
 		{
 			m_Bots.resize( 0 );
 
+			//g_MasterEntities = CMasterEntities();
+
 			if ( g_Waypoints.Load() )
 				BotMessage("Waypoints Loaded!");
 			else

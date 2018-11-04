@@ -61,6 +61,8 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_grapple",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_handgrenade",50.0,512.0,WEAP_FL_GRENADE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,1)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_sniperrifle",512.0,8000.0,WEAP_FL_SNIPE,10)); 
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_m249",60.0,2400.0,WEAP_FL_NONE,11)); 
+        
         
     }    
 

@@ -222,3 +222,29 @@
         return tr.flFraction >= 1.0f || (pTo is pEntity);
     }   
 		        
+
+CBaseEntity@ FIND_ENTITY_BY_TARGETNAME(CBaseEntity@ startEntity, string name )
+{
+    return g_EntityFuncs.FindEntityByString(startEntity,"targetname", name);
+}
+
+CBaseEntity@ FIND_ENTITY_BY_TARGET(CBaseEntity@ startEntity, string name )
+{
+    return g_EntityFuncs.FindEntityByString(startEntity,"target", name);
+}
+
+bool UTIL_DoorIsOpen ( CBaseDoor@ door, CBaseEntity@ pActivator )
+{
+    string masterName = door.m_sMaster;
+
+    CBaseEntity@ pMaster = FIND_ENTITY_BY_TARGETNAME(null,masterName);
+
+    if ( pMaster !is null )
+    {
+        return pMaster.IsTriggered(pActivator);
+    }
+
+	// master not found
+	return door.IsTriggered(pActivator);
+}
+
