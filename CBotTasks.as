@@ -211,7 +211,7 @@ final class CFindAmmoTask : RCBotTask
         
         while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 512,"ammo_*", "classname" )) !is null )
         {
-            if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW )
+            if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW && pent.pev.owner is null )
             {      
                 if ( bot.m_pPlayer.HasNamedPlayerItem(pent.GetClassname()) is null )
                 {
@@ -258,13 +258,11 @@ final class CFindWeaponTask : RCBotTask
 
         array<CBaseEntity@> pickup;
 
-
-        BotMessage("CFindWeaponTask");
-        
+        BotMessage("CFindWeaponTask");        
         
         while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 512,"weapon_*", "classname" )) !is null )
         {
-            if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW )
+            if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW && pent.pev.owner is null )
             {      
                 if ( bot.m_pPlayer.HasNamedPlayerItem(pent.GetClassname()) is null )
                 {
@@ -377,6 +375,10 @@ final class CPickupItemTask : RCBotTask
     void execute ( RCBot@ bot )
     {
         BotMessage("CPickupItemTask");
+
+        // can't pick this up!!!
+        if ( m_pItem.pev.owner !is null )
+            Complete();
 
         if ( m_pItem.pev.effects & EF_NODRAW == EF_NODRAW )
         {

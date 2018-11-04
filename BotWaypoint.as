@@ -21,7 +21,7 @@ const int W_FL_BARNEY_POINT  = (1<<12);
 const int W_FL_DEFEND_ZONE  =  (1<<13);
 const int W_FL_AIMING	= (1<<14); /* aiming waypoint */
 const int W_FL_CROUCHJUMP = 	(1<<16); // }	
-const int W_FL_WAIT_FOR_LIFT= (1<<17);/* wait for lift to be down before approaching this waypoint */
+const int W_FL_WAIT = (1<<17);/* wait for lift to be down before approaching this waypoint */
 const int W_FL_PAIN	= (1<<18);
 const int W_FL_JUMP    = (1<<19);
 const int W_FL_WEAPON	= (1<<20); // Crouch and jump
@@ -247,8 +247,8 @@ class CWaypointTypes
 						case W_FL_CROUCHJUMP :
 						name = "crouchjump";
 						break;
-						case W_FL_WAIT_FOR_LIFT :
-						name = "waitlift";
+						case W_FL_WAIT :
+						name = "wait";
 						break;
 						case W_FL_PAIN :
 						name = "pain";
@@ -417,6 +417,12 @@ class CWaypoint
 	CWaypoint ()
 	{
 		m_iFlags = 0;
+	}
+
+	void removePaths ()
+	{
+		m_PathsFrom = {};
+		m_PathsTo = {};
 	}
 
 	bool hasFlags ( int flags )
@@ -795,70 +801,85 @@ class CWaypoints
 				
 				TraceResult tr;
 
-
-				// auto path waypoint
-				for ( int i = 0; i < m_iNumWaypoints; i ++ )
+				if ( flags & W_FL_UNREACHABLE  != W_FL_UNREACHABLE )
 				{
-					CWaypoint@ other = getWaypointAtIndex(i);
 
-					if ( other.hasFlags(W_FL_DELETED))
-						continue;
 
-					if ( i == index )
-						continue;					
-
-					if ( added.distanceFrom(other.m_vOrigin) > 512 )
-						continue;
-
-					g_Utility.TraceHull(added.m_vOrigin, other.m_vOrigin, ignore_monsters,human_hull,  ignore is null ? null : ignore.edict(), tr);
-
-					
-					if ( tr.flFraction < 1.0 ) // !UTIL_IsVisible(other.m_vOrigin,added.m_vOrigin) )
+					// auto path waypoint
+					for ( int i = 0; i < m_iNumWaypoints; i ++ )
 					{
-						continue;
+						CWaypoint@ other = getWaypointAtIndex(i);
+
+						if ( other.hasFlags(W_FL_DELETED))
+							continue;
+
+						if ( other.hasFlags(W_FL_UNREACHABLE) )
+							continue;
+
+						if ( i == index )
+							continue;					
+
+						if ( added.distanceFrom(other.m_vOrigin) > 512 )
+							continue;
+
+						if ( (flags & W_FL_CROUCH != W_FL_CROUCH) && ( !other.hasFlags(W_FL_CROUCH)) )
+						{
+							g_Utility.TraceHull(added.m_vOrigin, other.m_vOrigin, ignore_monsters,human_hull,  ignore is null ? null : ignore.edict(), tr);
+							
+							if ( tr.flFraction < 1.0 ) // !UTIL_IsVisible(other.m_vOrigin,added.m_vOrigin) )
+							{
+								continue;
+							}
+
+						}
+						else
+						{
+							if ( !UTIL_IsVisible(other.m_vOrigin,added.m_vOrigin) )
+								continue;
+						}
+
+						//BotMessage("ADDED PATH\n");
+
+						other.addPath(index);
+						added.addPath(i);
 					}
 
-					//BotMessage("ADDED PATH\n");
-
-					other.addPath(index);
-					added.addPath(i);
-				}
-
-				CBaseEntity@ pent = null;
-				
-				while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
-				{					
-					string classname = pent.GetClassname();
-
-					float dist = (added.m_vOrigin - UTIL_EntityOrigin(pent)).Length();
-
-					if ( dist > 96 )
-						continue;
-
-					if ( pent.pev.owner is null )
+					CBaseEntity@ pent = null;
+					
+					while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
 					{					
-						if ( classname.SubString(0,7) == "weapon_")
-							flags |= W_FL_WEAPON;
-						else if ( classname.SubString(0,5) == "ammo_")
-							flags |= W_FL_AMMO;
-						else if ( classname.SubString(0,11) == "item_health")
+						string classname = pent.GetClassname();
+
+						float dist = (added.m_vOrigin - UTIL_EntityOrigin(pent)).Length();
+
+						if ( dist > 96 )
+							continue;
+
+						if ( pent.pev.owner is null )
+						{					
+							if ( classname.SubString(0,7) == "weapon_")
+								flags |= W_FL_WEAPON;
+							else if ( classname.SubString(0,5) == "ammo_")
+								flags |= W_FL_AMMO;
+							else if ( classname.SubString(0,11) == "item_health")
+								flags |= W_FL_HEALTH;
+							else if ( classname.SubString(0,12) == "item_battery")
+								flags |= W_FL_ARMOR;
+						}
+
+						if ( classname.SubString(0,11) == "func_button")
+							flags |= W_FL_IMPORTANT;
+						else if ( classname.SubString(0,15) == "func_rot_button")
+							flags |= W_FL_IMPORTANT;						
+						else if ( classname.SubString(0,11) == "func_health" )
 							flags |= W_FL_HEALTH;
-						else if ( classname.SubString(0,12) == "item_battery")
+						else if ( classname.SubString(0,13) == "func_recharge" )
 							flags |= W_FL_ARMOR;
+						else if ( classname.SubString(0,12) == "trigger_hurt" )
+							flags |= W_FL_PAIN;			
+
+						BotMessage(classname);
 					}
-
-					if ( classname.SubString(0,11) == "func_button")
-						flags |= W_FL_IMPORTANT;
-					else if ( classname.SubString(0,15) == "func_rot_button")
-						flags |= W_FL_IMPORTANT;						
-					else if ( classname.SubString(0,11) == "func_health" )
-						flags |= W_FL_HEALTH;
-					else if ( classname.SubString(0,13) == "func_recharge" )
-						flags |= W_FL_ARMOR;
-					else if ( classname.SubString(0,12) == "trigger_hurt" )
-						flags |= W_FL_PAIN;			
-
-					BotMessage(classname)			;
 				}
 
 
@@ -940,6 +961,23 @@ class CWaypoints
 			return -1;
 
 		return wpts[Math.RandomLong( 0, wpts.length()-1 )];
+	}
+
+	void PathWaypoint_RemovePathsFrom ( int wpt )
+	{
+		CWaypoint@ pWpt = m_Waypoints[wpt];
+
+		pWpt.removePaths();	
+	}
+
+	void PathWaypoint_RemovePathsTo ( int wpt )
+	{
+		for ( int i = 0; i < m_iNumWaypoints; i ++ )
+		{
+			CWaypoint@ pWpt = m_Waypoints[i];
+
+			pWpt.removePath(wpt);
+		}
 	}
 
 	int getNearestWaypointIndex ( Vector vecLocation, CBasePlayer@ player = null, int iIgnore = -1 )
@@ -1394,7 +1432,9 @@ m_fNextTimeout = 0;
 
 		float touch_distance = 64;
 
-		if ( wpt.hasFlags(W_FL_STAY_NEAR) )
+		if ( wpt.hasFlags(W_FL_JUMP) )
+			touch_distance = 24;
+		else if ( wpt.hasFlags(W_FL_STAY_NEAR) )
 			touch_distance = 40;
 
 		BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
@@ -1454,7 +1494,9 @@ m_fNextTimeout = 0;
 							{
 								if ( button.GetClassname() == "func_button" )
 								{
+									// TO DO
 									// add Schedule to press button
+
 
 								}
 							}
@@ -1570,8 +1612,10 @@ m_fNextTimeout = 0;
 										// mght be closed but is not locked
 										if ( ent.GetClassname() == "func_door")
 										{
-								
-											if ( ent.IsLockedByMaster() )
+											CBaseDoor@ door = cast<CBaseDoor@>( ent );
+										
+											// can't continue if locked
+											if ( door.IsLockedByMaster() || door.IsToggleLockedByMaster() )
 												continue;
 										}
 										else

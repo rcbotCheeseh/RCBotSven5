@@ -35,6 +35,8 @@ CConCommand@ m_pRCBotKillbots;
 CConCommand@ m_pNotouchMode;
 CConCommand@ m_pNoTargetMode;
 CConCommand@ m_pRCBotWaypointToggleType;
+CConCommand@ m_pPathWaypointRemovePathsFrom;
+CConCommand@ m_pPathWaypointRemovePathsTo;
 
 bool g_DebugOn = false;
 bool g_NoTouch = false;
@@ -73,6 +75,8 @@ void PluginInit()
 
 	@m_pPathWaypointRemove1 = @CConCommand( "pathwaypoint_remove1", "removes a new path from", @PathWaypoint_Remove1 );
 	@m_pPathWaypointRemove2 = @CConCommand( "pathwaypoint_remove2", "removed a new path to", @PathWaypoint_Remove2 );
+	@m_pPathWaypointRemovePathsFrom = @CConCommand( "pathwaypoint_remove_from", "removes paths from this waypoint", @PathWaypoint_RemovePathsFrom );
+	@m_pPathWaypointRemovePathsTo = @CConCommand( "pathwaypoint_remove_to", "removedpaths to this waypoint", @PathWaypoint_RemovePathsTo );
 
 	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
 	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type(s)",@WaypointGiveType);
@@ -199,6 +203,9 @@ void WaypointGiveType ( const CCommand@ args )
 		if ( wpt != -1 )
 		{
 			CWaypoint@ pWpt =  g_Waypoints.getWaypointAtIndex(wpt);
+
+			if ( flags & W_FL_UNREACHABLE == W_FL_UNREACHABLE )
+				pWpt.removePaths();
 
 			pWpt.m_iFlags |= flags;
 		}
@@ -377,6 +384,30 @@ void PathWaypoint_Remove2 ( const CCommand@ args )
 	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 	
 	g_Waypoints.PathWaypoint_Remove2(player);
+}
+
+void PathWaypoint_RemovePathsFrom  ( const CCommand@ args )
+{
+	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+
+	if ( wpt != -1 )
+	{
+		g_Waypoints.PathWaypoint_RemovePathsFrom(wpt);
+	}
+}
+
+void PathWaypoint_RemovePathsTo ( const CCommand@ args )
+{
+	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+
+	if ( wpt != -1 )
+	{
+		g_Waypoints.PathWaypoint_RemovePathsTo(wpt);
+	}
 }
 // ------------------------------------
 // COMMANDS - 	end
@@ -745,8 +776,13 @@ case 	CLASS_BARNACLE	:
 		return m_pPlayer.pev.origin;
 	}
 
+	float m_flWaitTime = 0.0f;
+
 	void touchedWpt ( CWaypoint@ wpt )                       
 	{
+		if ( wpt.hasFlags(W_FL_WAIT) )
+			m_flWaitTime = g_Engine.time + 1.0f;
+
 		if ( wpt.hasFlags(W_FL_JUMP) )
 			PressButton(IN_JUMP);
 		if ( wpt.hasFlags(W_FL_CROUCHJUMP) )
@@ -778,7 +814,7 @@ case 	CLASS_BARNACLE	:
 		if ( IsOnLadder() )
 			PressButton(IN_FORWARD);
 		if ( wpt.hasFlags(W_FL_STAY_NEAR))
-			m_fDesiredMoveSpeed = m_pPlayer.pev.maxspeed/2;
+			setMoveSpeed(m_pPlayer.pev.maxspeed/4);
 		//BotMessage("Following Wpt");	
 		setMove(wpt.m_vOrigin);
 
@@ -922,6 +958,8 @@ case 	CLASS_BARNACLE	:
 		DoLook();
 		DoWeapons();
 		DoButtons();
+
+		
 		
 	}
 
@@ -1027,6 +1065,9 @@ case 	CLASS_BARNACLE	:
 	{
 		//if ( navigator !is null )
 		//	navigator.execute(this);
+
+		if ( m_flWaitTime > g_Engine.time )
+			setMoveSpeed(0.0f);
 
 		if ( m_pPlayer.pev.flags & FL_FLY == FL_FLY )
 			PressButton(IN_DUCK);
