@@ -359,7 +359,7 @@ void WaypointDelete ( const CCommand@ args )
 {
 CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 
-	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,100.0f,false);
 
 	if ( wpt != -1 )
 	{
@@ -561,7 +561,7 @@ class CBotVisibles
 					continue;
 				}			
 
-				bBodyVisible = UTIL_IsVisible(player.EyePosition(),UTIL_EntityOrigin(m_pCurrentEntity));
+				bBodyVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity,player);
 
 				if ( m_pCurrentEntity.pev.flags & FL_MONSTER == FL_MONSTER )
 					bHeadVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity.EyePosition());
@@ -690,6 +690,7 @@ final class RCBot : BotManager::BaseBot
 
 	bool BreakableIsEnemy ( CBaseEntity@ pBreakable )
 	{
+		
 	// i. explosives required to blow breakable
 	// ii. OR is not a world brush (non breakable) and can be broken by shooting
 		if ( ((pBreakable.pev.flags & FL_WORLDBRUSH) != FL_WORLDBRUSH) && ((pBreakable.pev.spawnflags & 1)!=1) )
@@ -744,10 +745,13 @@ final class RCBot : BotManager::BaseBot
 
 	bool IsEnemy ( CBaseEntity@ entity )
 	{
+
 	//	return entity.pev.flags & FL_CLIENT == FL_CLIENT; (FOR TESTING)
 		// can't attack this enemy
 		if ( m_pWeapons.findBestWeapon(this,UTIL_EntityOrigin(entity),entity) is null ) 
 			return false;
+
+		
 
 		if ( entity.GetClassname() == "func_breakable" )
 			return BreakableIsEnemy(entity);
@@ -1156,6 +1160,9 @@ case 	CLASS_BARNACLE	:
 	{
 		CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
 
+		if ( m_pEnemy.GetEntity() !is null )
+			BotMessage("ENEMY");
+
 		if ( (m_fNextShoutMedic < g_Engine.time) && (HealthPercent() < 0.5f) )
 		{
 			ClientCommand("medic");
@@ -1177,7 +1184,7 @@ case 	CLASS_BARNACLE	:
 
 			if ( pCurrentWeapon !is null )
 			{
-				if ( pCurrentWeapon.IsMelee() && groundEntity is m_pEnemy.GetEntity() )
+				if ( /*pCurrentWeapon.IsMelee() && */ groundEntity is m_pEnemy.GetEntity() )
 					PressButton(IN_DUCK);
 
 				if ( pCurrentWeapon.IsSniperRifle() && !pCurrentWeapon.IsZoomed() )

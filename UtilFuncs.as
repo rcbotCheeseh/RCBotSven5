@@ -110,6 +110,9 @@
 					if ( pPlayer.pev.flags & FL_DUCKING != FL_DUCKING )
 						continue;
 
+					if ( pPlayer.pev.flags & FL_ONGROUND != FL_ONGROUND )
+						continue;
+
 					if ( pPlayer.pev.movetype == MOVETYPE_FLY )
 						continue;
 				}

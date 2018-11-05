@@ -978,12 +978,11 @@ class CWaypoints
 		}
 	}
 
-	int getNearestWaypointIndex ( Vector vecLocation, CBasePlayer@ player = null, int iIgnore = -1 )
+	int getNearestWaypointIndex ( Vector vecLocation, CBasePlayer@ player = null, int iIgnore = -1, float minDistance = 512.0f, bool bCheckVisible = true )
 	{
 		int nearestWptIdx = -1;
 		float distance = 0;
-		float minDistance = 0;
-		
+
 		for( int i = 0; i < m_iNumWaypoints; i ++ )
 		{
 			if ( i == iIgnore )
@@ -996,7 +995,7 @@ class CWaypoints
 			
 			if ( (nearestWptIdx == -1 ) || ( distance < minDistance) )
 			{
-				if ( UTIL_IsVisible(vecLocation,m_Waypoints[i].m_vOrigin,player) )
+				if ( !bCheckVisible || UTIL_IsVisible(vecLocation,m_Waypoints[i].m_vOrigin,player) )
 				{
 					minDistance = distance;
 					nearestWptIdx = i;
