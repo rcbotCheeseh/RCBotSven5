@@ -48,12 +48,12 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_357",0.0,2000.0,WEAP_FL_NONE,7));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_eagle",0.0,2000.0,WEAP_FL_NONE,6));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_9mmAR",0.0,2000.0,WEAP_FL_NONE|WEAP_FL_SECONDARY,10));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_crossbow",0.0,4000.0,WEAP_FL_SNIPE|WEAP_FL_UNDERWATER,14));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_crossbow",0.0,4000.0,WEAP_FL_SNIPE|WEAP_FL_UNDERWATER,2));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_egon",100.0,2000.0,WEAP_FL_NONE,12));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_hornetgun",0.0,2000.0,WEAP_FL_UNDERWATER,6));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_m16",0.0,2000.0,WEAP_FL_SECONDARY_EXPLOSIVE,13));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_pipewrench",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,99));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_rpg",400.0,5000.0,WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER,16));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_rpg",512.0,5000.0,WEAP_FL_SNIPE|WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER,16));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_shockrifle",100.0,2000.0,WEAP_FL_NONE,9));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_snark",300.0,2000.0,WEAP_FL_GRENADE|WEAP_FL_UNDERWATER,10));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_uzi",100.0,2000.0,WEAP_FL_NONE,8));

@@ -715,7 +715,6 @@ final class RCBot : BotManager::BaseBot
 				break;
 			}
 
-
 			// forget it!!!
 			if ( pBreakable.pev.health > 9999 )
 				return false;
@@ -745,15 +744,13 @@ final class RCBot : BotManager::BaseBot
 
 	bool IsEnemy ( CBaseEntity@ entity )
 	{
-
+		string szClassname = entity.GetClassname();
 	//	return entity.pev.flags & FL_CLIENT == FL_CLIENT; (FOR TESTING)
 		// can't attack this enemy
 		if ( m_pWeapons.findBestWeapon(this,UTIL_EntityOrigin(entity),entity) is null ) 
 			return false;
 
-		
-
-		if ( entity.GetClassname() == "func_breakable" )
+		if ( szClassname == "func_breakable" )
 			return BreakableIsEnemy(entity);
 
 		if ( entity.pev.deadflag != DEAD_NO )
@@ -780,6 +777,25 @@ case 	CLASS_ALIEN_BIOWEAPON	:
 case 	CLASS_XRACE_PITDRONE	:
 case 	CLASS_XRACE_SHOCK	:
 case 	CLASS_BARNACLE	:
+
+		if ( szClassname == "monster_tentacle" ) // tentacle things dont die
+			return false;
+
+		if ( szClassname == "monster_turret" || szClassname == "monster_miniturret" )
+		{
+			// turret is invincible
+			if ( entity.pev.sequence == 0 )
+				return false;
+		}
+/*
+		if ( szClassname == "monster_generic" )
+			return false;
+		 else if ( szClassname,"monster_furniture") )
+			return FALSE;
+		else if ( FStrEq(szClassname,"monster_leech") )
+			return FALSE;
+		else if ( FStrEq(szClassname,"monster_cockroach") )
+			return FALSE;		*/
 
 		return !entity.IsPlayerAlly();
 

@@ -144,24 +144,18 @@ final class CFindHealthTask : RCBotTask
 
         BotMessage("CFindHealthTask");
 
-        while( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_healthcharger")) !is null )
-        {
-            if ( bot.distanceFrom(pent) < 200 )
-            {
-                //if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
-                {
-                        if ( pent.pev.frame == 0  )
-                        {
-                            BotMessage("func_healthcharger");
+        @pent = UTIL_FindNearestEntity("func_healthcharger",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
-                            // add task to use health charger
-                            m_pContainingSchedule.addTask(CUseHealthChargerTask(bot,pent));
-                            Complete();
-                            return;
-                        }
-                }
-            }
-        }
+        if ( pent !is null )
+        {
+            BotMessage("func_healthcharger");
+
+            // add task to use health charger
+            m_pContainingSchedule.addTask(CUseHealthChargerTask(bot,pent));
+            Complete();
+            return;                        
+        }              
+
         
         while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "item_healthkit")) !is null )
         {
@@ -308,34 +302,20 @@ final class CFindArmorTask : RCBotTask
 
         BotMessage("CFindArmorTask");
 
-        while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_recharge")) !is null )
-        {
-            float dist =  bot.distanceFrom(pent);
-            BotMessage("FUNC_RECHARD DIST == " + dist);
-            // within reaching distance
-            if ( dist < 200 )
-            {
-                if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
-                {
-                    if ( pent.pev.frame == 0 )
-                    {
-                        BotMessage("func_recharge");
+        @pent = UTIL_FindNearestEntity("func_recharge",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
-                        // add task to use health charger
-                        m_pContainingSchedule.addTask(CUseArmorCharger(bot,pent));
-                        Complete();
-                        return;
-                    }          
-                    //else
-                    // BotMessage("FRAME != 0!!!");          
-                }
-            }
-        }
+        if ( pent !is null )
+        {
+                BotMessage("func_recharge");
+
+                // add task to use health charger
+                m_pContainingSchedule.addTask(CUseArmorCharger(bot,pent));
+                Complete();
+                return;                           
+        }        
         
         while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "item_battery")) !is null )
-        {
-
-            
+        {            
             // within reaching distance
             if ( bot.distanceFrom(pent) < 400 )
             {
@@ -452,7 +432,7 @@ final class CFindButtonTask : RCBotTask
 
         if ( pent !is null )
         {
-                        BotMessage("func_button");
+                        BotMessage("func_rot_button");
                         // add Task to pick up health
                         m_pContainingSchedule.addTask(CUseButtonTask(pent));
                         Complete();
@@ -901,6 +881,39 @@ abstract class CBotUtil
         utility = util;
     }
 }
+
+/*
+class CBotHealPlayerUtil : CBotUtil
+{
+    float calculateUtility ( RCBot@ bot )
+    {
+        return 1.0f;
+    }
+
+    bool canDo (RCBot@ bot)
+    {
+        return g_Engine.time > m_fNextDo && bot.m_pHeal.GetEntity() !is null;
+    }    
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        CBaseEntity@ pHeal = bot.m_pHeal.GetEntity();
+
+        int iWpt = g_Waypoints.getNearestWaypointIndex(pHeal.pev.origin,pHeal); 
+
+        if ( iWpt != -1 )
+        {
+            RCBotSchedule@ sched = CFindPathSchedule(bot,iWpt);
+
+            sched.addTask(CBotTaskHealPlayer());
+
+            return sched;
+        }
+
+        return null;
+    }
+}*/
+
 
 class CBotGetHealthUtil : CBotUtil
 {
