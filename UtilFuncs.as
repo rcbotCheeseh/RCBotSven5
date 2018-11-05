@@ -238,13 +238,45 @@ bool UTIL_DoorIsOpen ( CBaseDoor@ door, CBaseEntity@ pActivator )
     string masterName = door.m_sMaster;
 
     CBaseEntity@ pMaster = FIND_ENTITY_BY_TARGETNAME(null,masterName);
+	CBaseEntity@ pButton;
 
     if ( pMaster !is null )
     {
         return pMaster.IsTriggered(pActivator);
     }
 
-	// master not found
-	return door.IsTriggered(pActivator);
+	if ( door.pev.targetname == "" )
+		return true;
+
+	return false;
 }
 
+CBaseEntity@ UTIL_FindNearestEntity ( string classname, Vector vOrigin, float fMinDist, bool checkFrame, bool bVisible )
+{
+	CBaseEntity@ pent = null;
+	CBaseEntity@ pNearest = null;
+	float fDist;
+
+	while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent,classname)) !is null )
+	{        
+		Vector entityOrigin = UTIL_EntityOrigin(pent);
+
+		if ( checkFrame && pent.pev.frame != 0 )
+			continue;
+		
+		fDist = (entityOrigin - vOrigin).Length();
+
+		// within reaching distance
+		if ( fDist < fMinDist )
+		{
+			if ( !bVisible || UTIL_IsVisible(vOrigin,UTIL_EntityOrigin(pent)) )
+			{
+				fMinDist = fDist;
+				@pNearest = pent;                           
+			}
+		}
+		
+	}	
+
+	return pNearest;
+}

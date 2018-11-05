@@ -436,45 +436,28 @@ final class CFindButtonTask : RCBotTask
     }
     void execute ( RCBot@ bot )
     {
-        CBaseEntity@ pent = null;
+        //string classname, Vector vOrigin, float fMinDist, bool checkFrame, bool bVisible )
+        CBaseEntity@ pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
-        while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_button")) !is null )
-        {            
-            if ( pent.pev.frame != 0 )
-                continue;
-            // within reaching distance
-            if ( bot.distanceFrom(pent) < 400 )
-            {
-                if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
-                {
+        if ( pent !is null )
+        {
                         BotMessage("func_button");
                         // add Task to pick up health
                         m_pContainingSchedule.addTask(CUseButtonTask(pent));
                         Complete();
                         return;                                    
-                }
-            }
-            
         }
 
-        while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "func_rot_button")) !is null )
-        {            
-            if ( pent.pev.frame != 0 )
-                continue;
-            // within reaching distance
-            if ( bot.distanceFrom(pent) < 400 )
-            {
-                if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
-                {
+        @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
+        if ( pent !is null )
+        {
                         BotMessage("func_button");
                         // add Task to pick up health
                         m_pContainingSchedule.addTask(CUseButtonTask(pent));
                         Complete();
                         return;                                    
-                }
-            }
-            
-        }        
+        }
 
         Failed();
     }
