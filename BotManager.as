@@ -11,7 +11,7 @@
 #include "CBotBits"
 
 BotManager::BotManager g_BotManager( @CreateRCBot );
-
+CConCommand@ m_pRCBotWaypointConvertType;
 CConCommand@ m_pAddBot;
 CConCommand@ m_pRCBotWaypointAdd;
 CConCommand@ m_pRCBotWaypointDelete;
@@ -63,6 +63,8 @@ void PluginInit()
 	
 	@m_pAddBot = @CConCommand( "addbot", "Adds a new bot", @AddBotCallback );
 
+	@m_pRCBotWaypointConvertType = @CConCommand( "waypoint_convert_type", "Convert waypoint type to other", @WaypointConvertType );
+//ConvertFlagsToOther WaypointConvertType
 	@m_pRCBotWaypointOff = @CConCommand( "waypoint_off", "Display waypoints off", @WaypointOff );
 	@m_pRCBotWaypointOn = @CConCommand( "waypoint_on", "Displays waypoints on", @WaypointOn );
 	@m_pRCBotWaypointAdd = @CConCommand( "waypoint_add", "Adds a new waypoint", @WaypointAdd );
@@ -180,6 +182,23 @@ void WaypointToggleType ( const CCommand@ args )
 			else
 				pWpt.m_iFlags |= flags;
 		}
+	}
+}
+//ConvertFlagsToOther WaypointConvertType
+void WaypointConvertType ( const CCommand@ args )
+{
+	array<string> convFrom;
+	array<string> convTo;
+
+	if ( args.ArgC() > 2 )
+	{
+		convFrom.insertLast(args.Arg(1));
+		convTo.insertLast(args.Arg(2));	
+
+		int iFlagsFrom = g_WaypointTypes.parseTypes(convFrom);
+		int iFlagsTo = g_WaypointTypes.parseTypes(convTo);
+	
+		g_Waypoints.ConvertFlagsToOther(iFlagsFrom,iFlagsTo);
 	}
 }
 
@@ -647,6 +666,8 @@ final class RCBot : BotManager::BaseBot
 	int m_iPrevHealthArmor;
 	int m_iCurrentHealthArmor;
 
+	float m_flJumpTime = 0.0f;
+
 	RCBot( CBasePlayer@ pPlayer )
 	{
 		super( pPlayer );
@@ -762,6 +783,9 @@ final class RCBot : BotManager::BaseBot
 		if ( szClassname == "func_breakable" )
 			return BreakableIsEnemy(entity);
 
+		if ( szClassname == "func_tank")
+			return false;
+
 		if ( entity.pev.deadflag != DEAD_NO )
 			return false;
 
@@ -843,11 +867,10 @@ case 	CLASS_BARNACLE	:
 			m_flWaitTime = g_Engine.time + 1.0f;
 
 		if ( wpt.hasFlags(W_FL_JUMP) )
-			PressButton(IN_JUMP);
+			Jump();
 		if ( wpt.hasFlags(W_FL_CROUCHJUMP) )
 			{
-				PressButton(IN_JUMP);
-				PressButton(IN_DUCK);
+			Jump();
 			}
 
 			if( wpt.hasFlags(W_FL_HUMAN_TOWER) )
@@ -950,6 +973,50 @@ case 	CLASS_BARNACLE	:
 		//if ( m_fNextThink > g_Engine.time )
 		//	return;
 
+		/*
+
+		CSoundEnt@ soundEnt = GetSoundEntInstance();
+		int iSound = m_pPlayer.m_iAudibleList;
+
+		while ( iSound != SOUNDLIST_EMPTY )
+		{
+			CSound@ pCurrentSound = soundEnt.SoundPointerForIndex( iSound );
+
+			if ( pCurrentSound is null )
+			{
+				break;
+			}
+
+			if ( pCurrentSound.FIsSound() )
+			{
+				BotMessage("SOUND TYPE = " + pCurrentSound.m_iType + " Volume = " + pCurrentSound.m_iVolume);
+			}
+
+			iSound = pCurrentSound.m_iNext;
+		}*/
+
+
+		m_bMoveToValid = false;
+
+		if ( !m_pPlayer.FlashlightIsOn() )
+		{
+			if ( m_pPlayer.pev.light_level < 10 )
+			{
+				if ( m_pPlayer.m_iFlashBattery > 50 )
+				{
+					m_pPlayer.FlashlightTurnOn();
+				}
+			}
+		}
+		else
+		{
+			// flashlight on
+			if ( m_pPlayer.pev.light_level > 90 )
+			{
+				m_pPlayer.FlashlightTurnOff();				
+			}
+		}
+		
 		ceaseFire(false);
 
 		m_iCurrentPriority = PRIORITY_NONE;
@@ -1107,6 +1174,8 @@ case 	CLASS_BARNACLE	:
 		if ( init == true )
 			return;
 
+			m_flJumpTime = 0.0f;
+
 		m_fNextShoutMedic = 0.0f;
 
 		m_pWeapons.spawnInit();
@@ -1153,12 +1222,13 @@ case 	CLASS_BARNACLE	:
 		//if ( navigator !is null )
 		//	navigator.execute(this);
 
+		// for courch jump
+		if ( m_flJumpTime + 1.0f > g_Engine.time )
+			PressButton(IN_DUCK);
+
 		if ( m_flWaitTime > g_Engine.time )
 			setMoveSpeed(0.0f);
 
-		if ( m_pPlayer.pev.flags & FL_FLY == FL_FLY )
-			PressButton(IN_DUCK);
-		
 		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.25*m_fDesiredMoveSpeed)) )
 		{
 			m_flStuckTime = g_Engine.time;
@@ -1166,12 +1236,18 @@ case 	CLASS_BARNACLE	:
 		// stuck for more than 3 sec
 		else if ( (m_flStuckTime > 0) && (g_Engine.time - m_flStuckTime) > 3.0 )
 		{
-			PressButton(IN_JUMP);
+			Jump();
 			m_flStuckTime = 0;
 			// reset last enemy could cause lok issues
 			m_pLastEnemy = null;
 			m_bLastSeeEnemyValid = false;
 		}		
+	}
+
+	void Jump ()
+	{
+		m_flJumpTime = g_Engine.time;
+		PressButton(IN_JUMP);
 	}
 
 	void DoLook ()

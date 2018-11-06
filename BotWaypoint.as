@@ -419,6 +419,11 @@ class CWaypoint
 		m_iFlags = 0;
 	}
 
+	bool isDeleted ()
+	{
+		return hasFlags(W_FL_DELETED);
+	}
+
 	void removePaths ()
 	{
 		m_PathsFrom = {};
@@ -1122,6 +1127,23 @@ class CWaypoints
 			BotMessage("Waypoint " + filename + " not found \n");
 
 		return ret;
+	}
+
+	void ConvertFlagsToOther ( int iFlagsFrom, int iFlagsTo )
+	{
+		for ( int i = 0; i < m_iNumWaypoints; i ++ )
+		{
+			CWaypoint@ wpt = m_Waypoints[i];
+
+			if ( wpt.isDeleted() )
+				continue;
+
+			if ( wpt.hasFlags(iFlagsFrom) )
+			{
+				wpt.m_iFlags &= ~iFlagsFrom;
+				wpt.m_iFlags |= iFlagsTo;
+			}
+		}
 	}
 
 	bool Save ()
