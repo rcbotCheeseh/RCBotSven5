@@ -733,6 +733,9 @@ class CBotTaskHealPlayer : RCBotTask
 
         CBotWeapon@ medikit = bot.getMedikit();
 
+        if ( m_fLastVisibleTime == 0.0f )
+            m_fLastVisibleTime = g_Engine.time;
+
         // Look at player
         bot.setLookAt(vHeal);
 
