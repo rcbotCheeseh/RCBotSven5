@@ -253,7 +253,13 @@ bool UTIL_DoorIsOpen ( CBaseDoor@ door, CBaseEntity@ pActivator )
 
 	return false;
 }
-
+/**
+ * UTIL_FindNearestEntity
+ * 
+ * Finds the nearest entity with classname 
+ *
+ * @param checkFrame - only check entities with frame == 0 (useful for buttons etc)
+ */
 CBaseEntity@ UTIL_FindNearestEntity ( string classname, Vector vOrigin, float fMinDist, bool checkFrame, bool bVisible )
 {
 	CBaseEntity@ pent = null;

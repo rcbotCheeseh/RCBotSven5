@@ -665,6 +665,15 @@ final class RCBot : BotManager::BaseBot
 
 	}
 
+
+	bool isEntityVisible ( CBaseEntity@ pent )
+	{
+		int index = pent.entindex();
+
+		return m_pVisibles.isVisible(index)>0;
+	}
+
+
     // anggara_nothing  
 	void ClientCommand ( string command )
 	{
@@ -857,16 +866,16 @@ case 	CLASS_BARNACLE	:
 
 	WptColor@ col = WptColor(255,255,255);
 
-	void followingWpt ( CWaypoint@ wpt )
+	void followingWpt ( Vector vOrigin, int flags )
 	{
-		if ( wpt.hasFlags(W_FL_CROUCH) )
+		if ( flags & W_FL_CROUCH == W_FL_CROUCH )
 			PressButton(IN_DUCK);
 		if ( IsOnLadder() )
 			PressButton(IN_FORWARD);
-		if ( wpt.hasFlags(W_FL_STAY_NEAR))
+		if ( flags & W_FL_STAY_NEAR == W_FL_STAY_NEAR )
 			setMoveSpeed(m_pPlayer.pev.maxspeed/4);
 		//BotMessage("Following Wpt");	
-		setMove(wpt.m_vOrigin);
+		setMove(vOrigin);
 
 		//drawBeam (ListenPlayer(), m_pPlayer.pev.origin, wpt.m_vOrigin, col, 1 );
 
@@ -883,12 +892,23 @@ case 	CLASS_BARNACLE	:
 
 	CBotWeapon@ getMedikit ()
 	{
-		return m_pWeapons.findBotWeapon("weapon_medikit");
+		return m_pWeapons.findBotWeapon("weapon_medkit");
 	}
 
 	void selectWeapon ( CBotWeapon@ weapon )
 	{
 		m_pWeapons.selectWeapon(this,weapon);
+	}
+
+	bool CanRevive ( CBaseEntity@ entity )
+	{
+        CBotWeapon@ medikit = getMedikit();
+
+        if ( medikit is null )
+            return false;
+
+		// not implemented yet
+		return false;
 	}
 
 	bool CanHeal ( CBaseEntity@ entity )
@@ -897,14 +917,27 @@ case 	CLASS_BARNACLE	:
         CBotWeapon@ medikit = getMedikit();
 
         if ( medikit is null )
+		{
+			BotMessage("medikit == null");
             return false;
+		}
+
+		// only heal clients for now
+		if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )
+			return false;
+
+		// can't heal the dead -- revive will be done separately
+		if ( entity.pev.deadflag >= DEAD_RESPAWNABLE )
+			return false;
 
         if ( medikit.getPrimaryAmmo(this) == 0 )
         {
             return false;
         }
 
-		return ( entity.pev.flags & FL_CLIENT == FL_CLIENT ) && (entity.pev.health < entity.pev.max_health);
+		BotMessage("CanHeal("+entity.GetClassname()+")");
+
+		return (entity.pev.health < entity.pev.max_health);
 	}
 
 	float getHealFactor ( CBaseEntity@ player )
@@ -917,6 +950,7 @@ case 	CLASS_BARNACLE	:
 		//if ( m_fNextThink > g_Engine.time )
 		//	return;
 
+		ceaseFire(false);
 
 		m_iCurrentPriority = PRIORITY_NONE;
 		m_pWeapons.updateWeapons(this);
@@ -1033,6 +1067,7 @@ case 	CLASS_BARNACLE	:
 
 		if ( CanHeal(ent) )
 		{
+			BotMessage("CanHeal == TRUE");
 			if ( m_pHeal.GetEntity() is null )
 				m_pHeal = ent;
 			else if ( getHealFactor(ent) < getHealFactor(m_pHeal) )
@@ -1176,46 +1211,79 @@ case 	CLASS_BARNACLE	:
 	{
 		CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
 
-		if ( m_pEnemy.GetEntity() !is null )
-			BotMessage("ENEMY");
+		//if ( m_pEnemy.GetEntity() !is null )
+		//	BotMessage("ENEMY");
 
 		if ( (m_fNextShoutMedic < g_Engine.time) && (HealthPercent() < 0.5f) )
 		{
 			ClientCommand("medic");
 			m_fNextShoutMedic = g_Engine.time + 30.0f;
 		}
-		if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload() )
-		{
-			// attack
-			if( Math.RandomLong( 0, 100 ) < 99 )
-				PressButton(IN_RELOAD);
 
-		}
-		else if ( m_pEnemy.GetEntity() !is null )
-		{
-			bool bPressAttack1 = Math.RandomLong(0,100) < 95;
-			bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary();
-
-			CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);		
-
-			if ( pCurrentWeapon !is null )
+		if ( !ceasedFiring() )
+		{	
+			if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload() )
 			{
-				if ( /*pCurrentWeapon.IsMelee() && */ groundEntity is m_pEnemy.GetEntity() )
-					PressButton(IN_DUCK);
+				// attack
+				if( Math.RandomLong( 0, 100 ) < 99 )
+					PressButton(IN_RELOAD);
 
-				if ( pCurrentWeapon.IsSniperRifle() && !pCurrentWeapon.IsZoomed() )
-					bPressAttack2 = true;
 			}
-			
-			if ( bPressAttack1 )
-				PressButton(IN_ATTACK);
-			if ( bPressAttack2 )
-				PressButton(IN_ATTACK2);
+			else if ( m_pEnemy.GetEntity() !is null )
+			{
+				bool bPressAttack1 = Math.RandomLong(0,100) < 95;
+				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary();
 
-			//BotMessage("SHOOTING ENEMY!!!\n");
+				CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);		
+
+				if ( pCurrentWeapon !is null )
+				{
+					if ( /*pCurrentWeapon.IsMelee() && */ groundEntity is m_pEnemy.GetEntity() )
+						PressButton(IN_DUCK);
+
+					if ( pCurrentWeapon.IsSniperRifle() && !pCurrentWeapon.IsZoomed() )
+						bPressAttack2 = true;
+				}
+				
+				if ( bPressAttack1 )
+					PressButton(IN_ATTACK);
+				if ( bPressAttack2 )
+					PressButton(IN_ATTACK2);
+
+				//BotMessage("SHOOTING ENEMY!!!\n");
+			}
+
+			if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload() )
+			{
+				// attack
+				if( Math.RandomLong( 0, 100 ) < 99 )
+					PressButton(IN_RELOAD);
+
+			}
+			else if ( m_pEnemy.GetEntity() !is null )
+			{
+				bool bPressAttack1 = Math.RandomLong(0,100) < 95;
+				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary();
+
+				CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);		
+
+				if ( pCurrentWeapon !is null )
+				{
+					if ( /*pCurrentWeapon.IsMelee() && */ groundEntity is m_pEnemy.GetEntity() )
+						PressButton(IN_DUCK);
+
+					if ( pCurrentWeapon.IsSniperRifle() && !pCurrentWeapon.IsZoomed() )
+						bPressAttack2 = true;
+				}
+				
+				if ( bPressAttack1 )
+					PressButton(IN_ATTACK);
+				if ( bPressAttack2 )
+					PressButton(IN_ATTACK2);
+
+				//BotMessage("SHOOTING ENEMY!!!\n");
+			}
 		}
-
-		
 	}
 
 	void DoTasks ()

@@ -65,9 +65,20 @@ namespace BotManager
 		float m_fSideMove;
 		float m_fForwardMove;		
 		float m_fDesiredMoveSpeed = 0;
+		bool m_bCeaseFire = false;
 
 		bool m_bIsAvoiding = false;
 		Vector m_vAvoidVector;
+
+		void ceaseFire ( bool cease )
+		{
+			m_bCeaseFire = cease;
+		}
+
+		bool ceasedFiring ()
+		{
+			return m_bCeaseFire;
+		}
 
 		void setAvoiding ( bool bIsAvoiding )
 		{
@@ -100,15 +111,11 @@ namespace BotManager
 		void Think()
 		{
 		}
-
-
 		
 		void setMoveSpeed ( float speed )
 		{
 			m_fDesiredMoveSpeed = speed;
 		}
-
-
 
 		void Disconnected ()
 		{

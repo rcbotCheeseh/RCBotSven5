@@ -978,7 +978,7 @@ class CWaypoints
 		}
 	}
 
-	int getNearestWaypointIndex ( Vector vecLocation, CBasePlayer@ player = null, int iIgnore = -1, float minDistance = 512.0f, bool bCheckVisible = true )
+	int getNearestWaypointIndex ( Vector vecLocation, CBaseEntity@ player = null, int iIgnore = -1, float minDistance = 512.0f, bool bCheckVisible = true, bool bIgnoreUnreachable = true )
 	{
 		int nearestWptIdx = -1;
 		float distance = 0;
@@ -988,8 +988,11 @@ class CWaypoints
 			if ( i == iIgnore )
 				continue;
 
-			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
+			if ( m_Waypoints[i].hasFlags(W_FL_DELETED) )
 				continue;					
+
+			if ( !bIgnoreUnreachable && m_Waypoints[i].hasFlags(W_FL_UNREACHABLE))
+				continue;
 
 			distance = m_Waypoints[i].distanceFrom(vecLocation);
 			
@@ -1313,6 +1316,8 @@ final class RCBotNavigator
 	int iStart;
 	int iGoal;
 
+	EHandle m_pTarget;
+
 	int iMaxLoops = 200;
 	int iLastNode;
 
@@ -1353,13 +1358,13 @@ final class RCBotNavigator
 		return pNode;
 	}
 
-	RCBotNavigator ( RCBot@ bot , int iGoalWpt )
+	RCBotNavigator ( RCBot@ bot , int iGoalWpt, CBaseEntity@ pTarget = null )
 	{
-
-		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer,bot.m_iLastFailedWaypoint);
+		m_pTarget = pTarget;
+		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer,bot.m_iLastFailedWaypoint,512.0f,true,false);
 
 		BotMessage("m_iCurrentWaypoint == " + m_iCurrentWaypoint);
-	m_fNextTimeout = 0;
+		m_fNextTimeout = 0;
 		if ( iStart == -1 || iGoalWpt == -1 )
 		{
 			BotMessage("IsTART == -1 OR GOAL == -1");
@@ -1374,18 +1379,18 @@ final class RCBotNavigator
 			iGoal = iGoalWpt;
 			@pGoalWpt = g_Waypoints.getWaypointAtIndex(iGoal);
 
-
 			curr.setHeuristic(0);
 			open(curr);
 			iLastNode = iStart;
 		}
 	}	
-
+/*
 	RCBotNavigator ( RCBot@ bot , Vector vTo )
 	{
 		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer);
 		iGoal = g_Waypoints.getNearestWaypointIndex(vTo);
-m_fNextTimeout = 0;
+		m_fNextTimeout = 0;
+
 		if ( iStart == -1 || iGoal == -1 )
 		{
 			state = NavigatorState_Fail;
@@ -1402,7 +1407,7 @@ m_fNextTimeout = 0;
 			open(curr);
 			iLastNode = iStart;
 		}
-	}
+	}*/
 
 	void execute ( RCBot@ bot )
 	{
@@ -1427,6 +1432,26 @@ m_fNextTimeout = 0;
 
 		float distance = (wpt.m_vOrigin - bot.origin()).Length();
 
+		if ( m_pTarget.GetEntity() !is null )
+		{
+			CBaseEntity@ pTarget = m_pTarget.GetEntity();
+
+			Vector vTarget = UTIL_EntityOrigin(pTarget);
+
+			if ( bot.distanceFrom(vTarget) < bot.distanceFrom(wpt.m_vOrigin) )	
+			{
+				// Bot is closer to moving target than waypoint
+				// and moving target is visible (i.e. not through a wall)
+				// Goal reached!!
+				if ( UTIL_IsVisible(vTarget,bot.m_pPlayer.EyePosition(),bot.m_pPlayer) )
+				{
+					state = NavigatorState_ReachedGoal;			
+					BotMessage("bot reached target entity");			
+					return;
+				}
+			}
+		}
+
 		float touch_distance = 64;
 
 		if ( wpt.hasFlags(W_FL_JUMP) )
@@ -1434,9 +1459,9 @@ m_fNextTimeout = 0;
 		else if ( wpt.hasFlags(W_FL_STAY_NEAR) )
 			touch_distance = 40;
 
-		BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
+		//BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
 
-		if ( (distance < 64) || (distance > (m_fPreviousDistance+64.0)) )
+		if ( (distance < 64) || (distance > (m_fPreviousDistance+touch_distance)) )
 		{
 			bot.touchedWpt(wpt);
 
@@ -1457,8 +1482,8 @@ m_fNextTimeout = 0;
 		}
 		else
 		{
-			BotMessage("FOLLOWING");
-			bot.followingWpt(wpt);
+			//BotMessage("FOLLOWING");
+			bot.followingWpt(wpt.m_vOrigin,wpt.m_iFlags);
 			m_fPreviousDistance = distance;
 
 			if ( m_fNextCheckVisible < g_Engine.time )
