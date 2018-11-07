@@ -355,8 +355,13 @@ void WaypointLoad ( const CCommand@ args )
 void WaypointAdd ( const CCommand@ args )
 {
 	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	array<string> types;
+	for ( int i = 1 ; i < args.ArgC(); i ++ )
+	{
+		types.insertLast(args.Arg(i));
+	}
 
-	int flags = 0;
+	int flags = g_WaypointTypes.parseTypes(types);
 
 	if ( player.pev.flags & FL_DUCKING == FL_DUCKING )
 		flags = W_FL_CROUCH;
@@ -775,9 +780,12 @@ final class RCBot : BotManager::BaseBot
 	bool IsEnemy ( CBaseEntity@ entity )
 	{
 		string szClassname = entity.GetClassname();
+		CBotWeapon@ pBestWeapon = null;
+
+		@pBestWeapon = m_pWeapons.findBestWeapon(this,UTIL_EntityOrigin(entity),entity) ;
 	//	return entity.pev.flags & FL_CLIENT == FL_CLIENT; (FOR TESTING)
-		// can't attack this enemy
-		if ( m_pWeapons.findBestWeapon(this,UTIL_EntityOrigin(entity),entity) is null ) 
+		// can't attack this enemy -- maybe cos I don't have an appropriate weapon
+		if ( pBestWeapon is null ) 
 			return false;
 
 		if ( szClassname == "func_breakable" )
@@ -1140,8 +1148,9 @@ case 	CLASS_BARNACLE	:
 			else if ( getHealFactor(ent) < getHealFactor(m_pHeal) )
 				m_pHeal = ent;
 		}
+		
+		BotMessage("New Visible " + ent.pev.classname + "\n");
 
-		//BotMessage("New Visible " + ent.pev.classname + "\n");
 		if ( IsEnemy(ent) )
 		{
 			BotMessage("NEW ENEMY !!!  " + ent.pev.classname + "\n");
@@ -1298,38 +1307,7 @@ case 	CLASS_BARNACLE	:
 
 		if ( !ceasedFiring() )
 		{	
-			if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload() )
-			{
-				// attack
-				if( Math.RandomLong( 0, 100 ) < 99 )
-					PressButton(IN_RELOAD);
-
-			}
-			else if ( m_pEnemy.GetEntity() !is null )
-			{
-				bool bPressAttack1 = Math.RandomLong(0,100) < 95;
-				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary();
-
-				CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);		
-
-				if ( pCurrentWeapon !is null )
-				{
-					if ( /*pCurrentWeapon.IsMelee() && */ groundEntity is m_pEnemy.GetEntity() )
-						PressButton(IN_DUCK);
-
-					if ( pCurrentWeapon.IsSniperRifle() && !pCurrentWeapon.IsZoomed() )
-						bPressAttack2 = true;
-				}
-				
-				if ( bPressAttack1 )
-					PressButton(IN_ATTACK);
-				if ( bPressAttack2 )
-					PressButton(IN_ATTACK2);
-
-				//BotMessage("SHOOTING ENEMY!!!\n");
-			}
-
-			if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload() )
+			if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload(this) )
 			{
 				// attack
 				if( Math.RandomLong( 0, 100 ) < 99 )

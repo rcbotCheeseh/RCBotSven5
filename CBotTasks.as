@@ -350,6 +350,9 @@ final class CPickupItemTask : RCBotTask
     CPickupItemTask ( RCBot@ bot, CBaseEntity@ item )
     {
         @m_pItem = item;
+
+        // five sec to pick up
+        m_fDefaultTimeout = 5.0f;
     } 
 
     void execute ( RCBot@ bot )
@@ -1129,12 +1132,14 @@ class CBotFindLastEnemyUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iRandomGoal = g_Waypoints.getNearestWaypointIndex(bot.m_vLastSeeEnemy);
+        // ( Vector vecLocation, CBaseEntity@ player = null, int iIgnore = -1, float minDistance = 512.0f, bool bCheckVisible = true, bool bIgnoreUnreachable = true )
+
+        int iRandomGoal = g_Waypoints.getNearestWaypointIndex(bot.m_vLastSeeEnemy,null,-1,400.0,true,false);
 
         if ( iRandomGoal != -1 )
         {
-            RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal);
-
+            RCBotSchedule@ sched = RCBotSchedule();
+            sched.addTask(CFindPathTask(bot,iRandomGoal,bot.m_pEnemy.GetEntity()));
             sched.addTask(CRemoveLastEnemy());
 
             return sched;
@@ -1248,7 +1253,7 @@ class CBotUtilities
             {
                    
                 m_Utils[i].setUtility(m_Utils[i].calculateUtility(bot));
-                BotMessage("Utility = " + m_Utils[i].utility);
+               // BotMessage("Utility = " + m_Utils[i].utility);
                 UtilsCanDo.insertLast(m_Utils[i]);
             }
         }

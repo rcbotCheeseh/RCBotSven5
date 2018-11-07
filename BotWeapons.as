@@ -43,7 +43,7 @@ final class CBotWeaponsInfo
     CBotWeaponsInfo ()
     {
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_crowbar",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,99));        
-        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_9mmhandgun",0.0,1500.0,WEAP_FL_UNDERWATER,1));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_9mmhandgun",0.0,1500.0,WEAP_FL_UNDERWATER|WEAP_FL_SECONDARY,1));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_shotgun",0.0,768.0,WEAP_FL_NONE,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_357",0.0,2000.0,WEAP_FL_NONE,7));
         m_pWeaponInfo.insertLast(CBotWeaponInfo("weapon_eagle",0.0,2000.0,WEAP_FL_NONE,6));
@@ -142,7 +142,7 @@ class CBotWeapon
 
         int index = weap.PrimaryAmmoIndex();
 
-        return (index >= 0) && (player.m_rgAmmo(index) == 0);
+        return (index >= 0) && ((weap.m_iClip + player.m_rgAmmo(index)) == 0);
     }
 
     int getMaxPrimaryAmmo ()
@@ -209,12 +209,17 @@ class CBotWeapon
         return m_pWeaponInfo.m_iFlags & WEAP_FL_SECONDARY == WEAP_FL_SECONDARY;
     }
 
-	bool needToReload ()
+	bool needToReload (RCBot@ bot)
 	{
         CBasePlayerWeapon@ weap  = cast<CBasePlayerWeapon@>(m_pWeaponEntity.GetEntity());
 
-		return weap !is null && weap.m_iClip == 0;
+		return weap !is null && weap.m_iClip == 0 && !outOfAmmo(bot.m_pPlayer);
 	}    
+
+    string GetName ()
+    {
+        return m_pWeaponInfo.m_szName;
+    }
 
     CBotWeaponInfo@ m_pWeaponInfo;
     EHandle m_pWeaponEntity;
@@ -376,7 +381,10 @@ class CBotWeapons
             float distance;
 
             if ( weapon.HasWeapon() == false )
+            {
+            //    BotMessage("I don't have " + weapon.GetName());
                 continue;
+            }
 
             if ( bExplosivesOnly )
             {
@@ -386,7 +394,10 @@ class CBotWeapons
 
             // out of ammo
             if ( weapon.outOfAmmo(botPlayer) )
+            {
+                BotMessage(weapon.GetName() + " Out of ammo");
                 continue;
+            }
 
             if ( botPlayer.pev.waterlevel > 1 && !weapon.CanUseUnderwater() )
                 continue;
@@ -415,7 +426,9 @@ class CBotWeapons
             CBotWeapon@ desiredWeapon = findBestWeapon(bot,UTIL_EntityOrigin(pEnemy),pEnemy);
         
             if ( desiredWeapon !is null )
-            {
+            {                
+	            //BotMessage("ENEMY = " + pEnemy.GetClassname() + " BEST WEAPON = " + desiredWeapon.GetName() );
+
                 if ( desiredWeapon !is m_pCurrentWeapon )
                 {
                     selectWeapon(bot,desiredWeapon);
