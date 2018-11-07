@@ -664,6 +664,19 @@ final class CWaypointVisibility
 	}
 }
 
+// to do for finding waypoint types nearest a goal
+class CWaypointDistance
+{
+	int iWpt;
+	float fDistance;
+
+	CWaypointDistance ( int wptIndex, float fDist )
+	{
+		iWpt = wptIndex;
+		fDistance = fDist;
+	}
+}
+
 class CWaypoints
 {
 	// Max waypoint is 1024 
@@ -941,7 +954,31 @@ class CWaypoints
 		
 		return iIndex;
 	}
-	
+/*
+	int getRandomFlaggedWaypointNearestGoal ( int iFlags, CFailedWaypointsList@ failed = null, Vector vGoal )
+	{
+		array<int> wpts;
+		
+		for( int i = 0; i < m_iNumWaypoints; i ++ )
+		{
+			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
+				continue;	
+
+			if ( failed.contains(i) )
+				continue;
+
+			if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
+			{
+				wpts.insertLast(i);
+			}
+		}
+		
+		if ( wpts.length() == 0 )
+			return -1;
+
+		return wpts[Math.RandomLong( 0, wpts.length()-1 )];
+	}	
+	*/
 	int getRandomFlaggedWaypoint ( int iFlags, CFailedWaypointsList@ failed = null )
 	{
 		array<int> wpts;

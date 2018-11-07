@@ -1006,9 +1006,11 @@ case 	CLASS_BARNACLE	:
 
 		m_bMoveToValid = false;
 
+		int light_level = g_EngineFuncs.GetEntityIllum(m_pPlayer.edict());
+
 		if ( !m_pPlayer.FlashlightIsOn() )
 		{
-			if ( m_pPlayer.pev.light_level < 10 )
+			if ( light_level < 10 )
 			{
 				if ( m_pPlayer.m_iFlashBattery > 50 )
 				{
@@ -1019,7 +1021,7 @@ case 	CLASS_BARNACLE	:
 		else
 		{
 			// flashlight on
-			if ( m_pPlayer.pev.light_level > 90 )
+			if ( light_level > 90 )
 			{
 				m_pPlayer.FlashlightTurnOff();				
 			}
