@@ -88,35 +88,36 @@ then go to the second waypoint and use the command:
 # Waypoint Types
 
     Waypoint type	Usage										Implementation status
-    "team"														unimplemented
-    "teamspecific"												Unimplemented
-    "crouch"		Put where bot needs to crouch (auto)		OK
+    "team"												unimplemented
+    "teamspecific"											Unimplemented
+    "crouch"		Put where bot needs to crouch (auto)						OK
     "ladder"		Coming soon									Unimplemented
-    "lift"			Coming soon									Unimplemented
-    "door"			Coming soon									Unimplemented
-    "health"		Put at health pick up or health charger		Fully implemented
-    "armor"			Put at battery pickup or HEV charger		Fully implemented
-    "ammo"			Put at ammo pickup							OK (partially implemented)
+    "lift"		Coming soon									Unimplemented
+    "door"		Coming soon									Unimplemented
+    "health"		Put at health pick up or health charger						Fully implemented
+    "armor"		Put at battery pickup or HEV charger						Fully implemented
+    "ammo"		Put at ammo pickup								OK (partially implemented)
     "checklift"		Coming soon									Unimplemented
     "important"		Put at objective point such as button 
-					or breakable needed to move to next stage	OK
+			or breakable needed to move to next stage					OK
     "barney"		Coming soon									Unimplemented
     "defend"		Coming soon									Unimplemented
     "aiming"		Coming soon									Unimplemented
-    "crouchjump"	Coming soon									Unimplemented
+    "crouchjump"	Bots should do a longjump (TO CHANGE NAME)					Bots just do a normal jump atm
     "wait"		Bots wait 1 sec before moving to next waypoint					OK (waitlift unimplemented)
     "pain"			Put at a place where bots will be killed 
-					until a trigger_hurt stops working			OK
-    "jump"			Put where a bot needs to jump				OK
-    "weapon"		Put at a weapon pickup						OK (partially implemented)
-    "teleport"		Put at a teleport							OK
-    "tank"			Coming soon									Unimplemented
+					until a trigger_hurt stops working				OK
+    "jump"			Put where a bot needs to jump						OK
+    "weapon"		Put at a weapon pickup								OK (partially implemented)
+    "teleport"		Put at a teleport								OK
+    "tank"		Put at a useable turret								Unimplemented
     "grapple"		Coming soon									Unimplemented
     "staynear"		Coming soon									Unimplemented
-    "end"			Put at the end of level (main objective)	OK
+    "end"		Put at the end of level (main objective)					OK
     "openslater"	Put behind an area that opens later and 
-					has path between a wall/door				OK
-    "humantower"	Coming soon									Unimplemented
+					has path between a wall/door					OK
+    "humantower"	Bots crouch and wait for players to jump on them then stand. 
+    			Otherwise will jump on crouching players.					OK
     "unreachable"	Used for visibility only							OK
     "pushable"		Coming soon									Unimplemented
     "grenthrow"		Coming soon									Unimplemented
