@@ -104,7 +104,7 @@ then go to the second waypoint and use the command:
     "defend"		Coming soon									Unimplemented
     "aiming"		Coming soon									Unimplemented
     "crouchjump"	Coming soon									Unimplemented
-    "waitlift"		Coming soon									Unimplemented
+    "wait"		Bots wait 1 sec before moving to next waypoint					OK (waitlift unimplemented)
     "pain"			Put at a place where bots will be killed 
 					until a trigger_hurt stops working			OK
     "jump"			Put where a bot needs to jump				OK
@@ -117,7 +117,7 @@ then go to the second waypoint and use the command:
     "openslater"	Put behind an area that opens later and 
 					has path between a wall/door				OK
     "humantower"	Coming soon									Unimplemented
-    "unreachable"	Coming soon									Unimplemented
+    "unreachable"	Used for visibility only							OK
     "pushable"		Coming soon									Unimplemented
     "grenthrow"		Coming soon									Unimplemented
 
@@ -141,6 +141,16 @@ you can remove multiple types. Use the type names in the table above.
 
 you can toggle multiple types. Use the type names in the table above.
 
+# Changing waypoint types
+
+to change all waypoints with a particular type to another use
+
+    as_command rcbot.waypoint_convert_type <type_from> <type_to>
+    
+for example
+
+    as_command rcbot.waypoint_convert_type end important
+
 # Viewing current waypoint types
 
 Waypoint colour will change depending on waypoint type(s). To view the type(s) on a  waypoint, go to a waypoint and use the command 
@@ -161,7 +171,7 @@ The program will try to load the waypoint in the ‘store’ folder first (custo
 
     as_command rcbot.waypoint_save
 
-waypoints will be saved in the ‘store’ folder
+waypoints will be saved in the ‘store’ folder. 
 
 # Clearing waypoints
 
@@ -169,4 +179,13 @@ To start waypoints from scratch use the command
 
     as_command rcbot.waypoint_clear
 
-	
+# Waypoint considerations
+
+Many waypoints have been converted from RCBot 1, however some waypoint types now differ. 
+
+    1. There should be only one 'end' waypoint at the end of the map
+    2. There should be multiple 'important' waypoints to indicate milestone button presses etc.
+    3. The 'wait lift' waypoint is now 'wait'
+    4. Ladder waypoints aren't used, but bots can still climb ladders without the need for ladder waypoints. Just make sure the path is slightly angled so that bots do not look in the wrong direction going up the ladder.
+    
+
