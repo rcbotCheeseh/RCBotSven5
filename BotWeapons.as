@@ -206,7 +206,7 @@ class CBotWeapon
 
     bool CanUseSecondary ()
     {
-        return m_pWeaponInfo.m_iFlags & WEAP_FL_SECONDARY == WEAP_FL_SECONDARY;
+        return m_pWeaponInfo.m_iFlags & (WEAP_FL_SECONDARY|WEAP_FL_SECONDARY_EXPLOSIVE) > 0;
     }
 
 	bool needToReload (RCBot@ bot)

@@ -805,6 +805,9 @@ case 	CLASS_NONE	:
 case 	CLASS_PLAYER	:
 case 	CLASS_HUMAN_PASSIVE	:
 case 	CLASS_ALIEN_PASSIVE	:
+case 	CLASS_INSECT	:
+case 	CLASS_PLAYER_BIOWEAPON	:
+case 	CLASS_ALIEN_BIOWEAPON	:
 		return false;
 case 	CLASS_MACHINE	:
 case 	CLASS_HUMAN_MILITARY	:
@@ -812,9 +815,6 @@ case 	CLASS_ALIEN_MILITARY	:
 case 	CLASS_ALIEN_MONSTER	:
 case 	CLASS_ALIEN_PREY	:
 case 	CLASS_ALIEN_PREDATOR	:
-case 	CLASS_INSECT	:
-case 	CLASS_PLAYER_BIOWEAPON	:
-case 	CLASS_ALIEN_BIOWEAPON	:
 case 	CLASS_XRACE_PITDRONE	:
 case 	CLASS_XRACE_SHOCK	:
 case 	CLASS_BARNACLE	:
@@ -1005,6 +1005,16 @@ case 	CLASS_BARNACLE	:
 
 
 		m_bMoveToValid = false;
+
+		CBaseEntity@ pLastEnemy = m_pLastEnemy.GetEntity();
+
+		if ( pLastEnemy !is null )
+		{
+			if ( !IsEnemy(pLastEnemy) )
+			{
+				RemoveLastEnemy();
+			}
+		}
 
 		int light_level = g_EngineFuncs.GetEntityIllum(m_pPlayer.edict());
 

@@ -289,3 +289,19 @@ CBaseEntity@ UTIL_FindNearestEntity ( string classname, Vector vOrigin, float fM
 
 	return pNearest;
 }
+
+bool UTIL_DoesNearestTeleportGoTo ( Vector vTeleportOrigin, Vector vGoto )
+{
+	CBaseEntity@ pTeleIn = UTIL_FindNearestEntity("trigger_teleport",vTeleportOrigin,128.0f,false,true);
+
+	if ( pTeleIn.pev.target == "" )
+		return false;
+	
+	CBaseEntity@ pTeleportDestination = FIND_ENTITY_BY_TARGETNAME(null,pTeleIn.pev.target);
+
+	if ( pTeleportDestination is null )
+		return false;
+
+	return (UTIL_EntityOrigin(pTeleportDestination) - vGoto).Length() < 400.0f;
+
+}

@@ -1794,7 +1794,15 @@ final class RCBotNavigator
 
 								float fCost = curr.getCost();
 								
-								if ( !currWpt.hasFlags(W_FL_TELEPORT) )
+								if ( currWpt.hasFlags(W_FL_TELEPORT) )
+								{
+									if ( !UTIL_DoesNearestTeleportGoTo(currWpt.m_vOrigin,succWpt.m_vOrigin) )
+									{
+										//BotMessage("WAYPINT DOESN'T GO TO THIS TELEPORT!!! SKIPPING!!!");
+										continue;
+									}
+								}
+								else
 									fCost += (succWpt.distanceFrom(currWpt.m_vOrigin));
 
 								if ( succ.isOpen() || succ.isClosed() )
