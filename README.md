@@ -1,12 +1,9 @@
-# RCBotSven5
-New Angelscript RCBot for Svencoop 5 test
+# RCBot Angelscript for Svencoop 5
 
-Bot currently walks around and shoot using most weapons (don't use secondary fire yet)
-Imported tons of waypoints from RCBOT1 (some are corrupt... or maps have changed since)
+Bots currently walk around provided waypoints exist and shoot using most weapons 
 
-waypoints for osprey and sc_another are working, others haven't tested
-
-WIP!!!
+Waypoints can be imported from RCBot1 using the converter here:
+http://rcbot.bots-united.com/forums/index.php?act=Attach&type=post&id=561
 
 # Editor
 
