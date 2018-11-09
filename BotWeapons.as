@@ -171,6 +171,9 @@ class CBotWeapon
     int getPrimaryAmmo( RCBot@ bot )
     {
         CBasePlayerWeapon@ weap  = cast<CBasePlayerWeapon@>(m_pWeaponEntity.GetEntity());
+
+        if ( weap is null )
+            return 0;
         
         int index = weap.PrimaryAmmoIndex();
 
