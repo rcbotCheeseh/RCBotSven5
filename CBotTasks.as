@@ -449,10 +449,12 @@ final class CFindButtonTask : RCBotTask
 final class CUseButtonTask : RCBotTask
 {
     CBaseEntity@ m_pButton;
+    
     string DebugString ()
     {
         return "CUseButtonTask";
     }
+
     CUseButtonTask ( CBaseEntity@ button )
     {
         @m_pButton = button;
@@ -468,7 +470,7 @@ final class CUseButtonTask : RCBotTask
 
         bot.setLookAt(vOrigin);
 
-        if ( bot.distanceFrom(m_pButton) > 56 )
+        if ( bot.distanceFrom(m_pButton) > 64 )
         {
             bot.setMove(vOrigin);
             BotMessage("bot.setMove(m_pCharger.pev.origin)");
@@ -477,18 +479,14 @@ final class CUseButtonTask : RCBotTask
         {
             bot.StopMoving();
 
-            // within so many degrees of target
-           // if ( UTIL_DotProduct(bot.m_pPlayer.pev.v_angle,vOrigin) > 0.7 )    
+            BotMessage("bot.PressButton(IN_USE)");
+
+            if ( Math.RandomLong(0,100) < 99 )
             {
-
-                BotMessage("bot.PressButton(IN_USE)");
-
-                if ( Math.RandomLong(0,100) < 99 )
-                {
-                    bot.PressButton(IN_USE);
-                    Complete();
-                }
+                bot.PressButton(IN_USE);
+                Complete();
             }
+        
         }
     }
 }
@@ -704,6 +702,78 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
         addTask(CBotButtonTask(IN_RELOAD));
     }
     
+}
+
+class CBotTaskRevivePlayer : RCBotTask 
+{
+    float m_fLastVisibleTime = 0.0f;
+    EHandle m_pHeal;
+
+    CBotTaskRevivePlayer ( CBaseEntity@ pHeal )
+    {
+        m_pHeal = pHeal;
+        // Allow 15 sec max for task
+        setTimeout(15.0f);
+    }
+
+     void execute ( RCBot@ bot )
+     {
+        CBaseEntity@ pent = m_pHeal.GetEntity();
+        Vector vHeal;
+
+        if ( pent is null )
+            Complete();        
+
+        if (!bot.CanRevive(pent) )
+            Complete();        
+
+        // stop bot from attacking enemies whilst healing
+        bot.ceaseFire(true);
+
+        vHeal = pent.EyePosition();
+
+        CBotWeapon@ medikit = bot.getMedikit();
+
+        if ( m_fLastVisibleTime == 0.0f )
+            m_fLastVisibleTime = g_Engine.time;
+
+        // Look at player
+        bot.setLookAt(vHeal);
+
+        if ( !bot.isCurrentWeapon(medikit) )
+        {
+            bot.selectWeapon(medikit);
+            m_fLastVisibleTime = g_Engine.time;
+        }
+        else
+        {
+            if ( bot.isEntityVisible(pent) )
+            {
+                m_fLastVisibleTime = g_Engine.time + 3.0f;
+            }
+            else 
+            {
+                // haven't seen the player for three seconds
+                if ( m_fLastVisibleTime < g_Engine.time )
+                {
+                    Failed();
+                }
+            }
+
+            // get down to ground revive
+            bot.PressButton(IN_DUCK);
+
+            if ( bot.distanceFrom(vHeal) > 64.0f )
+            {
+                bot.setMove(vHeal);
+            }
+            else
+            {
+                bot.PressButton(IN_ATTACK2);
+                bot.StopMoving();
+            }
+        }
+     }
 }
 
 class CBotTaskHealPlayer : RCBotTask 
@@ -934,7 +1004,7 @@ class CBotHealPlayerUtil : CBotUtil
 {
     float calculateUtility ( RCBot@ bot )
     {        
-        return 1.0f;
+        return 0.9f;
     }
 
     bool canDo (RCBot@ bot)
@@ -959,6 +1029,48 @@ class CBotHealPlayerUtil : CBotUtil
             //RCBot@ bot, int wpt, CBaseEntity@ pEntity = nul
             sched.addTask(CFindPathTask(bot,iWpt,pHeal));
             sched.addTask(CBotTaskHealPlayer(pHeal));
+
+            return sched;
+        }
+
+        return null;
+    }
+}
+
+/**
+ * CBotHealPlayerUtil
+ *
+ * Utility function for healing a living player with medikit
+ */
+class CBotRevivePlayerUtil : CBotUtil
+{
+    float calculateUtility ( RCBot@ bot )
+    {        
+        return 1.0f;
+    }
+
+    bool canDo (RCBot@ bot)
+    {
+        return (g_Engine.time > m_fNextDo) && bot.m_pRevive.GetEntity() !is null && bot.CanRevive(bot.m_pRevive.GetEntity());
+    }    
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        CBaseEntity@ pHeal = bot.m_pRevive.GetEntity();
+
+        if ( pHeal is null )
+            return null;
+
+        // Vector vecLocation, CBasePlayer@ player = null, int iIgnore = -1, float minDistance = 512.0f, bool bCheckVisible = true, bool bIgnoreUnreachable = true )
+        int iWpt = g_Waypoints.getNearestWaypointIndex(pHeal.EyePosition(),pHeal,-1,400.0f,true,false); 
+
+        if ( iWpt != -1 )
+        {
+            RCBotSchedule@ sched = RCBotSchedule();
+
+            //RCBot@ bot, int wpt, CBaseEntity@ pEntity = nul
+            sched.addTask(CFindPathTask(bot,iWpt,pHeal));
+            sched.addTask(CBotTaskRevivePlayer(pHeal));
 
             return sched;
         }
@@ -1233,6 +1345,7 @@ class CBotUtilities
             m_Utils.insertLast(CBotFindLastEnemyUtil());
             m_Utils.insertLast(CBotRoamUtil());
             m_Utils.insertLast(CBotHealPlayerUtil());
+            m_Utils.insertLast(CBotRevivePlayerUtil());
     }
 
     void reset ()

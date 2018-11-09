@@ -43,11 +43,11 @@ bool g_NoTouch = false;
 bool g_NoTouchChange = false;
 int g_DebugLevel = 0;
 
-	const int PRIORITY_NONE = 0;
-	const int PRIORITY_LADDER = 1;
-	const int PRIORITY_TASK = 2;
-	const int PRIORITY_HURT = 3;
-	const int PRIORITY_ATTACK = 2;
+const int PRIORITY_NONE = 0;	
+const int PRIORITY_HURT = 1;
+const int PRIORITY_TASK = 2;
+const int PRIORITY_ATTACK = 3;
+const int PRIORITY_LADDER = 4;
 	
 CBasePlayer@ ListenPlayer ()
 {
@@ -889,23 +889,23 @@ case 	CLASS_BARNACLE	:
 				}
 			}
 	}
-
-	bool IsOnLadder ( ) 
-	{ 
-		return (m_pPlayer.pev.movetype == MOVETYPE_FLY);
-	};			
+	
 
 	WptColor@ col = WptColor(255,255,255);
 
 	void followingWpt ( Vector vOrigin, int flags )
 	{
+
 		if ( flags & W_FL_CROUCH == W_FL_CROUCH )
 			PressButton(IN_DUCK);
 		if ( IsOnLadder() )
+		{
+			BotMessage("IN_FORWARD");
 			PressButton(IN_FORWARD);
+		}
 		if ( flags & W_FL_STAY_NEAR == W_FL_STAY_NEAR )
 			setMoveSpeed(m_pPlayer.pev.maxspeed/4);
-		//BotMessage("Following Wpt");	
+		BotMessage("Following Wpt");	
 		setMove(vOrigin);
 
 		//drawBeam (ListenPlayer(), m_pPlayer.pev.origin, wpt.m_vOrigin, col, 1 );
@@ -915,6 +915,7 @@ case 	CLASS_BARNACLE	:
 	float m_fNextTakeCover = 0;
 	int m_iLastFailedWaypoint = -1;
 	EHandle m_pHeal;
+	EHandle m_pRevive;
 
 	bool isCurrentWeapon ( CBotWeapon@ weap )
 	{
@@ -938,8 +939,16 @@ case 	CLASS_BARNACLE	:
         if ( medikit is null )
             return false;
 
-		// not implemented yet
-		return false;
+		if ( medikit.getPrimaryAmmo(this) < 50 )
+			return false;
+
+		if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )	
+			return false;
+
+		if ( entity.pev.deadflag != DEAD_RESPAWNABLE )
+			return false;
+
+		return true;
 	}
 
 	bool CanHeal ( CBaseEntity@ entity )
@@ -958,7 +967,7 @@ case 	CLASS_BARNACLE	:
 			return false;
 
 		// can't heal the dead -- revive will be done separately
-		if ( entity.pev.deadflag >= DEAD_RESPAWNABLE )
+		if ( entity.pev.deadflag != DEAD_NO )
 			return false;
 
         if ( medikit.getPrimaryAmmo(this) == 0 )
@@ -1159,8 +1168,18 @@ case 	CLASS_BARNACLE	:
 				m_pHeal = ent;
 			else if ( getHealFactor(ent) < getHealFactor(m_pHeal) )
 				m_pHeal = ent;
+		}		
+		else if ( CanRevive(ent) )
+		{
+			BotMessage("CanRevive == TRUE");
+
+			if ( m_pRevive.GetEntity() is null )
+				m_pRevive = ent;
+			else if ( getHealFactor(ent) < getHealFactor(m_pRevive) )
+				m_pRevive = ent;
 		}
-		
+
+
 		BotMessage("New Visible " + ent.pev.classname + "\n");
 
 		if ( IsEnemy(ent) )
@@ -1188,6 +1207,11 @@ case 	CLASS_BARNACLE	:
 		{
 			m_pHeal = null;
 		}
+
+		if ( m_pRevive.GetEntity() is ent )
+		{
+			m_pRevive = null;
+		}
 	}
 
 	void SpawnInit ()
@@ -1214,6 +1238,7 @@ case 	CLASS_BARNACLE	:
 
 		m_flStuckTime = 0;
 		m_pHeal = null;
+
 	}
 
 	void DoVisibles ()

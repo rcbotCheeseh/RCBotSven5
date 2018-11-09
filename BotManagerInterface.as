@@ -52,6 +52,10 @@ namespace BotManager
 			//BotMessage("setMove IGNORE");
 		}
 
+	bool IsOnLadder ( ) 
+	{ 
+		return (m_pPlayer.pev.movetype == MOVETYPE_FLY);
+	}	
 		void setLookAt ( Vector origin )
 		{
 			if ( m_iCurrentPriority >= m_iLookPriority )
@@ -162,6 +166,8 @@ namespace BotManager
 				
 				m_pPlayer.pev.angles.x = -m_pPlayer.pev.v_angle.x/3;
 				m_pPlayer.pev.angles.y = m_pPlayer.pev.v_angle.y;//*/
+
+
 			}
 
 			m_fUpMove = 0;
@@ -196,6 +202,8 @@ namespace BotManager
 				else 
 					m_fUpMove = -m_fDesiredMoveSpeed;
 				}
+
+			
 				//BotMessage("Yaw = " + yaw + "\n");
 			}
 			else
