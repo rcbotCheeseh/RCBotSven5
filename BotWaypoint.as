@@ -1251,7 +1251,7 @@ final class RCBotCoverWaypointFinder
 	int state;
 	int m_iGoalWaypoint;
 
-	RCBotCoverWaypointFinder ( CWaypointVisibility@ visibility, RCBot@ bot, CBaseEntity@ hideFrom ) 
+	RCBotCoverWaypointFinder ( CWaypointVisibility@ visibility, RCBot@ bot, Vector vHideFrom ) 
 	{
 		if ( visibility is null )
 		{
@@ -1260,7 +1260,7 @@ final class RCBotCoverWaypointFinder
 		}
 		
 		iStart = g_Waypoints.getNearestWaypointIndex(bot.origin(),bot.m_pPlayer,bot.m_iLastFailedWaypoint);
-		vHideFrom = hideFrom.pev.origin;
+
 		iHideFrom = g_Waypoints.getNearestWaypointIndex(vHideFrom);
 
 		if ( iHideFrom != -1 || iStart == -1 )

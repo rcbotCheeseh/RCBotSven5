@@ -591,6 +591,8 @@ final class CUseHealthChargerTask : RCBotTask
 final class CBotButtonTask : RCBotTask 
 {
     int m_iButton;
+    float m_fStartTime = 0.0f;
+
     string DebugString ()
     {
         return "CBotButtonTask";
@@ -602,8 +604,13 @@ final class CBotButtonTask : RCBotTask
 
     void execute ( RCBot@ bot )
     {
-        bot.PressButton(m_iButton);
-        Complete();
+        if ( m_fStartTime == 0.0f )
+            m_fStartTime = g_Engine.time + 1.0f;
+        else if ( m_fStartTime < g_Engine.time )
+            Complete();
+
+        if ( Math.RandomLong(0,100) > 50 )
+            bot.PressButton(m_iButton);
     }
 }
 
@@ -695,9 +702,9 @@ class CFindPathSchedule : RCBotSchedule
 
 class CBotTaskFindCoverSchedule : RCBotSchedule
 {    
-    CBotTaskFindCoverSchedule ( RCBot@ bot, CBaseEntity@ hide_from )
+    CBotTaskFindCoverSchedule ( RCBot@ bot, Vector vHideFrom )
     {
-        addTask(CBotTaskFindCoverTask(bot,hide_from));
+        addTask(CBotTaskFindCoverTask(bot,vHideFrom));
         // reload when arrive at cover point
         addTask(CBotButtonTask(IN_RELOAD));
     }
@@ -925,9 +932,9 @@ class CBotTaskFindCoverTask : RCBotTask
     {
         return "CBotTaskFindCoverTask";
     }
-    CBotTaskFindCoverTask ( RCBot@ bot, CBaseEntity@ hide_from )
+    CBotTaskFindCoverTask ( RCBot@ bot, Vector vHideFrom )
     {
-        @finder = RCBotCoverWaypointFinder(g_Waypoints.m_VisibilityTable,bot,hide_from);    
+        @finder = RCBotCoverWaypointFinder(g_Waypoints.m_VisibilityTable,bot,vHideFrom);    
 
         if ( finder.state == NavigatorState_Fail )
         {

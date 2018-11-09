@@ -290,6 +290,30 @@ CBaseEntity@ UTIL_FindNearestEntity ( string classname, Vector vOrigin, float fM
 	return pNearest;
 }
 
+bool UTIL_PlayerIsAttacking ( CBaseEntity@ pPlayer )
+{
+	switch ( pPlayer.pev.sequence )
+	{
+case 21:
+case 49:
+case 57:
+case 132:
+case 79:
+case 65:
+case 113:
+case 147:
+case 87:
+case 73:
+case 107:
+case 159:
+case 171:
+case 95:
+		return true;
+	}
+
+	return false;
+}
+
 bool UTIL_DoesNearestTeleportGoTo ( Vector vTeleportOrigin, Vector vGoto )
 {
 	CBaseEntity@ pTeleIn = UTIL_FindNearestEntity("trigger_teleport",vTeleportOrigin,128.0f,false,true);

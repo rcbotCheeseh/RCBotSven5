@@ -447,6 +447,10 @@ namespace BotManager
 				pBot.RunPlayerMove();
 			}
 
+			//CBasePlayer@ player = ListenPlayer();
+
+			//BotMessage("Sequence == " + player.pev.sequence);
+
 			g_Waypoints.runVisibility();
 		
 			/*CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );

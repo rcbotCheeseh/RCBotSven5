@@ -43,11 +43,13 @@ bool g_NoTouch = false;
 bool g_NoTouchChange = false;
 int g_DebugLevel = 0;
 
-const int PRIORITY_NONE = 0;	
-const int PRIORITY_TASK = 1;
+const int PRIORITY_NONE = 0;
+const int PRIORITY_WAYPOINT = 1;	
 const int PRIORITY_HURT = 2;
-const int PRIORITY_ATTACK = 3;
-const int PRIORITY_LADDER = 4;
+const int PRIORITY_LISTEN = 3;
+const int PRIORITY_TASK = 4;
+const int PRIORITY_ATTACK = 5;
+const int PRIORITY_LADDER = 6;
 	
 CBasePlayer@ ListenPlayer ()
 {
@@ -577,8 +579,7 @@ class CBotVisibles
 				continue;
 
 			if ( groundEntity !is m_pCurrentEntity )
-			{
-				
+			{				
 				if ( !player.FInViewCone(m_pCurrentEntity) )
 				{
 					setVisible(m_pCurrentEntity,false,false);
@@ -603,6 +604,20 @@ class CBotVisibles
 					if ( m_pNearestAvoid.GetEntity() is null || (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist) )
 					{
 						m_pNearestAvoid =  m_pCurrentEntity;
+					}
+				}
+			}
+
+			if ( bBodyVisible && m_pCurrentEntity.GetClassname() == "grenade")
+			{
+				if ( m_pBot.distanceFrom(m_pCurrentEntity) < 300.0f )
+				{
+					if ( m_pCurrentEntity.pev.owner !is null )
+					{
+						CBaseEntity@ pentOwner = g_EntityFuncs.Instance(m_pCurrentEntity.pev.owner);
+
+						if ( m_pBot.IsEnemy(pentOwner,false) )
+							m_pBot.TakeCover(UTIL_EntityOrigin(m_pCurrentEntity));
 					}
 				}
 			}
@@ -779,16 +794,20 @@ final class RCBot : BotManager::BaseBot
 		return false;
 	}	
 
-	bool IsEnemy ( CBaseEntity@ entity )
+	bool IsEnemy ( CBaseEntity@ entity, bool bCheckWeapons = true )
 	{
 		string szClassname = entity.GetClassname();
-		CBotWeapon@ pBestWeapon = null;
 
-		@pBestWeapon = m_pWeapons.findBestWeapon(this,UTIL_EntityOrigin(entity),entity) ;
-	//	return entity.pev.flags & FL_CLIENT == FL_CLIENT; (FOR TESTING)
-		// can't attack this enemy -- maybe cos I don't have an appropriate weapon
-		if ( pBestWeapon is null ) 
-			return false;
+		if ( bCheckWeapons )
+		{
+			CBotWeapon@ pBestWeapon = null;
+
+			@pBestWeapon = m_pWeapons.findBestWeapon(this,UTIL_EntityOrigin(entity),entity) ;
+		//	return entity.pev.flags & FL_CLIENT == FL_CLIENT; (FOR TESTING)
+			// can't attack this enemy -- maybe cos I don't have an appropriate weapon
+			if ( pBestWeapon is null ) 
+				return false;
+		}
 
 		if ( szClassname == "func_breakable" )
 			return BreakableIsEnemy(entity);
@@ -900,19 +919,104 @@ case 	CLASS_BARNACLE	:
 
 		if ( flags & W_FL_CROUCH == W_FL_CROUCH )
 			PressButton(IN_DUCK);
+
 		if ( IsOnLadder() || ((flags & W_FL_LADDER) == W_FL_LADDER) )
 		{
 			BotMessage("IN_FORWARD");
 			PressButton(IN_FORWARD);
 		}
+
 		if ( flags & W_FL_STAY_NEAR == W_FL_STAY_NEAR )
 			setMoveSpeed(m_pPlayer.pev.maxspeed/4);
+
 		BotMessage("Following Wpt");	
+		
 		setMove(vOrigin);
 
 		//drawBeam (ListenPlayer(), m_pPlayer.pev.origin, wpt.m_vOrigin, col, 1 );
 
 	}
+
+	float m_fListenDistance = 768.0f;
+
+	void DoListen ()
+	{	
+		CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
+		CBaseEntity@ pNearestPlayer = null;
+		float m_fNearestPlayer = m_fListenDistance;
+		
+		if ( pEnemy !is null )
+			return;
+
+
+		for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+		{
+			CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+
+			if( pPlayer is null )
+				continue;
+
+			if ( pPlayer == m_pPlayer )
+				continue;
+
+			if ( UTIL_PlayerIsAttacking(pPlayer) )
+			{
+				float fDistance = distanceFrom(pPlayer);
+
+				if ( fDistance < m_fNearestPlayer )
+				{
+					m_fNearestPlayer = fDistance;
+					@pNearestPlayer = pPlayer;
+				}
+			}
+		}
+
+		if ( pNearestPlayer !is null  )
+		{
+
+					if ( isEntityVisible(pNearestPlayer) )
+						seePlayerAttack(pNearestPlayer);
+					else
+						hearPlayerAttack(pNearestPlayer	);			
+		}
+	}
+
+	void hearPlayerAttack ( CBaseEntity@ pPlayer )
+	{
+		if ( !hasHeardNoise() || (m_pListenPlayer.GetEntity() !is pPlayer) )
+			checkoutNoise(pPlayer,false);		
+	}
+
+	void seePlayerAttack ( CBaseEntity@ pPlayer )
+	{
+		checkoutNoise(pPlayer,true);		
+	}
+
+	void checkoutNoise ( CBaseEntity@ pPlayer, bool visible )
+	{
+		m_pListenPlayer = pPlayer;
+		m_flHearNoiseTime = g_Engine.time + 3.0;
+		m_vNoiseOrigin = pPlayer.EyePosition();
+
+		if ( visible )
+		{
+			// Ok set noise to forward vector
+			g_EngineFuncs.MakeVectors(pPlayer.pev.v_angle);
+
+			m_vNoiseOrigin = m_vNoiseOrigin + g_Engine.v_forward * 2048.0f;					
+		}
+	}
+
+
+	bool hasHeardNoise ()
+	{
+		return (m_flHearNoiseTime > g_Engine.time);
+	}
+
+	Vector m_vNoiseOrigin;
+	EHandle m_pListenPlayer;
+	Vector m_vListenOrigin;
+	float m_flHearNoiseTime = 0;
 
 	float m_fNextTakeCover = 0;
 	int m_iLastFailedWaypoint = -1;
@@ -987,8 +1091,18 @@ case 	CLASS_BARNACLE	:
 		return distanceFrom(player) * (1.0 - (float(player.pev.health) / player.pev.max_health));
 	}
 
-	void Think()
+
+	void TakeCover ( Vector vOrigin )
 	{
+		if ( m_fNextTakeCover < g_Engine.time )
+		{
+			@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,vOrigin);
+			m_fNextTakeCover = g_Engine.time + 8.0;
+		}			
+	}
+
+	void Think()
+	{		
 		//if ( m_fNextThink > g_Engine.time )
 		//	return;
 
@@ -1079,15 +1193,10 @@ case 	CLASS_BARNACLE	:
 		if ( m_iCurrentHealthArmor < m_iPrevHealthArmor )
 		{
 			//int iDamage = m_iPrevHealthArmor - m_iCurrentHealthArmor;
-
 			
 				if ( m_pEnemy.GetEntity() !is null )
 				{
-					if ( m_fNextTakeCover < g_Engine.time )
-					{
-						@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,m_pEnemy.GetEntity());
-						m_fNextTakeCover = g_Engine.time + 8.0;
-					}				
+					TakeCover(UTIL_EntityOrigin(m_pEnemy.GetEntity()));
 				}
 				else
 				{
@@ -1136,6 +1245,9 @@ case 	CLASS_BARNACLE	:
 		}*/
 		DoTasks();
 		DoVisibles();
+
+		DoListen();
+
 		DoMove();
 		DoLook();
 
@@ -1304,30 +1416,28 @@ case 	CLASS_BARNACLE	:
 
 		if ( pEnemy !is null )
 		{						
-			m_iCurrentPriority = PRIORITY_ATTACK;
-
 			if ( m_pVisibles.isVisible(pEnemy.entindex()) & VIS_FL_HEAD == VIS_FL_HEAD )
-				setLookAt(pEnemy.EyePosition());
+				setLookAt(pEnemy.EyePosition(),PRIORITY_ATTACK);
 			else
-				setLookAt(UTIL_EntityOrigin(pEnemy));
-
-			m_iCurrentPriority = PRIORITY_NONE;
+				setLookAt(UTIL_EntityOrigin(pEnemy),PRIORITY_ATTACK);
 
 			//BotMessage("LOOKING AT ENEMY!!!\n");
 		}
 		else if ( IsOnLadder() )		
 		{
-			m_iCurrentPriority = PRIORITY_LADDER;
-			setLookAt(m_vMoveTo);
-			m_iCurrentPriority = PRIORITY_NONE;
+			setLookAt(m_vMoveTo,PRIORITY_LADDER);
+		}
+		else if ( hasHeardNoise() )
+		{
+			setLookAt(m_vNoiseOrigin,PRIORITY_LISTEN);
 		}
 		else if ( m_bLastSeeEnemyValid )
 		{
 			setLookAt(m_vLastSeeEnemy);
 		}
 		else if (m_bMoveToValid )
-		{
-			setLookAt(m_vMoveTo);
+		{			
+			setLookAt(m_vMoveTo,PRIORITY_WAYPOINT);
 		}
 	}
 
