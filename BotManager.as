@@ -1138,6 +1138,7 @@ case 	CLASS_BARNACLE	:
 		DoVisibles();
 		DoMove();
 		DoLook();
+
 		DoWeapons();
 		DoButtons();
 
@@ -1147,7 +1148,8 @@ case 	CLASS_BARNACLE	:
 
 	void DoWeapons ()
 	{	
-		m_pWeapons.DoWeapons(this,m_pEnemy);
+		if ( !ceasedFiring() )
+			m_pWeapons.DoWeapons(this,m_pEnemy);
 	}
 
 	float getEnemyFactor ( CBaseEntity@ entity )
