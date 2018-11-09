@@ -342,14 +342,14 @@ final class CFindArmorTask : RCBotTask
 
 final class CPickupItemTask : RCBotTask 
 {
-    CBaseEntity@ m_pItem;
+    EHandle m_pItem;
     string DebugString ()
     {
         return "CPickupItemTask";
     }
     CPickupItemTask ( RCBot@ bot, CBaseEntity@ item )
     {
-        @m_pItem = item;
+        m_pItem = item;
 
         // five sec to pick up
         m_fDefaultTimeout = 5.0f;
@@ -357,21 +357,26 @@ final class CPickupItemTask : RCBotTask
 
     void execute ( RCBot@ bot )
     {
+        CBaseEntity@ pItem = m_pItem.GetEntity();
+
+        if ( pItem !is null )
+            Complete();
+
         BotMessage("CPickupItemTask");
 
         // can't pick this up!!!
-        if ( m_pItem.pev.owner !is null )
+        if ( pItem.pev.owner !is null )
             Complete();
 
-        if ( m_pItem.pev.effects & EF_NODRAW == EF_NODRAW )
+        if ( pItem.pev.effects & EF_NODRAW == EF_NODRAW )
         {
             BotMessage("EF_NODRAW");
             Complete();
         }
 
-        if ( bot.distanceFrom(m_pItem) > 56 )
+        if ( bot.distanceFrom(pItem) > 56 )
         {
-            bot.setMove(m_pItem.pev.origin);
+            bot.setMove(pItem.pev.origin);
 
              BotMessage("bot.setMove(m_pItem.pev.origin);");
         }
@@ -436,6 +441,17 @@ final class CFindButtonTask : RCBotTask
         if ( pent !is null )
         {
                         BotMessage("func_rot_button");
+                        // add Task to pick up health
+                        m_pContainingSchedule.addTask(CUseButtonTask(pent));
+                        Complete();
+                        return;                                    
+        }
+
+         @pent = UTIL_FindNearestEntity("trigger_once",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
+        if ( pent !is null )
+        {
+                        BotMessage("trigger_once");
                         // add Task to pick up health
                         m_pContainingSchedule.addTask(CUseButtonTask(pent));
                         Complete();
