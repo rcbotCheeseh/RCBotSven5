@@ -468,7 +468,8 @@ final class CUseButtonTask : RCBotTask
         if ( m_pButton.pev.frame != 0 )
             Complete();
 
-        bot.setLookAt(vOrigin);
+        // look at the friggin button!!!!!
+        bot.setLookAt(vOrigin,10);
 
         if ( bot.distanceFrom(m_pButton) > 64 )
         {
@@ -484,7 +485,6 @@ final class CUseButtonTask : RCBotTask
             if ( Math.RandomLong(0,100) < 99 )
             {
                 bot.PressButton(IN_USE);
-                Complete();
             }
         
         }

@@ -44,8 +44,8 @@ bool g_NoTouchChange = false;
 int g_DebugLevel = 0;
 
 const int PRIORITY_NONE = 0;	
-const int PRIORITY_HURT = 1;
-const int PRIORITY_TASK = 2;
+const int PRIORITY_TASK = 1;
+const int PRIORITY_HURT = 2;
 const int PRIORITY_ATTACK = 3;
 const int PRIORITY_LADDER = 4;
 	
@@ -689,6 +689,8 @@ final class RCBot : BotManager::BaseBot
 		m_iPrevHealthArmor = 0;
 		m_iCurrentHealthArmor = 0;
 
+	 	m_bLastSeeEnemyValid = false;
+		m_pLastEnemy = null;
 	}
 
 
@@ -898,7 +900,7 @@ case 	CLASS_BARNACLE	:
 
 		if ( flags & W_FL_CROUCH == W_FL_CROUCH )
 			PressButton(IN_DUCK);
-		if ( IsOnLadder() )
+		if ( IsOnLadder() || ((flags & W_FL_LADDER) == W_FL_LADDER) )
 		{
 			BotMessage("IN_FORWARD");
 			PressButton(IN_FORWARD);
@@ -1230,9 +1232,7 @@ case 	CLASS_BARNACLE	:
 		@m_pCurrentSchedule = null;
 	//	@navigator = null;	
 		m_pEnemy = null;
-
-	 m_bLastSeeEnemyValid = false;
-		m_pLastEnemy = null;		
+		
 		m_pVisibles.reset();
 		utils.reset();
 
@@ -1353,9 +1353,11 @@ case 	CLASS_BARNACLE	:
 			}
 			else if ( m_pEnemy.GetEntity() !is null )
 			{
-				bool bPressAttack1 = Math.RandomLong(0,100) < 95;
-				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary();
+				float fDist = distanceFrom(m_pEnemy.GetEntity());
 
+				bool bPressAttack1 = Math.RandomLong(0,100) < 95;
+				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary() && pCurrentWeapon.secondaryWithinRange(fDist);
+			
 				CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);		
 
 				if ( pCurrentWeapon !is null )

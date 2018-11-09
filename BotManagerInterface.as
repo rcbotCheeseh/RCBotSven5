@@ -56,9 +56,9 @@ namespace BotManager
 	{ 
 		return (m_pPlayer.pev.movetype == MOVETYPE_FLY);
 	}	
-		void setLookAt ( Vector origin )
+		void setLookAt ( Vector origin, int priority = 0 )
 		{
-			if ( m_iCurrentPriority >= m_iLookPriority )
+			if ( (m_iCurrentPriority >= m_iLookPriority) || (priority >= m_iLookPriority) )
 			{
 				m_vLookAtIsValid = true;
 				m_vLookAt = origin;

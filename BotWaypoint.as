@@ -1517,6 +1517,8 @@ final class RCBotNavigator
 			touch_distance = 24;
 		else if ( wpt.hasFlags(W_FL_STAY_NEAR) )
 			touch_distance = 40;
+		else if ( wpt.hasFlags(W_FL_LADDER) || bot.m_pPlayer.pev.movetype == MOVETYPE_FLY )
+			touch_distance = 24;
 
 		//BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
 
