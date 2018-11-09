@@ -45,9 +45,9 @@ int g_DebugLevel = 0;
 
 const int PRIORITY_NONE = 0;
 const int PRIORITY_WAYPOINT = 1;	
-const int PRIORITY_HURT = 2;
-const int PRIORITY_LISTEN = 3;
-const int PRIORITY_TASK = 4;
+const int PRIORITY_LISTEN = 2;
+const int PRIORITY_TASK = 3;
+const int PRIORITY_HURT = 4;
 const int PRIORITY_ATTACK = 5;
 const int PRIORITY_LADDER = 6;
 	
@@ -1209,9 +1209,7 @@ case 	CLASS_BARNACLE	:
 
 						if ( attacker !is null )
 						{
-							m_iCurrentPriority = PRIORITY_HURT;
-							setLookAt(UTIL_EntityOrigin(attacker));
-							m_iCurrentPriority = PRIORITY_NONE;
+							setLookAt(UTIL_EntityOrigin(attacker),PRIORITY_HURT);
 						}
 
 					}
