@@ -388,9 +388,25 @@ namespace BotManager
 			{
 				@pBot.m_pProfile = profile;
 
-				KeyValueBuffer@ infoBuffer = g_EngineFuncs.GetInfoKeyBuffer(pPlayer.edict());
+				KeyValueBuffer@ pInfoBuffer = g_EngineFuncs.GetInfoKeyBuffer(pPlayer.edict());
 
-				infoBuffer.SetValue("model",profile.skin);				
+				// choose model and skin colour
+
+				pInfoBuffer.SetValue("model",profile.skin);				
+				pInfoBuffer.SetValue( "topcolor", Math.RandomLong( 0, 255 ) );
+				pInfoBuffer.SetValue( "bottomcolor", Math.RandomLong( 0, 255 ) );
+
+				// Stuff from Rcbot1 / Hpb_bot 1
+
+				pInfoBuffer.SetValue( "rate", 3500 );
+				pInfoBuffer.SetValue( "cl_updaterate", 20 );
+				pInfoBuffer.SetValue( "cl_lw", 1 );
+				pInfoBuffer.SetValue( "cl_lc", 1 );
+				pInfoBuffer.SetValue( "cl_dlmax", 128 );
+				pInfoBuffer.SetValue( "_vgui_menus", 0 );
+				pInfoBuffer.SetValue( "_ah", 0 );
+				pInfoBuffer.SetValue( "dm", 0 );
+				pInfoBuffer.SetValue( "tracker", 0 );				
 
 				m_Bots.insertLast( pBot );
 				
@@ -446,43 +462,8 @@ namespace BotManager
 				pBot.Think();
 				pBot.RunPlayerMove();
 			}
-
-			//CBasePlayer@ player = ListenPlayer();
-
-			//BotMessage("Sequence == " + player.pev.sequence);
-
+			
 			g_Waypoints.runVisibility();
-		
-			/*CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
-
-			if ( player !is null )
-			{
-				Observer@ o = player.GetObserver();	
-
-				if ( o !is null )
-				{
-					if ( g_NoTouchChange )
-					{
-						g_NoTouchChange = false;	
-
-						if ( g_NoTouch == false )
-						{
-							o.StopObserver(true);
-						}
-						else
-						{
-							o.StartObserver(player.pev.origin, player.pev.angles, false);
-						}
-					}
-					else if ( g_NoTouch )
-					{
-						
-						o.SetMode(OBS_ENTERING);
-						o.SetObserverModeControlEnabled(true);	
-					}
-				}
-			}*/
-				
 			
 		}
 
@@ -495,7 +476,7 @@ namespace BotManager
 				CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
 				
 				if( pPlayer is null )
-					continue;
+					continue;				
 					
 				// not a bot
 				if( ( pPlayer.pev.flags & FL_FAKECLIENT ) == 0 )

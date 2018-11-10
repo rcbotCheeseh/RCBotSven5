@@ -661,29 +661,15 @@ final class CFindPathTask : RCBotTask
     {
         @navigator = RCBotNavigator(bot,wpt,pEntity);
     }
-/*
-    CFindPathTask ( RCBot@ bot, Vector origin )
-    {
-        @navigator = RCBotNavigator(bot,origin);
-    }*/
-/*
-}
-	const int NavigatorState_Complete = 0;
-	const int NavigatorState_InProgress = 1;
-	const int NavigatorState_Fail = 2;
-*/
+
     void execute ( RCBot@ bot )
     {
-        //@bot.navigator = navigator;
-
         switch ( navigator.run(bot) )
         {
             case NavigatorState_Following:
 
             navigator.execute(bot);
-
-           // BotMessage("NavigatorState_Following");
-
+            
             break;
         case NavigatorState_Complete:
  

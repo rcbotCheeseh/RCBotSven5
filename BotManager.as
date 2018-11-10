@@ -1264,7 +1264,12 @@ case 	CLASS_BARNACLE	:
 
 	float getEnemyFactor ( CBaseEntity@ entity )
 	{
-		return distanceFrom(entity.pev.origin) * entity.pev.size.Length();
+		float fFactor = distanceFrom(entity.pev.origin) * entity.pev.size.Length();
+
+		if ( entity.GetClassname() == "func_breakable" )
+			fFactor /= 2;
+
+		return fFactor;
 	}
 
 	void newVisible ( CBaseEntity@ ent )
