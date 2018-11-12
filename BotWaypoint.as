@@ -1606,6 +1606,8 @@ final class RCBotNavigator
 						int iLoops = 0;
 		int iPath;
 
+						iMaxLoops = m_pNavRevs.GetInt();
+
 		//BotMessage("Navigator State IN_PROGRESS...\n");
 
 						while ( state == NavigatorState_InProgress )

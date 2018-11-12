@@ -37,6 +37,8 @@ CConCommand@ m_pNoTargetMode;
 CConCommand@ m_pRCBotWaypointToggleType;
 CConCommand@ m_pPathWaypointRemovePathsFrom;
 CConCommand@ m_pPathWaypointRemovePathsTo;
+CCVar@ m_pVisRevs;
+CCVar@ m_pNavRevs;
 
 bool g_DebugOn = false;
 bool g_NoTouch = false;
@@ -95,6 +97,10 @@ void PluginInit()
 	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
 
 	@m_pRCBotSearch = @CConCommand( "search", "test search func", @RCBotSearch );
+
+	@m_pVisRevs = CCVar("visrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
+	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
+
 }
 
 void NoTargetMode ( const CCommand@ args )
@@ -558,6 +564,8 @@ class CBotVisibles
 			else
 				m_pNearestAvoid = null;
 		}
+
+		iMaxLoops = m_pVisRevs.GetInt();
 
 		do
 		{
@@ -1231,6 +1239,16 @@ case 	CLASS_BARNACLE	:
 		
 		pInfoBuffer.SetValue( "topcolor", Math.RandomLong( 0, 255 ) );
 		pInfoBuffer.SetValue( "bottomcolor", Math.RandomLong( 0, 255 ) );
+
+		pInfoBuffer.SetValue( "rate", 3500 );
+		pInfoBuffer.SetValue( "cl_updaterate", 20 );
+		pInfoBuffer.SetValue( "cl_lw", 1 );
+		pInfoBuffer.SetValue( "cl_lc", 1 );
+		pInfoBuffer.SetValue( "cl_dlmax", 128 );
+		pInfoBuffer.SetValue( "_vgui_menus", 0 );
+		pInfoBuffer.SetValue( "_ah", 0 );
+		pInfoBuffer.SetValue( "dm", 0 );
+		pInfoBuffer.SetValue( "tracker", 0 );
 		
 		if( Math.RandomLong( 0, 100 ) > 10 )
 			Player.pev.button |= IN_ATTACK;
@@ -1466,12 +1484,12 @@ case 	CLASS_BARNACLE	:
 					PressButton(IN_RELOAD);
 
 			}
-			else if ( m_pEnemy.GetEntity() !is null )
+			else if ( m_pEnemy.GetEntity() !is null && pCurrentWeapon !is null )
 			{
 				float fDist = distanceFrom(m_pEnemy.GetEntity());
 
-				bool bPressAttack1 = Math.RandomLong(0,100) < 95;
-				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon !is null && pCurrentWeapon.CanUseSecondary() && pCurrentWeapon.secondaryWithinRange(fDist);
+				bool bPressAttack1 = pCurrentWeapon.shouldFire();
+				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon.CanUseSecondary() && pCurrentWeapon.secondaryWithinRange(fDist);
 			
 				CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);		
 
