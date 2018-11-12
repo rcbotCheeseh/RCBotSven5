@@ -34,6 +34,15 @@ to load waypoints, and....
 
 to add a bot 
 
+# Say commands
+
+say any of the following messages for bots to follow commands
+
+    '<bot name> press [this/that/a] button' - bot will move to your location and press nearest button
+    '<bot name> wait [here/there/etc...]' - bot will move to your location and wait for 90 sec
+    '<bot name> come [here/there/etc...'] - bot will move to your location but not wait
+    '<bot name> pickup [a/some] <ammo/weapon/health/armor>' - bot will move to your location and attempt to pickup what you wanted
+
 # Waypointing
 
 Waypointing currently only works on listen server
