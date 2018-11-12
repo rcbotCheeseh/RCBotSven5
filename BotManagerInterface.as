@@ -257,6 +257,7 @@ namespace BotManager
 			{
 				g_Hooks.RemoveHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
 				g_Hooks.RemoveHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
+				g_Hooks.RemoveHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay ) );
 				
 			}
 		}
@@ -265,6 +266,127 @@ namespace BotManager
 		{
 			return m_pCreateBotFn( pPlayer );
 		}
+
+		HookReturnCode ClientSay ( SayParameters@ param )
+		{
+			CBasePlayer@ talker = param.GetPlayer();
+			
+
+			array<string> args = param.GetCommand().Split( " " );
+
+			CBasePlayer@ talking_to = UTIL_FindPlayer(args[0]);
+
+			if ( talker is null )
+				return HOOK_CONTINUE;
+
+			if ( talking_to !is null )
+			{
+
+				BaseBot@ bot = FindBot(talking_to);
+
+				RCBot@ rcbot = cast<RCBot@> (bot);
+
+				bool OK = false;
+
+				if ( args.length() > 1 )
+				{
+
+						Vector vTalker = talker.pev.origin;
+					
+						if ( args[1] == "come")
+						{
+							RCBotSchedule@ sched = rcbot.SCHED_CREATE_NEW();
+							RCBotTask@ task = rcbot.SCHED_CREATE_PATH(vTalker);
+
+							if ( task !is null )
+							{
+								sched.addTask(task);
+								sched.addTask(CBotMoveToOrigin(vTalker));
+								OK = true;
+							}
+						}
+						else if ( args[1] == "wait")
+						{
+							RCBotSchedule@ sched = rcbot.SCHED_CREATE_NEW();
+							RCBotTask@ task = rcbot.SCHED_CREATE_PATH(vTalker);
+
+							if ( task !is null )
+							{
+								sched.addTask(task);
+								sched.addTask(CBotMoveToOrigin(vTalker));
+								sched.addTask(CBotWaitTask(90.0f));
+								OK = true;
+							}
+						}
+						else if ( args[1] == "press") 
+						{
+							RCBotSchedule@ sched = rcbot.SCHED_CREATE_NEW();
+							
+							CBaseEntity@ pButton = UTIL_FindNearestEntity ( "func_button", talker.EyePosition(), 128.0f, true, false );
+
+							if ( pButton !is null )
+							{
+								RCBotTask@ task = rcbot.SCHED_CREATE_PATH(vTalker);
+
+								if ( task !is null )
+								{
+									sched.addTask(task);
+									sched.addTask(CBotMoveToOrigin(vTalker));
+									sched.addTask(CUseButtonTask(pButton));
+									
+									OK = true;
+								}
+							}
+						}
+						else if ( args[1] == "pickup" )
+						{
+							if ( args.length > 3 )
+							{
+								RCBotSchedule@ sched = rcbot.SCHED_CREATE_NEW();
+								RCBotTask@ task = rcbot.SCHED_CREATE_PATH(vTalker);
+
+								if ( task !is null )
+								{
+									sched.addTask(task);									
+									
+									
+										if ( args[3] == "ammo" )
+										{
+											sched.addTask(CFindAmmoTask());
+											OK = true;
+										}
+										else if ( args[3] == "weapon" )
+										{
+											sched.addTask(CFindWeaponTask());
+											OK = true;
+										}
+										else if ( args[3] ==  "health")
+										{
+											sched.addTask(CFindHealthTask());
+											OK = true;
+										}
+										else if ( args[3] ==  "armor")
+										{
+											sched.addTask(CFindArmorTask());
+											OK = true;
+										}
+									
+								}
+							}
+						}
+					
+					
+				}
+				
+				if ( OK )
+					rcbot.Say("AFFIRMATIVE");
+				else 
+					rcbot.Say("NEGATIVE");
+			}
+
+
+			return HOOK_CONTINUE;
+		}
 		
 		void PluginInit()
 		{
@@ -272,7 +394,7 @@ namespace BotManager
 				return;
 			
 			m_bInitialized = true;
-				
+			g_Hooks.RegisterHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay) );
 			g_Hooks.RegisterHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
 			//g_Hooks.RegisterHook( Hooks::CEntityFuncs, DispatchKeyValueHook(this.DispatchKeyValue) );

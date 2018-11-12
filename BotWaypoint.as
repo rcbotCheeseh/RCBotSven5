@@ -1567,21 +1567,44 @@ final class RCBotNavigator
 				}
 				else
 				{
+					// an entity is blocking the way
 					if ( tr.pHit !is null )
-					{
-						if ( tr.pHit.vars.targetname != "" )
+					{						
+						CBaseEntity@ pent = g_EntityFuncs.Instance(tr.pHit);
+						CBaseToggle@ pDoor = null;
+
+						if ( pent !is null )
 						{
-							CBaseEntity@ button = UTIL_FindEntityByTarget(null,tr.pHit.vars.targetname);
+							@pDoor = cast<CBaseToggle@>(pent);
+						}
 
-							if ( button !is null )
+						if ( pDoor !is null )
+						{
+							BotMessage("pDoor !is null ");
+
+							bool bUse = true;
+
+							if ( pDoor.pev.targetname != "" )
 							{
-								if ( button.GetClassname() == "func_button" )
-								{
-									// TO DO
-									// add Schedule to press button
+								BotMessage("pDoor.pev.targetname != \"\" ");
+								// It has a button ?
+								CBaseEntity@ pButton = UTIL_FindButton(pDoor,bot.m_pPlayer);
 
-
+								if ( pButton !is null )
+								{								
+									bot.pressButton(pButton,m_iCurrentWaypoint);
+									bUse = false;
 								}
+						
+							}
+							
+							
+							if ( bUse )
+							{
+								BotMessage("USE ONLY DOOR, DERP");
+
+								if ( Math.RandomLong(0,100) < 90 )
+									bot.PressButton(IN_USE);
 							}
 						}
 					}
@@ -1682,68 +1705,7 @@ final class RCBotNavigator
 										continue;
 								}
 								if ( succWpt.hasFlags(W_FL_OPENS_LATER) )
-								{
-									/*TraceResult tr;
-
-									g_Utility.TraceLine( currWpt.m_vOrigin, succWpt.m_vOrigin, ignore_monsters,dont_ignore_glass, null, tr );
-
-									if ( tr.flFraction < 1.0f )
-									{
-										if ( tr.pHit is null )
-											continue;
-
-										CBaseEntity@ pentArea;
-										CBaseEntity@ pentActivator;
-										string szClassname;
-										eMasterType iMasterVal;
-
-										if ( tr.pHit is null )
-											continue; // hit something we can't check
-										if ( tr.pHit.GetClassname() == "worldspawn" )
-											continue; // hit a wall that can't be opened
-										
-										pentArea = g_EntityFuncs.Instance(tr.pHit);
-									
-										pentActivator = bot.m_pPlayer;
-										
-										if ( pentArea && pentActivator && !pentArea->IsTriggered(pentActivator) )
-											continue; // it can't be opened yet..
-										
-										// get master value
-										iMasterVal = gBotGlobals.m_Masters.EntityCanFire(tr.pHit,pBot->m_pEdict);
-															
-										switch ( iMasterVal )
-										{
-										case MASTER_NONE:
-											// bot cant open it without using something?
-											{
-												char *szTargetname = (char*)STRING(tr.pHit->v.targetname);
-												
-												if ( szTargetname && *szTargetname )
-												{
-													edict_t *pTarget = UTIL_FindEntityByTarget(NULL,szTargetname);
-														
-													if ( pTarget )
-													{
-														if ( gBotGlobals.m_Masters.EntityCanFire(pTarget,pBot->m_pEdict) == MASTER_TRIGGERED )
-															break;										
-													}
-
-													continue;
-												}
-											}
-											break;
-										case MASTER_FAULT:
-										case MASTER_NOT_TRIGGERED:
-											continue;
-										case MASTER_TRIGGERED:
-											break;
-										default:
-											break;
-
-										}	
-									}*/
-																		
+								{								
 									TraceResult tr;
 
 									g_Utility.TraceLine( currWpt.m_vOrigin, succWpt.m_vOrigin, ignore_monsters,dont_ignore_glass, null, tr );

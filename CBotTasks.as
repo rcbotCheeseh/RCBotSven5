@@ -59,26 +59,40 @@ class RCBotTask
     }
 }
 
+const int SCHED_TASKS_MAX = 16;
+
 class RCBotSchedule
 {
 	array<RCBotTask@> m_pTasks;
     uint m_iCurrentTaskIndex;
+    
 
     RCBotSchedule()
     {
         m_iCurrentTaskIndex = 0;
     }
 
+    uint numTasksRemaining ()
+    {
+        return m_pTasks.length();
+    }
+
 	void addTaskFront ( RCBotTask@ pTask )
 	{
-        pTask.setSchedule(this);
-		m_pTasks.insertAt(0,pTask);
+        if ( m_pTasks.length() < SCHED_TASKS_MAX )
+        {
+            pTask.setSchedule(this);
+            m_pTasks.insertAt(0,pTask);
+        }
 	}
 
 	void addTask ( RCBotTask@ pTask )
 	{	
-        pTask.setSchedule(this);
-		m_pTasks.insertLast(pTask);
+        if ( m_pTasks.length() < SCHED_TASKS_MAX )
+        {
+            pTask.setSchedule(this);
+		    m_pTasks.insertLast(pTask);
+        }
 	}
 
 	bool execute (RCBot@ bot)
@@ -647,7 +661,9 @@ final class CRemoveLastEnemy : RCBotTask
 
 final class CFindPathTask : RCBotTask
 {
-    RCBotNavigator@ navigator;
+    RCBotNavigator@ navigator = null;
+    int m_iGoalWpt;
+    EHandle m_pEntity;
 
     string DebugString ()
     {
@@ -659,11 +675,15 @@ final class CFindPathTask : RCBotTask
      */ 
     CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null )
     {
-        @navigator = RCBotNavigator(bot,wpt,pEntity);
+        m_pEntity = pEntity;
+        m_iGoalWpt = wpt;
     }
 
     void execute ( RCBot@ bot )
     {
+        if ( navigator is null )
+            @navigator = RCBotNavigator(bot,m_iGoalWpt,m_pEntity.GetEntity());
+
         switch ( navigator.run(bot) )
         {
             case NavigatorState_Following:
@@ -687,6 +707,7 @@ final class CFindPathTask : RCBotTask
         case NavigatorState_ReachedGoal:
 
             BotMessage("NavigatorState_ReachedGoal");
+            //m_pContainingSchedule.addTaskFront(CBotMoveToOrigin());
             Complete();
             break;
         }
@@ -1167,6 +1188,40 @@ class CBotGetAmmo : CBotUtil
 
         return null;
     }    
+}
+
+class CBotMoveToOrigin : RCBotTask
+{
+    Vector m_vOrigin;
+
+    CBotMoveToOrigin ( Vector vOrigin )
+    {
+        m_fTimeout = 3.0f;
+        m_vOrigin = vOrigin;
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        bot.setMove(m_vOrigin);
+
+        if ( bot.distanceFrom(m_vOrigin) < 64 )
+        {
+            Complete();
+        }
+    }
+}
+
+class CBotWaitTask : RCBotTask
+{
+    CBotWaitTask ( float fTime = 0.0f )
+    {
+        m_fTimeout = fTime;
+    }
+
+    void execute (RCBot@bot )
+    {
+        bot.StopMoving();
+    }
 }
 
 class CBotGetArmorUtil : CBotUtil

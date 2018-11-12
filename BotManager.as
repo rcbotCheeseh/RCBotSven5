@@ -33,6 +33,7 @@ CConCommand@ m_pRCBotWaypointGiveType;
 CConCommand@ m_pDebugBot;
 CConCommand@ m_pRCBotKillbots;
 CConCommand@ m_pNotouchMode;
+CConCommand@ m_pExplo;
 CConCommand@ m_pNoTargetMode;
 CConCommand@ m_pRCBotWaypointToggleType;
 CConCommand@ m_pPathWaypointRemovePathsFrom;
@@ -78,7 +79,7 @@ void PluginInit()
 	@m_pRCBotWaypointSave = @CConCommand( "waypoint_save", "Saves waypoints", @WaypointSave );
 	@m_pPathWaypointCreate1 = @CConCommand( "pathwaypoint_create1", "Adds a new path from", @PathWaypoint_Create1 );
 	@m_pPathWaypointCreate2 = @CConCommand( "pathwaypoint_create2", "Adds a new path to", @PathWaypoint_Create2 );
-
+	@m_pExplo = @CConCommand ("explo","an explosion!!!",@Explo);
 	@m_pPathWaypointRemove1 = @CConCommand( "pathwaypoint_remove1", "removes a new path from", @PathWaypoint_Remove1 );
 	@m_pPathWaypointRemove2 = @CConCommand( "pathwaypoint_remove2", "removed a new path to", @PathWaypoint_Remove2 );
 	@m_pPathWaypointRemovePathsFrom = @CConCommand( "pathwaypoint_remove_from", "removes paths from this waypoint", @PathWaypoint_RemovePathsFrom );
@@ -117,6 +118,19 @@ void NoTargetMode ( const CCommand@ args )
 		player.pev.flags |= FL_NOTARGET;
 		SayMessageAll(player,"No target mode enabled");
 	}
+}
+
+void Explo ( const CCommand@ args )
+{
+	CBaseEntity@ player = ListenPlayer();// g_ConCommandSystem.GetCurrentPlayer();
+	TraceResult tr;
+		// Ok set noise to forward vector
+	g_EngineFuncs.MakeVectors(player.pev.v_angle);
+
+	// CreateExplosion(const Vector& in vecCenter, const Vector& in vecAngles, edict_t@ pOwner, int iMagnitude, bool fDoDamage)
+	g_Utility.TraceLine( player.EyePosition(), player.EyePosition() + g_Engine.v_forward * 2048.0f, dont_ignore_monsters,dont_ignore_glass, player.edict(), tr );
+
+	g_EntityFuncs.CreateExplosion(tr.vecEndPos - g_Engine.v_forward*16,Vector(0,0,0),player.edict(),1024,true);
 }
 
 void NoTouchFunc ( const CCommand@ args )
@@ -312,7 +326,7 @@ void RCBotSearch ( const CCommand@ args )
 		if ( (UTIL_EntityOrigin(pent) - v).Length() < 200 )
 		{
 			if ( pent.GetClassname() == "func_door" )
-				{
+			{
 				CBaseDoor@ door = cast<CBaseDoor@>( pent );
 				bool open = UTIL_DoorIsOpen(door,ListenPlayer());
 
@@ -320,7 +334,7 @@ void RCBotSearch ( const CCommand@ args )
 					BotMessage("func_door UNLOCKED");
 				else 
 					BotMessage("func_door LOCKED!!");
-				}
+			}
 			BotMessage(pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (UTIL_EntityOrigin(pent)-v).Length());			
 		}
 	}
@@ -1015,6 +1029,55 @@ case 	CLASS_BARNACLE	:
 		}
 	}
 
+	bool bWaiting = false;
+
+	RCBotSchedule@ SCHED_CREATE_NEW ()
+	{
+		@m_pCurrentSchedule = RCBotSchedule();
+
+		return m_pCurrentSchedule;
+	}
+
+	RCBotTask@ SCHED_CREATE_PATH ( Vector vOrigin )
+	{
+		int iWpt = g_Waypoints.getNearestWaypointIndex(vOrigin);
+		
+		if ( iWpt == -1 )
+			return null;
+		
+		return CFindPathTask(this,iWpt,null);
+	}
+
+	// press button and go back to original waypoint
+	void pressButton ( CBaseEntity@ pButton, int iLastWpt )
+	{
+		//CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null )
+		int iWpt = g_Waypoints.getNearestWaypointIndex(UTIL_EntityOrigin(pButton),pButton);
+		
+		if ( iWpt == -1 )
+		{
+			BotMessage("A BUTTON!!! NO WAYPOINT????");
+			return;
+		}
+
+		// don't overflow tasks
+		if ( m_pCurrentSchedule.numTasksRemaining() < 5 )
+		{
+			// This will be the third task
+			m_pCurrentSchedule.addTaskFront(CFindPathTask(this,iLastWpt));
+			// This will be the second task
+			m_pCurrentSchedule.addTaskFront(CUseButtonTask(pButton));
+			// This will be the first task
+			m_pCurrentSchedule.addTaskFront(CFindPathTask(this,iWpt,pButton));
+			
+
+			BotMessage("A BUTTON!!! AM GONNA PRESS IT!!!");
+		}
+		else
+		{
+			BotMessage("A BUTTON!!! TASK OVERFLOW!!!");
+		}
+	}
 
 	bool hasHeardNoise ()
 	{
@@ -1107,6 +1170,11 @@ case 	CLASS_BARNACLE	:
 			@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,vOrigin);
 			m_fNextTakeCover = g_Engine.time + 8.0;
 		}			
+	}
+
+	void Say (string text)
+	{
+		g_PlayerFuncs.SayTextAll(m_pPlayer,text);
 	}
 
 	void Think()

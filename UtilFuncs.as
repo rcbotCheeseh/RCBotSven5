@@ -1,3 +1,5 @@
+	const int DEBUG_NAV = 1;
+	const int DEBUG_TASK = 2;
 
 	float  UTIL_FixFloatAngle ( float fAngle )
 	{
@@ -70,7 +72,6 @@
 
 				dist  = (pPlayer.pev.origin - vOrigin).Length();
 									
-
 				if ( dist < minDistance )
 				{
 					minDistance = dist;
@@ -234,6 +235,88 @@ CBaseEntity@ FIND_ENTITY_BY_TARGETNAME(CBaseEntity@ startEntity, string name )
 CBaseEntity@ FIND_ENTITY_BY_TARGET(CBaseEntity@ startEntity, string name )
 {
     return g_EntityFuncs.FindEntityByString(startEntity,"target", name);
+}
+
+CBaseEntity@ UTIL_RandomTarget ( string targetname, CBaseEntity@ pPlayer )
+{
+	CBaseEntity@ pent = null;
+	array<CBaseEntity@> pButtonsVisible;
+	array<CBaseEntity@> pButtonsNotVisible;
+
+	Vector vEye = pPlayer.EyePosition();
+	
+	while ( (@pent = FIND_ENTITY_BY_TARGET(pent,targetname)) !is null )
+	{
+		Vector vOrigin = UTIL_EntityOrigin(pent);
+
+		if ( UTIL_IsVisible(vEye,vOrigin,pPlayer) )
+			pButtonsVisible.insertLast(pent);
+		else
+			pButtonsNotVisible.insertLast(pent);		
+	}
+
+	if ( pButtonsVisible.length() > 0 )
+		return pButtonsVisible[Math.RandomLong(0,pButtonsVisible.length()-1)];	
+	if ( pButtonsNotVisible.length() > 0 )
+		return pButtonsNotVisible[Math.RandomLong(0,pButtonsNotVisible.length()-1)];	
+	return null;
+}
+
+CBasePlayer@ UTIL_FindPlayer ( string szName )
+{
+		for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+		{
+			CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+
+			if( pPlayer is null )
+				continue;
+			
+			if ( pPlayer.pev.netname == szName )
+				return pPlayer;
+		}
+
+		return null;
+
+}
+
+CBaseEntity@ UTIL_FindButton ( CBaseToggle@ door, CBaseEntity@ pPlayer )
+{
+    string masterName = door.m_sMaster;
+
+    CBaseEntity@ pMaster = FIND_ENTITY_BY_TARGETNAME(null,masterName);
+	CBaseEntity@ pButton;
+
+    if ( pMaster !is null )
+    {
+		BotMessage("pMaster !is null");
+		return UTIL_RandomTarget(pMaster.pev.targetname,pPlayer);
+    }
+
+	if ( door.pev.targetname == "" )
+	{
+		BotMessage("door.pev.targetname :(");
+		return null;
+	}	
+
+	@pButton = FIND_ENTITY_BY_TARGET(null,door.pev.targetname);
+
+	if ( pButton !is null )
+	{
+		string szClassname = pButton.GetClassname();
+		BotMessage("pButton !is null");
+
+		if ( szClassname != "func_button" && szClassname != "func_rot_button" )
+		{			
+			BotMessage("pButton.pev.targetname != \"\"");
+			BotMessage(pButton.GetClassname());			
+
+			return UTIL_RandomTarget(pButton.pev.targetname,pPlayer);
+		}
+		else 
+			return UTIL_RandomTarget(door.pev.targetname,pPlayer);
+	}
+
+	return null;
 }
 
 bool UTIL_DoorIsOpen ( CBaseDoor@ door, CBaseEntity@ pActivator )
