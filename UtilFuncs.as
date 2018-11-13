@@ -262,20 +262,79 @@ CBaseEntity@ UTIL_RandomTarget ( string targetname, CBaseEntity@ pPlayer )
 	return null;
 }
 
-CBasePlayer@ UTIL_FindPlayer ( string szName )
+uint UTIL_StringMatch ( string truncated, string search_in )
 {
-		for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
-		{
-			CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+	uint len = search_in.Length();
+	uint trunc_len = truncated.Length();
 
-			if( pPlayer is null )
-				continue;
-			
-			if ( pPlayer.pev.netname == szName )
-				return pPlayer;
+	
+	if ( trunc_len > len )
+		return 0;
+
+	uint total_len = len - trunc_len;	
+	uint i = 0;
+	uint trunc_i = 0;
+	uint search_i = 0;
+	uint contiguous_match = 0;
+	uint max_match = 0;
+
+	while ( i < total_len )
+	{
+
+		trunc_i = 0;
+		search_i = i;
+		contiguous_match =0;
+
+		while ( search_i < len )
+		{
+			if ( uint8(truncated[trunc_i]) == uint8(search_in[search_i]) )
+			{
+				search_i++;
+				trunc_i ++;
+				contiguous_match ++;
+			}
+			else
+			{
+				
+				break;
+			}
 		}
 
-		return null;
+		if ( contiguous_match > max_match )
+		{
+			max_match = contiguous_match;
+		}
+
+		i++;
+	}
+	return max_match;
+}
+
+// Finds a player from a truncated name
+// e.g. 'wh' will find [m00]wh3y
+CBasePlayer@ UTIL_FindPlayer ( string szName )
+{
+	CBasePlayer@ pBestMatch = null;
+	uint iBestMatch = 0;
+
+	for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+	{
+		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+		uint iMatch = 0;
+
+		if( pPlayer is null )
+			continue;
+
+		iMatch = UTIL_StringMatch(szName,pPlayer.pev.netname);
+		
+		if ( iMatch > iBestMatch )
+		{			
+			@pBestMatch = pPlayer;
+			iBestMatch = iMatch;
+		}
+	}
+
+	return pBestMatch;
 
 }
 

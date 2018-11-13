@@ -115,6 +115,11 @@ namespace BotManager
 		void Think()
 		{
 		}
+
+		void ClientSay ( CBaseEntity@ talker, array<string> args )
+		{
+			// nothing
+		}
 		
 		void setMoveSpeed ( float speed )
 		{
@@ -271,8 +276,9 @@ namespace BotManager
 		{
 			CBasePlayer@ talker = param.GetPlayer();
 			
-
 			array<string> args = param.GetCommand().Split( " " );
+
+			//SayMessage(ListenPlayer(),"YOU TYPED " + args[0] + " | " + args[1]);
 
 			CBasePlayer@ talking_to = UTIL_FindPlayer(args[0]);
 
@@ -281,107 +287,12 @@ namespace BotManager
 
 			if ( talking_to !is null )
 			{
-
 				BaseBot@ bot = FindBot(talking_to);
 
-				RCBot@ rcbot = cast<RCBot@> (bot);
-
-				bool OK = false;
-
-				if ( args.length() > 1 )
+				if ( bot !is null )
 				{
-
-						Vector vTalker = talker.pev.origin;
-					
-						if ( args[1] == "come")
-						{
-							RCBotSchedule@ sched = rcbot.SCHED_CREATE_NEW();
-							RCBotTask@ task = rcbot.SCHED_CREATE_PATH(vTalker);
-
-							if ( task !is null )
-							{
-								sched.addTask(task);
-								sched.addTask(CBotMoveToOrigin(vTalker));
-								OK = true;
-							}
-						}
-						else if ( args[1] == "wait")
-						{
-							RCBotSchedule@ sched = rcbot.SCHED_CREATE_NEW();
-							RCBotTask@ task = rcbot.SCHED_CREATE_PATH(vTalker);
-
-							if ( task !is null )
-							{
-								sched.addTask(task);
-								sched.addTask(CBotMoveToOrigin(vTalker));
-								sched.addTask(CBotWaitTask(90.0f));
-								OK = true;
-							}
-						}
-						else if ( args[1] == "press") 
-						{
-							RCBotSchedule@ sched = rcbot.SCHED_CREATE_NEW();
-							
-							CBaseEntity@ pButton = UTIL_FindNearestEntity ( "func_button", talker.EyePosition(), 128.0f, true, false );
-
-							if ( pButton !is null )
-							{
-								RCBotTask@ task = rcbot.SCHED_CREATE_PATH(vTalker);
-
-								if ( task !is null )
-								{
-									sched.addTask(task);
-									sched.addTask(CBotMoveToOrigin(vTalker));
-									sched.addTask(CUseButtonTask(pButton));
-									
-									OK = true;
-								}
-							}
-						}
-						else if ( args[1] == "pickup" )
-						{
-							if ( args.length > 3 )
-							{
-								RCBotSchedule@ sched = rcbot.SCHED_CREATE_NEW();
-								RCBotTask@ task = rcbot.SCHED_CREATE_PATH(vTalker);
-
-								if ( task !is null )
-								{
-									sched.addTask(task);									
-									
-									
-										if ( args[3] == "ammo" )
-										{
-											sched.addTask(CFindAmmoTask());
-											OK = true;
-										}
-										else if ( args[3] == "weapon" )
-										{
-											sched.addTask(CFindWeaponTask());
-											OK = true;
-										}
-										else if ( args[3] ==  "health")
-										{
-											sched.addTask(CFindHealthTask());
-											OK = true;
-										}
-										else if ( args[3] ==  "armor")
-										{
-											sched.addTask(CFindArmorTask());
-											OK = true;
-										}
-									
-								}
-							}
-						}
-					
-					
+					bot.ClientSay(talker,args);
 				}
-				
-				if ( OK )
-					rcbot.Say("AFFIRMATIVE");
-				else 
-					rcbot.Say("NEGATIVE");
 			}
 
 
