@@ -425,7 +425,7 @@ class CBotWeapons
             // out of ammo
             if ( weapon.outOfAmmo(botPlayer) )
             {
-                BotMessage(weapon.GetName() + " Out of ammo");
+                UTIL_DebugMsg(botPlayer,weapon.GetName() + " Out of ammo",DEBUG_THINK);
                 continue;
             }
 

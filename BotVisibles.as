@@ -123,32 +123,35 @@ class CBotVisibles
 			if ( m_pCurrentEntity is player )
 				continue;
 
-			if ( groundEntity !is m_pCurrentEntity )
-			{				
-				if ( !player.FInViewCone(m_pCurrentEntity) )
-				{
-					setVisible(m_pCurrentEntity,false,false);
-					continue;
-				}			
-
-				bBodyVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity,player);
-
-				if ( m_pCurrentEntity.pev.flags & FL_MONSTER == FL_MONSTER )
-					bHeadVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity.EyePosition());
-			
-				flags = getFlags(bBodyVisible,bHeadVisible);
-
-				if ( flags == 0 )
-				{
-					setVisible(m_pCurrentEntity,false,false);
-					continue;		
-				}
-
-				if ( CanAvoid(m_pCurrentEntity) )
-				{
-					if ( m_pNearestAvoid.GetEntity() is null || (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist) )
+			if ( m_pBot.m_pBlocking.GetEntity() !is m_pCurrentEntity )
+			{
+				if ( groundEntity !is m_pCurrentEntity )
+				{				
+					if ( !player.FInViewCone(m_pCurrentEntity) )
 					{
-						m_pNearestAvoid =  m_pCurrentEntity;
+						setVisible(m_pCurrentEntity,false,false);
+						continue;
+					}			
+
+					bBodyVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity,player);
+
+					if ( m_pCurrentEntity.pev.flags & FL_MONSTER == FL_MONSTER )
+						bHeadVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity.EyePosition());
+				
+					flags = getFlags(bBodyVisible,bHeadVisible);
+
+					if ( flags == 0 )
+					{
+						setVisible(m_pCurrentEntity,false,false);
+						continue;		
+					}
+
+					if ( CanAvoid(m_pCurrentEntity) )
+					{
+						if ( m_pNearestAvoid.GetEntity() is null || (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist) )
+						{
+							m_pNearestAvoid =  m_pCurrentEntity;
+						}
 					}
 				}
 			}

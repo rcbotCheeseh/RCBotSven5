@@ -236,16 +236,29 @@ final class RCBot : BotManager::BaseBot
 
 			// forget it!!!
 			if ( pBreakable.pev.health > 9999 )
+			{
+				UTIL_DebugMsg(m_pPlayer,"pBreakable.pev.health > 9999",DEBUG_THINK);
 				return false;
+			}
 
 			if ( pBreakable.pev.target != "" )
+			{
+				UTIL_DebugMsg(m_pPlayer,"pBreakable.pev.target != ''",DEBUG_THINK);
 				return true;
+			}
 				
-			if ( pBreakable.pev.targetname != "" )	
-				return false;
 			// w00tguy
 			//if ( (iClass == -1) || (iClass == 1) || (iClass == 2) || (iClass == 3) || (iClass == 10) )
 			//	return FALSE; // not an enemy
+
+			if ( m_pBlocking.GetEntity() !is null )
+			{
+				if ( m_pBlocking.GetEntity() is pBreakable )
+				{
+					UTIL_DebugMsg(m_pPlayer,"m_pBlocking.GetEntity() is pBreakable` ",DEBUG_THINK);
+					return true;
+				}
+			}
 
 			Vector vSize = pBreakable.pev.size;
 			Vector vMySize = m_pPlayer.pev.size;
@@ -335,6 +348,81 @@ case 	CLASS_BARNACLE	:
 		return false;
 	}
 
+	bool canGotoWaypoint ( CWaypoint@ currWpt, CWaypoint@ succWpt )
+	{
+		if ( succWpt.hasFlags(W_FL_GRAPPLE) )
+		{
+			if ( !HasWeapon("weapon_grapple") )	
+				return false;
+		}
+		if ( succWpt.hasFlags(W_FL_OPENS_LATER) )
+		{								
+			TraceResult tr;
+
+			g_Utility.TraceLine( currWpt.m_vOrigin, succWpt.m_vOrigin, ignore_monsters,dont_ignore_glass, null, tr );
+
+			if ( tr.flFraction < 1.0f )
+			{
+				if ( tr.pHit is null )
+					return false;
+			
+				CBaseEntity@ ent = g_EntityFuncs.Instance(tr.pHit);
+
+				// mght be closed but is not locked
+				if ( ent.GetClassname() == "func_door" || ent.GetClassname() == "func_door_rotating" )
+				{
+					CBaseDoor@ door = cast<CBaseDoor@>( ent );
+
+					if ( !UTIL_DoorIsOpen(door,m_pPlayer) )
+						return false;
+				}
+				else
+					return false;
+			}		
+		}
+		if ( succWpt.hasFlags(W_FL_PAIN) )
+		{
+
+			CBaseEntity@ pent = null;
+			bool bFound = false;
+			Vector vSucc = succWpt.m_vOrigin;
+
+			while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "trigger_hurt")) !is null )
+			//while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, succWpt.m_vOrigin , 128,"trigger_hurt", "classname"  )) !is null )
+			{										
+					if ( ((pent.pev.spawnflags & 8)!=8) && (pent.pev.solid == SOLID_TRIGGER) )
+					{
+						if ( UTIL_VectorInsideEntity(pent,vSucc) )
+						{
+							BotMessage("TRIGGET HURT DETECTED!!!");
+							bFound = true;
+							break;
+						}
+					}
+			}
+
+			if ( bFound )
+				return false;
+											
+		}
+
+		//if ( (iSucc != m_iGoalWaypoint) && !m_pBot.canGotoWaypoint(vOrigin,succWpt,currWpt) )
+	//		continue;
+
+
+		if ( currWpt.hasFlags(W_FL_TELEPORT) )
+		{
+			if ( !UTIL_DoesNearestTeleportGoTo(currWpt.m_vOrigin,succWpt.m_vOrigin) )
+			{
+				//BotMessage("WAYPINT DOESN'T GO TO THIS TELEPORT!!! SKIPPING!!!");
+				return false;
+			}
+		}
+
+		return true;
+			
+	}
+
 	float distanceFrom ( Vector vOrigin )
 	{
 		return (vOrigin - m_pPlayer.pev.origin).Length();
@@ -389,14 +477,14 @@ case 	CLASS_BARNACLE	:
 
 		if ( IsOnLadder() || ((flags & W_FL_LADDER) == W_FL_LADDER) )
 		{
-			BotMessage("IN_FORWARD");
+			UTIL_DebugMsg(m_pPlayer,"IN_FORWARD",DEBUG_NAV);
 			PressButton(IN_FORWARD);
 		}
 
 		if ( flags & W_FL_STAY_NEAR == W_FL_STAY_NEAR )
 			setMoveSpeed(m_pPlayer.pev.maxspeed/4);
 
-		BotMessage("Following Wpt");	
+		//BotMessage("Following Wpt");	
 		
 		setMove(vOrigin);
 
@@ -501,7 +589,7 @@ case 	CLASS_BARNACLE	:
 		
 		if ( iWpt == -1 )
 		{
-			BotMessage("A BUTTON!!! NO WAYPOINT????");
+			UTIL_DebugMsg(m_pPlayer,"pressButton() NO PATH",DEBUG_THINK);
 			return;
 		}
 
@@ -516,11 +604,11 @@ case 	CLASS_BARNACLE	:
 			m_pCurrentSchedule.addTaskFront(CFindPathTask(this,iWpt,pButton));
 			
 
-			BotMessage("A BUTTON!!! AM GONNA PRESS IT!!!");
+			UTIL_DebugMsg(m_pPlayer,"pressButton() OK",DEBUG_THINK);
 		}
 		else
 		{
-			BotMessage("A BUTTON!!! TASK OVERFLOW!!!");
+			UTIL_DebugMsg(m_pPlayer,"pressButton() overflow",DEBUG_THINK);
 		}
 	}
 
@@ -597,7 +685,7 @@ case 	CLASS_BARNACLE	:
             return false;
         }
 
-		BotMessage("CanHeal("+entity.GetClassname()+")");
+		UTIL_DebugMsg(m_pPlayer,"CanHeal("+entity.GetClassname()+")",DEBUG_THINK);
 
 		return (entity.pev.health < entity.pev.max_health);
 	}
@@ -787,6 +875,13 @@ case 	CLASS_BARNACLE	:
 		
 	}
 
+	EHandle m_pBlocking = null;
+
+	void setBlockingEntity ( CBaseEntity@ blockingEntity )
+	{
+		m_pBlocking = blockingEntity;
+	}
+
 	void DoWeapons ()
 	{	
 		if ( !ceasedFiring() )
@@ -813,7 +908,7 @@ case 	CLASS_BARNACLE	:
 
 		if ( CanHeal(ent) )
 		{
-			BotMessage("CanHeal == TRUE");
+			//BotMessage("CanHeal == TRUE");
 			if ( m_pHeal.GetEntity() is null )
 				m_pHeal = ent;
 			else if ( getHealFactor(ent) < getHealFactor(m_pHeal) )
@@ -821,7 +916,7 @@ case 	CLASS_BARNACLE	:
 		}		
 		else if ( CanRevive(ent) )
 		{
-			BotMessage("CanRevive == TRUE");
+			//BotMessage("CanRevive == TRUE");
 
 			if ( m_pRevive.GetEntity() is null )
 				m_pRevive = ent;
@@ -830,11 +925,11 @@ case 	CLASS_BARNACLE	:
 		}
 
 
-		BotMessage("New Visible " + ent.pev.classname + "\n");
+		//BotMessage("New Visible " + ent.pev.classname + "\n");
 
 		if ( IsEnemy(ent) )
 		{
-			BotMessage("NEW ENEMY !!!  " + ent.pev.classname + "\n");
+			//BotMessage("NEW ENEMY !!!  " + ent.pev.classname + "\n");
 
 			if ( m_pEnemy.GetEntity() is null )
 				m_pEnemy = ent;
@@ -923,7 +1018,7 @@ case 	CLASS_BARNACLE	:
 		if ( m_flWaitTime > g_Engine.time )
 			setMoveSpeed(0.0f);
 
-		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.25*m_fDesiredMoveSpeed)) )
+		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.1*m_fDesiredMoveSpeed)) )
 		{
 			m_flStuckTime = g_Engine.time;
 		}
@@ -951,7 +1046,7 @@ case 	CLASS_BARNACLE	:
 		if ( pEnemy !is null )
 		{						
 			if ( m_pVisibles.isVisible(pEnemy.entindex()) & VIS_FL_HEAD == VIS_FL_HEAD )
-				setLookAt(pEnemy.EyePosition(),PRIORITY_ATTACK);
+				setLookAt(UTIL_EyePosition(pEnemy),PRIORITY_ATTACK);
 			else
 				setLookAt(UTIL_EntityOrigin(pEnemy),PRIORITY_ATTACK);
 

@@ -107,18 +107,19 @@ class RCBotSchedule
 
         if ( m_pCurrentTask.m_bComplete )
         {                
-            BotMessage("m_pTasks.removeAt(0)");
             m_pTasks.removeAt(0);
-        BotMessage(m_pCurrentTask.DebugString()+" COMPLETE");
+            UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" COMPLETE",DEBUG_TASK);
+       
             if ( m_pTasks.length() == 0 )
             {
-                BotMessage("m_pTasks.length() == 0");
+                UTIL_DebugMsg(bot.m_pPlayer,"m_pTasks.length() == 0",DEBUG_TASK);
+             
                 return true;
             }
         }
         else if ( m_pCurrentTask.timedOut() )
         {
-                    BotMessage(m_pCurrentTask.DebugString()+" FAILED");
+                    UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" FAILED",DEBUG_TASK);
 
             m_pCurrentTask.m_bFailed = true;
             // failed
@@ -126,7 +127,7 @@ class RCBotSchedule
         }
         else if ( m_pCurrentTask.m_bFailed )
         {
-                    BotMessage(m_pCurrentTask.DebugString()+" FAILED");
+                    UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" FAILED",DEBUG_NAV);
 
             return true;
         }
@@ -156,13 +157,13 @@ final class CFindHealthTask : RCBotTask
         // Search for health to pick up or health dispenser
         CBaseEntity@ pent = null;
 
-        BotMessage("CFindHealthTask");
+        UTIL_DebugMsg(bot.m_pPlayer,"CFindHealthTask",DEBUG_TASK);
 
         @pent = UTIL_FindNearestEntity("func_healthcharger",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
         if ( pent !is null )
         {
-            BotMessage("func_healthcharger");
+            UTIL_DebugMsg(bot.m_pPlayer,"func_healthcharger",DEBUG_TASK);
 
             // add task to use health charger
             m_pContainingSchedule.addTask(CUseHealthChargerTask(bot,pent));
@@ -180,7 +181,7 @@ final class CFindHealthTask : RCBotTask
                 {
                         if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW )
                         {
-                            BotMessage("item_healthkit");
+                            UTIL_DebugMsg(bot.m_pPlayer,"item_healthkit",DEBUG_TASK);
                             // add Task to pick up health
                             m_pContainingSchedule.addTask(CPickupItemTask(bot,pent));
                             Complete();
@@ -192,7 +193,7 @@ final class CFindHealthTask : RCBotTask
         }
 
         
-            BotMessage("nothing FOUND");
+            UTIL_DebugMsg(bot.m_pPlayer,"nothing FOUND",DEBUG_TASK);
 
         Failed();
     }
@@ -213,7 +214,7 @@ final class CFindAmmoTask : RCBotTask
         // Search for health to pick up or health dispenser
         CBaseEntity@ pent = null;
 
-        BotMessage("CFindAmmoTask");
+        UTIL_DebugMsg(bot.m_pPlayer,"CFindAmmoTask",DEBUG_TASK);
 
         array<CBaseEntity@> pickup;
         
@@ -235,7 +236,7 @@ final class CFindAmmoTask : RCBotTask
         {
             @pent = pickup[Math.RandomLong(0,pickup.length()-1)];
 
-            BotMessage(pent.GetClassname());	
+            UTIL_DebugMsg(bot.m_pPlayer,pent.GetClassname());	
 
             m_pContainingSchedule.addTask(CPickupItemTask(bot,pent));
 
@@ -266,7 +267,7 @@ final class CFindWeaponTask : RCBotTask
 
         array<CBaseEntity@> pickup;
 
-        BotMessage("CFindWeaponTask");        
+        UTIL_DebugMsg(bot.m_pPlayer,"CFindWeaponTask",DEBUG_TASK);        
         
         while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 512,"weapon_*", "classname" )) !is null )
         {
@@ -286,7 +287,7 @@ final class CFindWeaponTask : RCBotTask
         {
             @pent = pickup[Math.RandomLong(0,pickup.length()-1)];
 
-            BotMessage(pent.GetClassname());	
+            UTIL_DebugMsg(bot.m_pPlayer,pent.GetClassname());	
 
             m_pContainingSchedule.addTask(CPickupItemTask(bot,pent));
             
@@ -314,13 +315,13 @@ final class CFindArmorTask : RCBotTask
         // Search for health to pick up or health dispenser
         CBaseEntity@ pent = null;
 
-        BotMessage("CFindArmorTask");
+        UTIL_DebugMsg(bot.m_pPlayer,"CFindArmorTask",DEBUG_TASK);
 
         @pent = UTIL_FindNearestEntity("func_recharge",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
         if ( pent !is null )
         {
-                BotMessage("func_recharge");
+                UTIL_DebugMsg(bot.m_pPlayer,"func_recharge",DEBUG_TASK);
 
                 // add task to use health charger
                 m_pContainingSchedule.addTask(CUseArmorCharger(bot,pent));
@@ -337,7 +338,7 @@ final class CFindArmorTask : RCBotTask
                 {
                         if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW )
                         {
-                            BotMessage("item_battery");
+                            UTIL_DebugMsg(bot.m_pPlayer,"item_battery",DEBUG_TASK);
                             // add Task to pick up health
                             m_pContainingSchedule.addTask(CPickupItemTask(bot,pent));
                             Complete();
@@ -348,7 +349,7 @@ final class CFindArmorTask : RCBotTask
             
         }
 
-        BotMessage("nothing FOUND");
+        UTIL_DebugMsg(bot.m_pPlayer,"nothing FOUND",DEBUG_TASK);
 
         Failed();
     }
@@ -376,7 +377,7 @@ final class CPickupItemTask : RCBotTask
         if ( pItem !is null )
             Complete();
 
-        BotMessage("CPickupItemTask");
+        UTIL_DebugMsg(bot.m_pPlayer,"CPickupItemTask",DEBUG_TASK);
 
         // can't pick this up!!!
         if ( pItem.pev.owner !is null )
@@ -384,7 +385,7 @@ final class CPickupItemTask : RCBotTask
 
         if ( pItem.pev.effects & EF_NODRAW == EF_NODRAW )
         {
-            BotMessage("EF_NODRAW");
+            UTIL_DebugMsg(bot.m_pPlayer,"EF_NODRAW",DEBUG_TASK);
             Complete();
         }
 
@@ -392,7 +393,7 @@ final class CPickupItemTask : RCBotTask
         {
             bot.setMove(pItem.pev.origin);
 
-             BotMessage("bot.setMove(m_pItem.pev.origin);");
+             UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(m_pItem.pev.origin);",DEBUG_TASK);
         }
         else
             Complete();
@@ -443,7 +444,7 @@ final class CFindButtonTask : RCBotTask
 
         if ( pent !is null )
         {
-                        BotMessage("func_button");
+                        UTIL_DebugMsg(bot.m_pPlayer,"func_button",DEBUG_TASK);
                         // add Task to pick up health
                         m_pContainingSchedule.addTask(CUseButtonTask(pent));
                         Complete();
@@ -454,7 +455,7 @@ final class CFindButtonTask : RCBotTask
 
         if ( pent !is null )
         {
-                        BotMessage("func_rot_button");
+                        UTIL_DebugMsg(bot.m_pPlayer,"func_rot_button",DEBUG_TASK);
                         // add Task to pick up health
                         m_pContainingSchedule.addTask(CUseButtonTask(pent));
                         Complete();
@@ -465,12 +466,23 @@ final class CFindButtonTask : RCBotTask
 
         if ( pent !is null )
         {
-                        BotMessage("trigger_once");
+                        UTIL_DebugMsg(bot.m_pPlayer,"trigger_once",DEBUG_TASK);
+                        // add Task to pick up health
+                        m_pContainingSchedule.addTask(CBotMoveToOrigin(UTIL_EntityOrigin(pent)));
+                        Complete();
+                        return;                                    
+        }
+
+         @pent = UTIL_FindNearestEntity("momentary_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
+        if ( pent !is null )
+        {
+                        UTIL_DebugMsg(bot.m_pPlayer,"momentary_rot_button",DEBUG_TASK);
                         // add Task to pick up health
                         m_pContainingSchedule.addTask(CUseButtonTask(pent));
                         Complete();
                         return;                                    
-        }
+        }        
 
         Failed();
     }
@@ -498,19 +510,18 @@ final class CUseButtonTask : RCBotTask
         if ( m_pButton.pev.frame != 0 )
             Complete();
 
-        // look at the friggin button!!!!!
-        bot.setLookAt(vOrigin,10);
+        bot.setLookAt(vOrigin,PRIORITY_TASK);
 
         if ( bot.distanceFrom(m_pButton) > 64 )
         {
             bot.setMove(vOrigin);
-            BotMessage("bot.setMove(m_pCharger.pev.origin)");
+            UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(m_pCharger.pev.origin)",DEBUG_TASK);
         }
         else
         {
             bot.StopMoving();
 
-            BotMessage("bot.PressButton(IN_USE)");
+            UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);
 
             if ( Math.RandomLong(0,100) < 99 )
             {
@@ -537,17 +548,17 @@ final class CUseArmorCharger : RCBotTask
 
     void execute ( RCBot@ bot )
     {
-        BotMessage("CUseArmorCharger");
+        UTIL_DebugMsg(bot.m_pPlayer,"CUseArmorCharger",DEBUG_TASK);
 
         if ( m_pCharger.pev.frame != 0 )
         {
             Complete();
-            BotMessage(" m_pCharger.pev.frame == 0");
+            UTIL_DebugMsg(bot.m_pPlayer," m_pCharger.pev.frame == 0",DEBUG_TASK);
         }
         if ( bot.m_pPlayer.pev.armorvalue >= 100 )
         {
             Complete();
-            BotMessage(" bot.m_pPlayer.pev.armorvalue >= 100");
+            UTIL_DebugMsg(bot.m_pPlayer," bot.m_pPlayer.pev.armorvalue >= 100",DEBUG_TASK);
         }
 
         Vector vOrigin = UTIL_EntityOrigin(m_pCharger);
@@ -556,7 +567,7 @@ final class CUseArmorCharger : RCBotTask
         if ( bot.distanceFrom(m_pCharger) > 56 )
         {
             bot.setMove(vOrigin);
-            BotMessage("bot.setMove(m_pCharger.pev.origin)");
+            UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(m_pCharger.pev.origin)",DEBUG_TASK);
         }
         else
         {
@@ -565,7 +576,7 @@ final class CUseArmorCharger : RCBotTask
                         // within so many degrees of target
             //if ( UTIL_DotProduct(bot.m_pPlayer.pev.v_angle,vOrigin) > 0.7 )    
             {
-                BotMessage("bot.PressButton(IN_USE)");
+                UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);
 
                 if ( Math.RandomLong(0,100) < 99 )
                 {
@@ -594,8 +605,8 @@ final class CUseHealthChargerTask : RCBotTask
         if ( m_pCharger.pev.frame != 0 )
             Complete();
 
-        BotMessage("Health  = " + bot.m_pPlayer.pev.health);
-        BotMessage("Max Health = " + bot.m_pPlayer.pev.max_health);
+        UTIL_DebugMsg(bot.m_pPlayer,"Health  = " + bot.m_pPlayer.pev.health);
+        UTIL_DebugMsg(bot.m_pPlayer,"Max Health = " + bot.m_pPlayer.pev.max_health);
 
         if ( bot.HealthPercent() >= 1.0f )
             Complete();
@@ -694,19 +705,19 @@ final class CFindPathTask : RCBotTask
         case NavigatorState_Complete:
  
             // follow waypoint
-            BotMessage("NavigatorState_Complete");
+            UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_Complete",DEBUG_NAV);
         break;
         case NavigatorState_InProgress:
             // waiting...
-             BotMessage("NavigatorState_InProgress");
+             UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_InProgress",DEBUG_NAV);
         break;
         case NavigatorState_Fail:
-             BotMessage("NavigatorState_Fail");
+             UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_Fail",DEBUG_NAV);
             Failed();
         break;
         case NavigatorState_ReachedGoal:
 
-            BotMessage("NavigatorState_ReachedGoal");
+            UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_ReachedGoal",DEBUG_NAV);
             //m_pContainingSchedule.addTaskFront(CBotMoveToOrigin());
             Complete();
             break;
@@ -923,7 +934,7 @@ class CBotHumanTowerTask : RCBotTask
             {
                 bot.setMove(m_vOrigin);
 
-                BotMessage("bot.distanceFrom(m_vOrigin) > 96");
+                UTIL_DebugMsg(bot.m_pPlayer,"bot.distanceFrom(m_vOrigin) > 96",DEBUG_TASK);
             }
             else 
             {
@@ -931,7 +942,7 @@ class CBotHumanTowerTask : RCBotTask
 
                 if ( playerOnTop !is null  )
                 {
-                    BotMessage("playerOnTop !is null");
+                    UTIL_DebugMsg(bot.m_pPlayer,"playerOnTop !is null",DEBUG_TASK);
 
                     // stand up 
                     // look at player
@@ -961,7 +972,7 @@ class CBotTaskFindCoverTask : RCBotTask
 
         if ( finder.state == NavigatorState_Fail )
         {
-            BotMessage("FINDING COVER FAILED!!!");
+            UTIL_DebugMsg(bot.m_pPlayer,"FINDING COVER FAILED!!!",DEBUG_TASK);
             Failed();
         }
     }
@@ -972,7 +983,7 @@ class CBotTaskFindCoverTask : RCBotTask
          if ( finder.execute() )
          {
              m_pContainingSchedule.addTask(CFindPathTask(bot,finder.m_iGoalWaypoint));
-             BotMessage("FINDING COVER COMPLETE!!!");
+             UTIL_DebugMsg(bot.m_pPlayer,"FINDING COVER COMPLETE!!!",DEBUG_TASK);
              Complete();
          }
          else
@@ -992,6 +1003,11 @@ abstract class CBotUtil
     { 
         utility = 0; 
         m_fNextDo = 0.0;   
+    }
+
+    string DebugMessage ()
+    {
+        return "CBotUtil";
     }
 
     void reset ()
@@ -1035,6 +1051,11 @@ class CBotHealPlayerUtil : CBotUtil
     float calculateUtility ( RCBot@ bot )
     {        
         return 0.9f;
+    }
+
+    string DebugMessage ()
+    {
+        return "CBotHealPlayerUtil";
     }
 
     bool canDo (RCBot@ bot)
@@ -1084,6 +1105,11 @@ class CBotRevivePlayerUtil : CBotUtil
         return (g_Engine.time > m_fNextDo) && bot.m_pRevive.GetEntity() !is null && bot.CanRevive(bot.m_pRevive.GetEntity());
     }    
 
+    string DebugMessage ()
+    {
+        return "CBotRevivePlayerUtil";
+    }    
+
     RCBotSchedule@ execute ( RCBot@ bot )
     {
         CBaseEntity@ pHeal = bot.m_pRevive.GetEntity();
@@ -1112,7 +1138,10 @@ class CBotRevivePlayerUtil : CBotUtil
 
 class CBotGetHealthUtil : CBotUtil
 {
-
+    string DebugMessage ()
+    {
+        return "CBotGetHealthUtil";
+    }    
     float calculateUtility ( RCBot@ bot )
     {
         float healthPercent = float(bot.m_pPlayer.pev.health) / bot.m_pPlayer.pev.max_health;
@@ -1139,12 +1168,16 @@ class CBotGetHealthUtil : CBotUtil
 
 class CBotGetWeapon : CBotUtil
 {
+    string DebugMessage ()
+    {
+        return "CBotGetWeapon";
+    }
 
    float calculateUtility ( RCBot@ bot )
     {
         // TO DO calculate on bots current weapons collection
         float ret = 1.0 - bot.m_pWeapons.getNumWeaponsPercent(bot);
-        BotMessage("CBotGetWeapon UTILILTY = " + ret);
+       
         return ret;
     }
 
@@ -1165,11 +1198,14 @@ class CBotGetWeapon : CBotUtil
 
 class CBotGetAmmo : CBotUtil
 {
-
+    string DebugMessage ()
+    {
+        return "CBotGetAmmo";
+    }    
    float calculateUtility ( RCBot@ bot )
     {
         float ret = 1.0 - bot.m_pWeapons.getPrimaryAmmoPercent(bot);
-        BotMessage("CBotGetAmmo UTILILTY = " + ret);
+       
         return ret;
         // TO DO Calculate based on bots current weapon / ammo inventory
         //return 0.45;
@@ -1226,7 +1262,10 @@ class CBotWaitTask : RCBotTask
 
 class CBotGetArmorUtil : CBotUtil
 {
-    
+    string DebugMessage ()
+    {
+        return "CBotGetArmorUtil";
+    }  
    float calculateUtility ( RCBot@ bot )
     {
         float healthPercent = float(bot.m_pPlayer.pev.armorvalue) / 100;
@@ -1252,6 +1291,11 @@ class CBotGetArmorUtil : CBotUtil
 
 class CBotGotoObjectiveUtil : CBotUtil
 {
+    string DebugMessage ()
+    {
+        return "CBotGotoObjectiveUtil";
+    }  
+
     CFailedWaypointsList failed;
 
     float calculateUtility ( RCBot@ bot )
@@ -1293,6 +1337,10 @@ class CBotGotoObjectiveUtil : CBotUtil
 
 class CBotFindLastEnemyUtil : CBotUtil
 {
+    string DebugMessage ()
+    {
+        return "CBotFindLastEnemyUtil";
+    }      
     float calculateUtility ( RCBot@ bot )
     {        
             return bot.totalHealth(); 
@@ -1330,7 +1378,10 @@ class CBotFindLastEnemyUtil : CBotUtil
 class CBotGotoEndLevelUtil : CBotUtil
 {
     CFailedWaypointsList failed;
-    
+    string DebugMessage ()
+    {
+        return "CBotGotoEndLevelUtil";
+    }      
     void reset ()
     {
         failed.clear();
@@ -1365,6 +1416,10 @@ class CBotGotoEndLevelUtil : CBotUtil
 
 class CBotRoamUtil : CBotUtil
 {
+    string DebugMessage ()
+    {
+        return "CBotRoamUtil";
+    }         
     float calculateUtility ( RCBot@ bot )
     {
         return (0.01);
@@ -1430,7 +1485,7 @@ class CBotUtilities
             {
                    
                 m_Utils[i].setUtility(m_Utils[i].calculateUtility(bot));
-               // BotMessage("Utility = " + m_Utils[i].utility);
+               // UTIL_DebugMsg(bot.m_pPlayer,"Utility = " + m_Utils[i].utility);
                 UtilsCanDo.insertLast(m_Utils[i]);
             }
         }
@@ -1441,12 +1496,14 @@ class CBotUtilities
 
             for ( uint i = 0; i < UtilsCanDo.length(); i ++ )
             {
-                RCBotSchedule@ sched = UtilsCanDo[i].execute(bot);
+                CBotUtil@ chosenUtil = UtilsCanDo[i];
+                RCBotSchedule@ sched = chosenUtil.execute(bot);
 
                 if ( sched !is null )
-                {
-                    
-                    UtilsCanDo[i].setNextDo();
+                {                    
+                    UTIL_DebugMsg(bot.m_pPlayer,"Chosen Utility = " + chosenUtil.DebugMessage() + " Value = " + chosenUtil.utility, DEBUG_UTIL );
+                    chosenUtil.setNextDo();
+
                     return sched;
                 }
             }

@@ -130,6 +130,8 @@ namespace BotManager
 		{
 			// free stuff
 			m_pProfile.m_bUsed = false;
+			// Solokiller -- clear the handles out to avoid problems.
+			@m_pPlayer = null;
 		}
 		
 		private void UpdateMSec() final

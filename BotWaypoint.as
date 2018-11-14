@@ -1248,6 +1248,7 @@ final class RCBotCoverWaypointFinder
 	int iHideFrom;
 	CBits@ closedWaypoints;
 	CWaypointVisibility@ m_visibility;
+	RCBot@ m_pBot;
 	int state;
 	int m_iGoalWaypoint;
 
@@ -1258,6 +1259,8 @@ final class RCBotCoverWaypointFinder
 			state = NavigatorState_Fail;
 			return;
 		}
+
+		@m_pBot = bot;
 		
 		iStart = g_Waypoints.getNearestWaypointIndex(bot.origin(),bot.m_pPlayer,bot.m_iLastFailedWaypoint);
 
@@ -1316,9 +1319,14 @@ final class RCBotCoverWaypointFinder
 
 				int iWptIndex = pWpt.iIndex;
 
-				if ( FindCover(iWptIndex) == iWptIndex )
+				if ( m_pBot.canGotoWaypoint(wpt,pWpt) )
 				{
-					return iWptIndex;
+
+					if ( FindCover(iWptIndex) == iWptIndex )
+					{
+						return iWptIndex;
+					}
+
 				}			
 			}
 		}
@@ -1328,7 +1336,7 @@ final class RCBotCoverWaypointFinder
 
 	bool execute ( )
 	{
-		BotMessage("FINDING COVER!!!!");
+		//UTIL_DebugMsg(m_pBot.m_pPlayer,"FINDING COVER!!!!",DEBUG_NAV);
 
 		m_iGoalWaypoint = FindCover(iStart);
 
@@ -1422,11 +1430,11 @@ final class RCBotNavigator
 		m_pTarget = pTarget;
 		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer,bot.m_iLastFailedWaypoint,512.0f,true,false);
 
-		BotMessage("m_iCurrentWaypoint == " + m_iCurrentWaypoint);
+		UTIL_DebugMsg(bot.m_pPlayer,"m_iCurrentWaypoint == " + m_iCurrentWaypoint,DEBUG_NAV);
 		m_fNextTimeout = 0;
 		if ( iStart == -1 || iGoalWpt == -1 )
 		{
-			BotMessage("IsTART == -1 OR GOAL == -1");
+			UTIL_DebugMsg(bot.m_pPlayer,"iStart == -1 OR iGOAL == -1 (FAIL)",DEBUG_NAV);
 			state = NavigatorState_Fail;
 		}
 		else
@@ -1472,7 +1480,7 @@ final class RCBotNavigator
 	{
 		if ( m_fNextTimeout < g_Engine.time )
 		{
-			BotMessage("m_fNextTimeout < g_Engine.time");
+			UTIL_DebugMsg(bot.m_pPlayer,"m_fNextTimeout < g_Engine.time",DEBUG_TASK);
 			bot.m_iLastFailedWaypoint = m_iCurrentWaypoint;
 			state = NavigatorState_Fail;
 			return;
@@ -1480,7 +1488,7 @@ final class RCBotNavigator
 	
 		if ( m_currentRoute.length () == 0 )
 		{			
-			BotMessage("m_currentRoute.length () == 0");
+			UTIL_DebugMsg(bot.m_pPlayer,"m_currentRoute.length () == 0",DEBUG_NAV);
 			state = NavigatorState_Fail;
 			return;
 		}
@@ -1505,7 +1513,7 @@ final class RCBotNavigator
 				if ( UTIL_IsVisible(vTarget,bot.m_pPlayer.EyePosition(),bot.m_pPlayer) )
 				{
 					state = NavigatorState_ReachedGoal;			
-					BotMessage("bot reached target entity");			
+					UTIL_DebugMsg(bot.m_pPlayer,"bot reached target entity",DEBUG_NAV);			
 					return;
 				}
 			}
@@ -1513,16 +1521,18 @@ final class RCBotNavigator
 
 		float touch_distance = 64;
 
-		if ( wpt.hasFlags(W_FL_JUMP) )
-			touch_distance = 24;
-		else if ( wpt.hasFlags(W_FL_STAY_NEAR) )
-			touch_distance = 40;
+		if ( wpt.hasFlags(W_FL_CROUCH) )
+			touch_distance = 32;
+		else if ( wpt.hasFlags(W_FL_JUMP))
+			touch_distance = 32;
+		else if ( wpt.hasFlags(W_FL_STAY_NEAR)  )
+			touch_distance = 32;
 		else if ( wpt.hasFlags(W_FL_LADDER) || bot.m_pPlayer.pev.movetype == MOVETYPE_FLY )
-			touch_distance = 24;
+			touch_distance = 32;
 
 		//BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
 
-		if ( (distance < 64) || (distance > (m_fPreviousDistance+touch_distance)) )
+		if ( (distance < touch_distance) || (distance > (m_fPreviousDistance+touch_distance)) )
 		{
 			bot.touchedWpt(wpt);
 
@@ -1537,7 +1547,7 @@ final class RCBotNavigator
 			if ( m_currentRoute.length () == 0 )
 			{
 				state = NavigatorState_ReachedGoal;			
-				BotMessage("m_currentRoute.length () == 0 ");			
+				UTIL_DebugMsg(bot.m_pPlayer,"m_currentRoute.length () == 0 ",DEBUG_NAV);			
 				return;
 			}
 		}
@@ -1559,7 +1569,7 @@ final class RCBotNavigator
 					m_fLastSeeWaypoint = g_Engine.time;
 				else if ( m_fLastSeeWaypoint > 0 && ((g_Engine.time - m_fLastSeeWaypoint) > 3.0) )
 				{
-					BotMessage("BotNavigator FAIL");
+					UTIL_DebugMsg(bot.m_pPlayer,"BotNavigator FAIL",DEBUG_NAV);
 					m_fLastSeeWaypoint = 0;
 					// Fail
 					state = NavigatorState_Fail;
@@ -1573,6 +1583,8 @@ final class RCBotNavigator
 						CBaseEntity@ pent = g_EntityFuncs.Instance(tr.pHit);
 						CBaseToggle@ pDoor = null;
 
+						bot.setBlockingEntity(pent);
+
 						if ( pent !is null )
 						{
 							@pDoor = cast<CBaseToggle@>(pent);
@@ -1580,13 +1592,14 @@ final class RCBotNavigator
 
 						if ( pDoor !is null )
 						{
-							BotMessage("pDoor !is null ");
+							UTIL_DebugMsg(bot.m_pPlayer,"pDoor !is null ",DEBUG_NAV);
 
 							bool bUse = true;
 
 							if ( pDoor.pev.targetname != "" )
 							{
-								BotMessage("pDoor.pev.targetname != \"\" ");
+								//UTIL_DebugMsg(bot.m_pPlayer,"pDoor !is null ",DEBUG_NAV);
+								//BotMessage("pDoor.pev.targetname != \"\" ");
 								// It has a button ?
 								CBaseEntity@ pButton = UTIL_FindButton(pDoor,bot.m_pPlayer);
 
@@ -1600,14 +1613,14 @@ final class RCBotNavigator
 							
 							
 							if ( bUse )
-							{
-								BotMessage("USE ONLY DOOR, DERP");
-
+							{					
 								if ( Math.RandomLong(0,100) < 90 )
 									bot.PressButton(IN_USE);
 							}
 						}
 					}
+					else
+						bot.setBlockingEntity(null);
 				}
 
 			}
@@ -1699,76 +1712,12 @@ final class RCBotNavigator
 								@succ = @paths[iSucc];
 								@succWpt = g_Waypoints.getWaypointAtIndex(iSucc);
 
-								if ( succWpt.hasFlags(W_FL_GRAPPLE) )
-								{
-									if ( !bot.HasWeapon("weapon_grapple") )	
-										continue;
-								}
-								if ( succWpt.hasFlags(W_FL_OPENS_LATER) )
-								{								
-									TraceResult tr;
-
-									g_Utility.TraceLine( currWpt.m_vOrigin, succWpt.m_vOrigin, ignore_monsters,dont_ignore_glass, null, tr );
-
-									if ( tr.flFraction < 1.0f )
-									{
-										if ( tr.pHit is null )
-											continue;
-									
-										CBaseEntity@ ent = g_EntityFuncs.Instance(tr.pHit);
-
-										// mght be closed but is not locked
-										if ( ent.GetClassname() == "func_door")
-										{
-											CBaseDoor@ door = cast<CBaseDoor@>( ent );
-
-											if ( !UTIL_DoorIsOpen(door,bot.m_pPlayer) )
-												continue;
-										}
-										else
-											continue;
-									}		
-								}
-								if ( succWpt.hasFlags(W_FL_PAIN) )
-								{
-				
-									CBaseEntity@ pent = null;
-									bool bFound = false;
-									Vector vSucc = succWpt.m_vOrigin;
-
-									while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "trigger_hurt")) !is null )
-									//while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, succWpt.m_vOrigin , 128,"trigger_hurt", "classname"  )) !is null )
-									{										
-											if ( ((pent.pev.spawnflags & 8)!=8) && (pent.pev.solid == SOLID_TRIGGER) )
-											{
-												if ( UTIL_VectorInsideEntity(pent,vSucc) )
-												{
-													BotMessage("TRIGGET HURT DETECTED!!!");
-													bFound = true;
-													break;
-												}
-											}
-									}
-
-									if ( bFound )
-										continue;
-																	
-								}
-
-								//if ( (iSucc != m_iGoalWaypoint) && !m_pBot.canGotoWaypoint(vOrigin,succWpt,currWpt) )
-							//		continue;
+								if ( !bot.canGotoWaypoint(currWpt,succWpt) )
+									continue;
 
 								float fCost = curr.getCost();
-								
-								if ( currWpt.hasFlags(W_FL_TELEPORT) )
-								{
-									if ( !UTIL_DoesNearestTeleportGoTo(currWpt.m_vOrigin,succWpt.m_vOrigin) )
-									{
-										//BotMessage("WAYPINT DOESN'T GO TO THIS TELEPORT!!! SKIPPING!!!");
-										continue;
-									}
-								}
-								else
+
+								if ( !currWpt.hasFlags(W_FL_TELEPORT) && !succWpt.hasFlags(W_FL_TELEPORT) )								
 									fCost += (succWpt.distanceFrom(currWpt.m_vOrigin));
 
 								if ( succ.isOpen() || succ.isClosed() )
@@ -1843,20 +1792,12 @@ final class RCBotNavigator
 						{
 							m_iCurrentWaypoint = m_currentRoute[0];
 
-							/*for ( uint i = 0; i < m_currentRoute.length(); i ++ )
-							{
-								BotMessage("ROUTE " + i + " - " + m_currentRoute[i]);
-							}		*/				
-
 							state = NavigatorState_Following;
 
-							BotMessage("Navigator State FOUND_GOAL...\n");
+							UTIL_DebugMsg(bot.m_pPlayer,"Navigator State FOUND_GOAL...\n",DEBUG_NAV);
 						}
 						else
 						{
-
-							// error
-							//BotMessage("ERORRR");
 							state = NavigatorState_Fail;
 							break;
 						}

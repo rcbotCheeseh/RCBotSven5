@@ -25,7 +25,7 @@ CConCommand@ GodMode;
 CConCommand@ NoClipMode;
 CConCommand@ m_pRCBotWaypointRemoveType;
 CConCommand@ m_pRCBotWaypointGiveType;
-CConCommand@ m_pDebugBot;
+CConCommand@ m_pDebugMessages;
 CConCommand@ m_pRCBotKillbots;
 CConCommand@ m_pNotouchMode;
 CConCommand@ m_pExplo;
@@ -33,13 +33,15 @@ CConCommand@ m_pNoTargetMode;
 CConCommand@ m_pRCBotWaypointToggleType;
 CConCommand@ m_pPathWaypointRemovePathsFrom;
 CConCommand@ m_pPathWaypointRemovePathsTo;
+CConCommand@ m_pDebugBot;
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
 
-bool g_DebugOn = false;
+//bool g_DebugOn = false;
 bool g_NoTouch = false;
 bool g_NoTouchChange = false;
 int g_DebugLevel = 0;
+EHandle g_DebugBot = null;
 
 CBasePlayer@ ListenPlayer ()
 {
@@ -76,7 +78,8 @@ void PluginInit()
 	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type(s)",@WaypointGiveType);
 	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type(s)",@WaypointRemoveType);
 	@m_pRCBotWaypointToggleType = @CConCommand ( "waypoint_toggletype", "toggle waypoint type(s)",@WaypointToggleType);
-	@m_pDebugBot = @CConCommand ( "debug" , "debug messages toggle" , @DebugBot );
+	@m_pDebugMessages = @CConCommand ( "debug" , "debug messages toggle" , @DebugMessages );
+	@m_pDebugBot = @CConCommand ( "debug_bot" , "debug bot <name>" , @DebugBot );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
 	@m_pNotouchMode = @CConCommand("notouch","no touch mode",@NoTouchFunc);
@@ -152,17 +155,59 @@ void NoTouchFunc ( const CCommand@ args )
 	else 	
 		SayMessageAll(player,"No touch mode enabled");			
 }
-
-void DebugBot ( const CCommand@ args )
+	const int DEBUG_NAV = 1;
+	const int DEBUG_TASK = 2;
+	const int DEBUG_UTIL = 4;
+	const int DEBUG_THINK = 8;
+	const int DEBUG_VISIBLES = 16;
+void DebugMessages ( const CCommand@ args )
 {
 	CBasePlayer@ player = ListenPlayer();
 
-	g_DebugOn = !g_DebugOn;
+	if ( args.ArgC() > 1 )
+	{
+		int iLevel = 0;
 
-	if ( g_DebugOn )
-		SayMessageAll(player,"Debug on");
+		if ( args[1] == "nav" )
+			iLevel = DEBUG_NAV;
+		else if ( args[1] == "task" )
+			iLevel = DEBUG_TASK;
+		else if ( args[1] == "util" )
+			iLevel = DEBUG_UTIL;
+		else if ( args[1] == "think" )
+			iLevel = DEBUG_THINK;
+		else if ( args[1] == "visibles" )
+			iLevel = DEBUG_VISIBLES;	
+
+		if ( g_DebugLevel & iLevel == iLevel )
+		{
+			g_DebugLevel &= ~iLevel;
+			BotMessage("No longer debugging " + args[1]);
+		}
+		else
+		{
+			g_DebugLevel |= iLevel;
+			BotMessage("debugging " + args[1]);
+		}								
+	}
+
+	//g_DebugOn = !g_DebugOn;
+
+	//if ( g_DebugOn )
+	//	SayMessageAll(player,"Debug on");
+	//else
+	//	SayMessageAll(player,"Debug off");
+}
+
+void DebugBot ( const CCommand@ args )
+{
+	if ( args.ArgC() > 1 )
+		g_DebugBot = UTIL_FindPlayer(args[1]);
+
+	if ( g_DebugBot.GetEntity() !is null )
+		SayMessageAll(ListenPlayer(),"Debug '"+g_DebugBot.GetEntity().pev.netname+"' (if bot)");
 	else
-		SayMessageAll(player,"Debug off");
+		SayMessageAll(ListenPlayer(),"Debugging bot off");
 }
 
 void WaypointToggleType ( const CCommand@ args )

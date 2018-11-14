@@ -1,5 +1,4 @@
-	const int DEBUG_NAV = 1;
-	const int DEBUG_TASK = 2;
+
 
 	float  UTIL_FixFloatAngle ( float fAngle )
 	{
@@ -34,6 +33,11 @@
 	{
 		return Vector( a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x );
 	}
+
+	Vector UTIL_EyePosition ( CBaseEntity@ entity )
+	{
+		return entity.EyePosition();
+	}	
 
 	Vector UTIL_EntityOrigin ( CBaseEntity@ entity )
 	{
@@ -137,8 +141,8 @@
     
     void BotMessage ( string message )
     {
-		if ( g_DebugOn == true )
-        	g_Game.AlertMessage( at_console, "[RCBOT]" + message + "\n" );	
+		//if ( g_DebugLevel & DEBUG_THINK == DEBUG_THINK )
+    	g_Game.AlertMessage( at_console, "[RCBOT]" + message + "\n" );	
     }
 
 	void SayMessage ( CBasePlayer@ player, string message )
@@ -153,7 +157,7 @@
 
     void UTIL_PrintVector ( string name, Vector v )
     {
-		if ( g_DebugOn == true )
+		if ( g_DebugLevel & DEBUG_THINK == DEBUG_THINK )
         	g_Game.AlertMessage( at_console, name + " = (" + v.x + "," + v.y + "," + v.z + ")\n" );	
     }
 
@@ -185,15 +189,36 @@
 
 	}
 
-	void UTIL_DebugMsg ( CBasePlayer@ debugBot, int level, string message )
+	void UTIL_DebugMsg ( CBaseEntity@ debugBot, string message, int level = 0 )
 	{
-		/*if ( g_DebugBot == debugBot )
+		if ( g_DebugBot == debugBot )
 		{
-			if ( g_DebugLevel & level == level )
+			if ( level == 0 || g_DebugLevel & level == level )
 			{
-				BotMessage("DEBUG: " + message);
-			}*
-		}*/
+				string debugLevelName = "NONE";
+
+				switch ( level )
+				{					
+					case DEBUG_NAV:
+						debugLevelName = "NAV";
+					break;
+					case DEBUG_TASK:
+						debugLevelName = "TASK";
+					break;
+					case DEBUG_THINK:
+						debugLevelName = "THINK";
+					break;
+					case DEBUG_UTIL:
+						debugLevelName = "UTIL";
+					break;
+					case DEBUG_VISIBLES:
+						debugLevelName = "VISIBLES";
+					break;
+				}
+
+				BotMessage("[DEBUG - " + debugLevelName + "] " + message);
+			}
+		}
 	}
 
 	bool UTIL_VectorInsideEntity ( CBaseEntity@ pent, Vector v )
@@ -347,13 +372,13 @@ CBaseEntity@ UTIL_FindButton ( CBaseToggle@ door, CBaseEntity@ pPlayer )
 
     if ( pMaster !is null )
     {
-		BotMessage("pMaster !is null");
+		UTIL_DebugMsg(pPlayer,"pMaster !is null",DEBUG_THINK);
 		return UTIL_RandomTarget(pMaster.pev.targetname,pPlayer);
     }
 
 	if ( door.pev.targetname == "" )
 	{
-		BotMessage("door.pev.targetname :(");
+		UTIL_DebugMsg(pPlayer,"door.pev.targetname is empty :(",DEBUG_THINK);		
 		return null;
 	}	
 
@@ -362,12 +387,11 @@ CBaseEntity@ UTIL_FindButton ( CBaseToggle@ door, CBaseEntity@ pPlayer )
 	if ( pButton !is null )
 	{
 		string szClassname = pButton.GetClassname();
-		BotMessage("pButton !is null");
+		UTIL_DebugMsg(pPlayer,"pButton !is null",DEBUG_THINK);
 
-		if ( szClassname != "func_button" && szClassname != "func_rot_button" )
+		if ( szClassname != "func_button" && szClassname != "func_rot_button"  && szClassname != "momentary_rot_button" )
 		{			
-			BotMessage("pButton.pev.targetname != \"\"");
-			BotMessage(pButton.GetClassname());			
+			UTIL_DebugMsg(pPlayer,"pButton is " + pButton.GetClassname() +  " pButton.pev.targetname != \"\"",DEBUG_THINK);
 
 			return UTIL_RandomTarget(pButton.pev.targetname,pPlayer);
 		}
