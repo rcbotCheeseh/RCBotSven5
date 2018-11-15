@@ -575,16 +575,12 @@ final class CUseArmorCharger : RCBotTask
         {
             bot.StopMoving();
            
-                        // within so many degrees of target
-            //if ( UTIL_DotProduct(bot.m_pPlayer.pev.v_angle,vOrigin) > 0.7 )    
-            {
-                UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);
+            UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);
 
-                if ( Math.RandomLong(0,100) < 99 )
-                {
-                    bot.PressButton(IN_USE);
-                }
-            }
+            if ( Math.RandomLong(0,100) < 99 )
+            {
+                bot.PressButton(IN_USE);
+            }            
         }
     }  
 }
