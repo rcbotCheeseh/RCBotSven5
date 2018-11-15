@@ -97,7 +97,7 @@ then go to the second waypoint and use the command:
     "team"												unimplemented
     "teamspecific"											Unimplemented
     "crouch"		Put where bot needs to crouch (auto)						OK
-    "ladder"		Coming soon									Unimplemented
+    "ladder"		Bots look at waypoint								OK
     "lift"		Coming soon									Unimplemented
     "door"		Coming soon									Unimplemented
     "health"		Put at health pick up or health charger						Fully implemented
@@ -111,14 +111,14 @@ then go to the second waypoint and use the command:
     "aiming"		Coming soon									Unimplemented
     "crouchjump"	Bots should do a longjump (TO CHANGE NAME)					Bots just do a normal jump atm
     "wait"		Bots wait 1 sec before moving to next waypoint					OK (waitlift unimplemented)
-    "pain"			Put at a place where bots will be killed 
-					until a trigger_hurt stops working				OK
-    "jump"			Put where a bot needs to jump						OK
+    "pain"		Put at a place where bots will be killed 
+			until a trigger_hurt stops working						OK
+    "jump"		Put where a bot needs to jump							OK
     "weapon"		Put at a weapon pickup								OK (partially implemented)
     "teleport"		Put at a teleport								OK
     "tank"		Put at a useable turret								Unimplemented
-    "grapple"		Coming soon									Unimplemented
-    "staynear"		Coming soon									Unimplemented
+    "grapple"		Bots aim a grapple gun at the waypoint to progress				OK
+    "staynear"		Bots tay closer and slow down at waypoint					OK
     "end"		Put at the end of level (main objective)					OK
     "openslater"	Put behind an area that opens later and 
 					has path between a wall/door					OK
