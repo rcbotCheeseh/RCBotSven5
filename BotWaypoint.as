@@ -1240,12 +1240,17 @@ class RCBotWaypointSorter
 
 final class RCBotCoverWaypointFinder
 {
+	/** Starting waypoint */
 	int iStart;
-
+	/** Maximum search depth */
 	int iDepth = 0;
+	/** vector to hide from */
 	Vector vHideFrom;
+	/** Maximum search depth */
 	int iMaxDepth = 12;
+	/** waypoint index to hide from */
 	int iHideFrom;
+	/** waypoints already searched */
 	CBits@ closedWaypoints;
 	CWaypointVisibility@ m_visibility;
 	RCBot@ m_pBot;
@@ -1539,6 +1544,28 @@ final class RCBotNavigator
 			m_fNextTimeout = g_Engine.time + 5.0;
 
 			m_currentRoute.removeAt(0);
+
+			// check if next waypoint is grapple
+			if ( m_currentRoute.length() > 1 )
+			{
+				CWaypoint@ pNextWpt = g_Waypoints.getWaypointAtIndex(m_currentRoute[0]);
+
+				if ( pNextWpt !is null )
+				{					
+					if ( pNextWpt.hasFlags(W_FL_GRAPPLE) )
+					{
+						CWaypoint@ pAfterGrapple = g_Waypoints.getWaypointAtIndex(m_currentRoute[1]);
+
+						if ( pAfterGrapple !is null )
+						{							
+							// skip the grapple waypoint
+							m_currentRoute.removeAt(0);
+
+							bot.grapple(pNextWpt.m_vOrigin,pAfterGrapple.m_vOrigin);
+						}
+					}
+				}
+			}
 
 			m_fPreviousDistance = 9999.0;
 

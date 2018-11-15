@@ -13,57 +13,28 @@ namespace BotManager
 	*/
 	abstract class BaseBot
 	{
+		/** player handle to bot */
 		CBasePlayer@ m_pPlayer;
-		
+		/** milliseconds between each runPlayerMove */
 		private int m_iMSecInterval = 0;
+		/* last time runPlayerMove was called */
 		private float m_flLastRunMove = 0;
-
+		/* Bot profile handle which contains bots name, model etc */
 		BotProfile@ m_pProfile;
-
+		/** calls to moveTo() will be ignored if priority is lower */
 		int m_iMovePriority = 0;
+		/** calls to lookAt() will be ignored if priority is lower */
 		int m_iLookPriority = 0;
+		/** current look/move priority */
 		int m_iCurrentPriority = 0;
-
+		/** Current vector moving towards */
 		Vector m_vMoveTo;
+		/** if false , bot will stay still */
 		bool m_bMoveToValid;
 
 		Vector m_vLookAt;
+
 		bool m_vLookAtIsValid;
-
-		void ReleaseButtons ( )
-		{
-			m_pPlayer.pev.button = 0;
-		}
-
-		void PressButton ( int button )
-		{
-			m_pPlayer.pev.button |= button;
-		}
-
-		void setMove ( Vector origin )
-		{
-			
-			if ( m_iCurrentPriority >= m_iMovePriority )
-			{
-				m_vMoveTo = origin;
-				m_bMoveToValid = true;
-				//BotMessage("setMove !");
-			}
-			//BotMessage("setMove IGNORE");
-		}
-
-	bool IsOnLadder ( ) 
-	{ 
-		return (m_pPlayer.pev.movetype == MOVETYPE_FLY);
-	}	
-		void setLookAt ( Vector origin, int priority = 0 )
-		{
-			if ( (m_iCurrentPriority >= m_iLookPriority) || (priority >= m_iLookPriority) )
-			{
-				m_vLookAtIsValid = true;
-				m_vLookAt = origin;
-			}
-		}
 				
 		float m_fUpMove;
 		float m_fSideMove;
@@ -73,6 +44,42 @@ namespace BotManager
 
 		bool m_bIsAvoiding = false;
 		Vector m_vAvoidVector;
+
+		/** bot releases pressed buttons */
+		void ReleaseButtons ( )
+		{
+			m_pPlayer.pev.button = 0;
+		}
+		/** press a key */
+		void PressButton ( int button )
+		{
+			m_pPlayer.pev.button |= button;
+		}
+
+		void setMove ( Vector origin )
+		{			
+			if ( m_iCurrentPriority >= m_iMovePriority )
+			{
+				m_vMoveTo = origin;
+				m_bMoveToValid = true;
+				//BotMessage("setMove !");
+			}
+			//BotMessage("setMove IGNORE");
+		}
+		/** @return true if bot is on a ladder */
+		bool IsOnLadder ( ) 
+		{ 
+			return (m_pPlayer.pev.movetype == MOVETYPE_FLY);
+		}	
+		/** forces bot to look at vector */
+		void setLookAt ( Vector origin, int priority = 0 )
+		{
+			if ( (m_iCurrentPriority >= m_iLookPriority) || (priority >= m_iLookPriority) )
+			{
+				m_vLookAtIsValid = true;
+				m_vLookAt = origin;
+			}
+		}
 
 		void ceaseFire ( bool cease )
 		{
@@ -133,7 +140,7 @@ namespace BotManager
 			// Solokiller -- clear the handles out to avoid problems.
 			@m_pPlayer = null;
 		}
-		
+		/** update millisec between each runplayer move */
 		private void UpdateMSec() final
 		{
 			m_iMSecInterval = int( ( g_Engine.time - m_flLastRunMove ) * 1000 );

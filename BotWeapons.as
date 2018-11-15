@@ -80,9 +80,6 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_minigun",0.0,3000.0,WEAP_FL_NONE,15)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_sporelauncher",64.0,1024.0,WEAP_FL_GRENADE|WEAP_FL_NONE,12)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_displacer",64.0,3000.0,WEAP_FL_UNDERWATER,15)); 
-     
-        
-        
     }    
 
     int numWeapons ()
@@ -104,12 +101,10 @@ class CBotWeapon
         m_pWeaponEntity = null;
     }
 
-    
     bool shouldFire ()
     {
         return m_pWeaponInfo.shouldFire();
     }
-
 
     bool isOtherBetterChoiceThan ( CBotWeapon@ other )
     {
@@ -472,55 +467,3 @@ class CBotWeapons
          @m_pCurrentWeapon = null;
     }
 }
-/*
-bool Weapon_hasAmmo ( CBasePlayer@ player, CBasePlayerWeapon@ weapon )
-{
-    int index = weapon.PrimaryAmmoIndex();
-
-    return (index == -1) || (player.m_rgAmmo(index) > 0);
-}
-
-CBasePlayerWeapon@ findBestWeapon ( CBasePlayer@ pBot, Vector targetOrigin, CBaseEntity@ target = null )
-{
-    CBasePlayerWeapon@ weapon = null;
-    int priority = 0;
-
-    for ( int i = 0; i < g_WeaponInfo.numWeapons(); i ++ )
-    {
-        CBotWeaponInfo@ weaponInfo = g_WeaponInfo.getWeapon(i);
-        CBasePlayerItem@ item = pBot.HasNamedPlayerItem(weaponInfo.m_szName);
-        CBasePlayerWeapon@ tmpWeapon;
-
-        if ( item is null )
-            continue;
-
-        @tmpWeapon = item.GetWeaponPtr();
-
-        if ( tmpWeapon is null )    
-            continue;
-
-        // out of ammo
-        if ( !Weapon_hasAmmo(pBot,tmpWeapon) )
-            continue;
-
-        if ( pBot.pev.waterlevel > 1 && !weaponInfo.hasFlags(WEAP_FL_UNDERWATER) )
-            continue;
-
-        float distance = (pBot.pev.origin - targetOrigin).Length();
-
-        if ( distance < weaponInfo.m_fMinDistance )
-            continue;
-
-        if ( distance > weaponInfo.m_fMaxDistance )
-            continue;
-
-        if ( weaponInfo.m_iPriority <= priority )
-            continue;
-        
-        priority = weaponInfo.m_iPriority;
-        @weapon = tmpWeapon;
-    }
-
-    return weapon;
-}
-*/

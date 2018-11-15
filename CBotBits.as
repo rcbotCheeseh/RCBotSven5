@@ -11,7 +11,11 @@ final class CBits
 		int bit = 1<<(longbit % 32);
 		int byte = longbit / 32;
 
-		return (bits[byte] & bit) == bit;
+		//? ????
+		if ( uint(byte) < bits.length() )	
+			return (bits[byte] & bit) == bit;
+
+		return false;
 	}
 
 	void setBit ( int longbit , bool val )

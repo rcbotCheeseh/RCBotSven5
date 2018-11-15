@@ -484,6 +484,9 @@ bool UTIL_DoesNearestTeleportGoTo ( Vector vTeleportOrigin, Vector vGoto )
 {
 	CBaseEntity@ pTeleIn = UTIL_FindNearestEntity("trigger_teleport",vTeleportOrigin,128.0f,false,true);
 
+	if ( pTeleIn is null )
+		return false;
+
 	if ( pTeleIn.pev.target == "" )
 		return false;
 	

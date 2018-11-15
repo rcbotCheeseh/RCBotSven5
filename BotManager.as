@@ -382,7 +382,6 @@ case 	CLASS_BARNACLE	:
 		}
 		if ( succWpt.hasFlags(W_FL_PAIN) )
 		{
-
 			CBaseEntity@ pent = null;
 			bool bFound = false;
 			Vector vSucc = succWpt.m_vOrigin;
@@ -392,13 +391,17 @@ case 	CLASS_BARNACLE	:
 			{										
 					if ( ((pent.pev.spawnflags & 8)!=8) && (pent.pev.solid == SOLID_TRIGGER) )
 					{
-						if ( UTIL_VectorInsideEntity(pent,vSucc) )
+						if ( UTIL_VectorInsideEntity(pent,vSucc) || ((UTIL_EntityOrigin(pent)-vSucc).Length() < 128) )
 						{
-							BotMessage("TRIGGET HURT DETECTED!!!");
+							//BotMessage("TRIGGET HURT DETECTED!!!");
 							bFound = true;
-							break;
+							break;	
 						}
+
+						//BotMessage("TRIGGET HURT DETECTED!!! 1");
 					}
+
+					//BotMessage("TRIGGET HURT DETECTED!!! 2");
 			}
 
 			if ( bFound )
@@ -636,6 +639,11 @@ case 	CLASS_BARNACLE	:
 	{
 		return m_pWeapons.findBotWeapon("weapon_medkit");
 	}
+
+	CBotWeapon@ getGrapple ()
+	{
+		return m_pWeapons.findBotWeapon("weapon_grapple");
+	}	
 
 	void selectWeapon ( CBotWeapon@ weapon )
 	{
@@ -1070,6 +1078,15 @@ case 	CLASS_BARNACLE	:
 		}
 	}
 
+	void grapple ( Vector vGrapple, Vector vTo )
+	{
+		// grapple from current position, aim at grapple and head towards 'to'
+		if ( m_pCurrentSchedule is null )
+			m_pCurrentSchedule = RCBotSchedule();
+		
+		m_pCurrentSchedule.addTaskFront(CGrappleTask(vGrapple,vTo));			
+	}
+
 	void DoButtons ()
 	{
 		CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
@@ -1126,10 +1143,10 @@ case 	CLASS_BARNACLE	:
 
 		if ( m_pCurrentSchedule !is null )
 		{
-			if ( m_pCurrentSchedule.execute(this) )
-			{
+			if ( m_pCurrentSchedule.execute(this) == SCHED_TASK_FAIL )
 				@m_pCurrentSchedule = null;
-			}			
+			else if ( m_pCurrentSchedule.numTasksRemaining() == 0 )
+				@m_pCurrentSchedule = null;			
 		}
 		else
 		{

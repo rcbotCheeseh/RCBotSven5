@@ -61,11 +61,13 @@ class RCBotTask
 
 const int SCHED_TASKS_MAX = 16;
 
+const int SCHED_TASK_OK = 0;
+const int SCHED_TASK_FAIL = 1;
+
 class RCBotSchedule
 {
 	array<RCBotTask@> m_pTasks;
     uint m_iCurrentTaskIndex;
-    
 
     RCBotSchedule()
     {
@@ -95,10 +97,10 @@ class RCBotSchedule
         }
 	}
 
-	bool execute (RCBot@ bot)
+	int execute (RCBot@ bot)
 	{        
         if ( m_pTasks.length() == 0 )
-            return true;
+            return SCHED_TASK_OK;
 
         RCBotTask@ m_pCurrentTask = m_pTasks[0];
 
@@ -114,25 +116,25 @@ class RCBotSchedule
             {
                 UTIL_DebugMsg(bot.m_pPlayer,"m_pTasks.length() == 0",DEBUG_TASK);
              
-                return true;
+                return SCHED_TASK_OK;
             }
         }
         else if ( m_pCurrentTask.timedOut() )
         {
-                    UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" FAILED",DEBUG_TASK);
+            UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" FAILED",DEBUG_TASK);
 
             m_pCurrentTask.m_bFailed = true;
             // failed
-            return true;
+            return SCHED_TASK_FAIL;
         }
         else if ( m_pCurrentTask.m_bFailed )
         {
-                    UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" FAILED",DEBUG_NAV);
+            UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" FAILED",DEBUG_NAV);
 
-            return true;
+            return SCHED_TASK_FAIL;
         }
 
-        return false;
+        return SCHED_TASK_OK;
 	}
 }
 
@@ -743,6 +745,61 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
         addTask(CBotButtonTask(IN_RELOAD));
     }
     
+}
+
+class CGrappleTask : RCBotTask
+{
+    Vector m_vGrapple;
+    Vector m_vTo;
+    float m_fOriginalDistance;
+    int state;
+
+    CGrappleTask ( Vector vGrapple, Vector vTo )
+    {
+        m_vGrapple = vGrapple;
+        m_vTo = vTo;
+        setTimeout(15.0f);
+        state = 0;
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        CBotWeapon@ pGrapple = bot.getGrapple();
+        CBaseEntity@ pPlayer = bot.m_pPlayer;
+
+        if ( pGrapple is null )
+        {
+                Failed();
+                return;
+        }
+
+        if ( !bot.isCurrentWeapon(pGrapple) )
+        {
+            bot.selectWeapon(pGrapple);
+            return;
+        }
+
+        switch ( state )
+        {
+            case 0:
+                m_fOriginalDistance = bot.distanceFrom(m_vTo);
+                state = 1;
+                break;
+            case 1:
+
+                bot.StopMoving();
+                bot.setLookAt(m_vGrapple);
+                bot.PressButton(IN_ATTACK);
+
+                if ( bot.distanceFrom(m_vTo) < (m_fOriginalDistance/2) )
+                {                    
+                    Complete();
+                }
+
+            break;
+        }
+    }
+
 }
 
 class CBotTaskRevivePlayer : RCBotTask 
