@@ -751,15 +751,12 @@ class CGrappleTask : RCBotTask
 {
     Vector m_vGrapple;
     Vector m_vTo;
-    float m_fOriginalDistance;
-    int state;
 
     CGrappleTask ( Vector vGrapple, Vector vTo )
     {
         m_vGrapple = vGrapple;
         m_vTo = vTo;
         setTimeout(15.0f);
-        state = 0;
     }
 
     void execute ( RCBot@ bot )
@@ -779,24 +776,13 @@ class CGrappleTask : RCBotTask
             return;
         }
 
-        switch ( state )
-        {
-            case 0:
-                m_fOriginalDistance = bot.distanceFrom(m_vTo);
-                state = 1;
-                break;
-            case 1:
+        bot.StopMoving();
+        bot.setLookAt(m_vGrapple);
+        bot.PressButton(IN_ATTACK);
 
-                bot.StopMoving();
-                bot.setLookAt(m_vGrapple);
-                bot.PressButton(IN_ATTACK);
-
-                if ( bot.distanceFrom(m_vTo) < (m_fOriginalDistance/2) )
-                {                    
-                    Complete();
-                }
-
-            break;
+        if ( bot.distanceFrom(m_vTo) < pPlayer.pev.velocity.Length() )
+        {                    
+            Complete();
         }
     }
 
