@@ -103,7 +103,7 @@ then go to the second waypoint and use the command:
     "health"		Put at health pick up or health charger						Fully implemented
     "armor"		Put at battery pickup or HEV charger						Fully implemented
     "ammo"		Put at ammo pickup								OK (partially implemented)
-    "checklift"		Coming soon									Unimplemented
+    "checkground"	Bots don't progress until waypoint has a ground (e.g. drawbridge)		OK
     "important"		Put at objective point such as button 
 			or breakable needed to move to next stage					OK
     "barney"		Coming soon									Unimplemented
