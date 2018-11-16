@@ -45,6 +45,12 @@ namespace BotManager
 		bool m_bIsAvoiding = false;
 		Vector m_vAvoidVector;
 
+		// nothing
+		void hurt ( DamageInfo@ damageInfo )
+		{
+
+		}
+
 		/** bot releases pressed buttons */
 		void ReleaseButtons ( )
 		{
@@ -272,7 +278,7 @@ namespace BotManager
 				g_Hooks.RemoveHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
 				g_Hooks.RemoveHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
 				g_Hooks.RemoveHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay ) );
-				
+				g_Hooks.RemoveHook( Hooks::Player::PlayerTakeDamage, PlayerTakeDamageHook( this.PlayerTakeDamage) );
 			}
 		}
 		
@@ -280,6 +286,18 @@ namespace BotManager
 		{
 			return m_pCreateBotFn( pPlayer );
 		}
+
+		HookReturnCode PlayerTakeDamage ( DamageInfo@ damageInfo )
+		{
+			BaseBot@ pBot = FindBot(damageInfo.pVictim);
+
+			if ( pBot !is null )
+			{
+				pBot.hurt(damageInfo);
+			}
+
+			return HOOK_CONTINUE;
+		}		
 
 		HookReturnCode ClientSay ( SayParameters@ param )
 		{
@@ -314,6 +332,7 @@ namespace BotManager
 				return;
 			
 			m_bInitialized = true;
+			g_Hooks.RegisterHook( Hooks::Player::PlayerTakeDamage, PlayerTakeDamageHook( this.PlayerTakeDamage) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay) );
 			g_Hooks.RegisterHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
@@ -386,7 +405,7 @@ namespace BotManager
 			return m_Bots[ uiIndex ];
 		}
 		
-		BaseBot@ FindBot( CBasePlayer@ pPlayer ) const
+		BaseBot@ FindBot( const CBaseEntity@ pPlayer ) const
 		{
 			if( pPlayer is null )
 				return null;

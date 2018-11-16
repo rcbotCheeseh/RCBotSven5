@@ -15,7 +15,7 @@ const int W_FL_DOOR		= 	(1<<6);  /* wait for door to open */
 const int W_FL_HEALTH	= 	(1<<7);  /* health kit (or wall mounted) location */
 const int W_FL_ARMOR	= 	(1<<8);  /* armor (or HEV) location */
 const int W_FL_AMMO		=	(1<<9);  /* ammo location */
-const int W_FL_CHECK_LIFT	= (1<<10); /* checks for lift at this point */
+const int W_FL_CHECK_GROUND	= (1<<10); /* checks for lift at this point */
 const int W_FL_IMPORTANT	= (1<<11);/* flag position (or hostage or president) */
 const int W_FL_BARNEY_POINT  = (1<<12);
 const int W_FL_DEFEND_ZONE  =  (1<<13);
@@ -229,8 +229,8 @@ class CWaypointTypes
 						case W_FL_AMMO :
 						name = "ammo";
 						break;
-						case W_FL_CHECK_LIFT :
-						name = "checklift";
+						case W_FL_CHECK_GROUND :
+						name = "checkground";
 						break;
 						case W_FL_IMPORTANT :
 						name = "important";
@@ -517,6 +517,9 @@ class CWaypoint
 
 	void addPath ( int wpt )
 	{
+
+		if ( wpt == iIndex )
+			return;
 		if ( m_PathsTo.find(wpt) < 0 )
 		{
 			CWaypoint@ pwpt = g_Waypoints.getWaypointAtIndex(wpt);
@@ -1342,7 +1345,7 @@ final class RCBotCoverWaypointFinder
 	bool execute ( )
 	{
 		//UTIL_DebugMsg(m_pBot.m_pPlayer,"FINDING COVER!!!!",DEBUG_NAV);
-
+		//BotMessage("FINDING COVER");
 		m_iGoalWaypoint = FindCover(iStart);
 
 		return m_iGoalWaypoint != -1;

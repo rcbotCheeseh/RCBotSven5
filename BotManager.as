@@ -355,6 +355,17 @@ case 	CLASS_BARNACLE	:
 			if ( !HasWeapon("weapon_grapple") )	
 				return false;
 		}
+		if ( succWpt.hasFlags(W_FL_CHECK_GROUND) )
+		{
+			TraceResult tr;
+
+			g_Utility.TraceLine( succWpt.m_vOrigin, succWpt.m_vOrigin - Vector(0,0,128.0f), ignore_monsters,dont_ignore_glass, null, tr );
+			
+			// no ground?
+			if ( tr.flFraction >= 1.0f )
+				return false;
+
+		}
 		if ( succWpt.hasFlags(W_FL_OPENS_LATER) )
 		{								
 			TraceResult tr;
@@ -481,6 +492,7 @@ case 	CLASS_BARNACLE	:
 		if ( IsOnLadder() || ((flags & W_FL_LADDER) == W_FL_LADDER) )
 		{
 			UTIL_DebugMsg(m_pPlayer,"IN_FORWARD",DEBUG_NAV);
+			setLookAt(vOrigin);
 			PressButton(IN_FORWARD);
 		}
 
@@ -718,6 +730,29 @@ case 	CLASS_BARNACLE	:
 		g_PlayerFuncs.SayTextAll(m_pPlayer,"[RCBOT] " + m_pPlayer.pev.netname + ": \"" + text + "\"");
 	}
 
+	void hurt ( DamageInfo@ damageInfo )
+	{
+		CBaseEntity@ attacker = damageInfo.pAttacker;
+		
+		if ( attacker !is null )
+		{
+			Vector vAttacker = UTIL_EntityOrigin(attacker);
+
+			if ( isEntityVisible(attacker) )
+			{
+				TakeCover(vAttacker);
+
+				//BotMessage("Take Cover!!!");
+			}
+			else
+			{
+				setLookAt(vAttacker,PRIORITY_HURT);
+
+				//BotMessage("Look!!!");
+			}
+		}
+	}
+
 	void Think()
 	{		
 		//if ( m_fNextThink > g_Engine.time )
@@ -803,36 +838,6 @@ case 	CLASS_BARNACLE	:
 
 			return; // Dead , nothing else to do
 		}
-
-
-		m_iCurrentHealthArmor = int(m_pPlayer.pev.health + m_pPlayer.pev.armorvalue);
-
-		if ( m_iCurrentHealthArmor < m_iPrevHealthArmor )
-		{
-			//int iDamage = m_iPrevHealthArmor - m_iCurrentHealthArmor;
-			
-				if ( m_pEnemy.GetEntity() !is null )
-				{
-					TakeCover(UTIL_EntityOrigin(m_pEnemy.GetEntity()));
-				}
-				else
-				{
-					// no enemy ,, who shot me?
-
-					//w00tguy
-					if ( m_pPlayer.pev.dmg_inflictor !is null )
-					{
-						CBaseEntity@ attacker = g_EntityFuncs.Instance(m_pPlayer.pev.dmg_inflictor);
-
-						if ( attacker !is null )
-						{
-							setLookAt(UTIL_EntityOrigin(attacker),PRIORITY_HURT);
-						}
-
-					}
-				}
-			
-		}		
 
 		m_iPrevHealthArmor = m_iCurrentHealthArmor;
 
@@ -1018,7 +1023,10 @@ case 	CLASS_BARNACLE	:
 	{
 		//if ( navigator !is null )
 		//	navigator.execute(this);
+		float fStuckSpeed = 0.1*m_fDesiredMoveSpeed;
 
+		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
+			fStuckSpeed /= 2;
 		// for courch jump
 		if ( m_flJumpTime + 1.0f > g_Engine.time )
 			PressButton(IN_DUCK);
@@ -1026,7 +1034,7 @@ case 	CLASS_BARNACLE	:
 		if ( m_flWaitTime > g_Engine.time )
 			setMoveSpeed(0.0f);
 
-		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > (0.1*m_fDesiredMoveSpeed)) )
+		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > fStuckSpeed) )
 		{
 			m_flStuckTime = g_Engine.time;
 		}

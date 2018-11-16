@@ -1038,10 +1038,17 @@ abstract class CBotUtil
     float utility;
     float m_fNextDo;
 
+    //float m_fWeight;
+    //int m_iNumTimesChosenThisLife;
+    //float m_iPreviousScore;
+
     CBotUtil ( ) 
     { 
         utility = 0; 
+       // m_fWeight = 1.0f;
         m_fNextDo = 0.0;   
+       // m_iPreviousScore = 0;
+        //m_iNumTimesChosenThisLife = 0;
     }
 
     string DebugMessage ()
@@ -1063,6 +1070,60 @@ abstract class CBotUtil
     {
         m_fNextDo = g_Engine.time + 30.0f;
     }
+
+    /*float getWeight ()
+    {
+        return m_fWeight;
+    }*/
+
+    /*void chosen ()
+    {
+        m_iNumTimesChosenThisLife++;
+    }*/
+
+    /*void calculateWeight (RCBot@ bot, int iNumUtilsChosen)
+    {
+        float iCurrentScore = bot.m_pPlayer.pev.frags;
+ 
+        if ( iNumUtilsChosen > 0 && m_iNumTimesChosenThisLife > 0 )
+        {
+            float fWeightAdjustment;
+            bool bGoodUtil = ( iCurrentScore > m_iPreviousScore );
+            
+            if ( m_iNumTimesChosenThisLife == iNumUtilsChosen )
+            {
+                // BotMessage("m_iNumTimesChosenThisLife == iNumUtilsChosen");
+                fWeightAdjustment = 1.0f;
+            }
+            else 
+            {
+                fWeightAdjustment = float(m_iNumTimesChosenThisLife)/iNumUtilsChosen;
+                // BotMessage("fWeightAdjustment = " + fWeightAdjustment);
+            }
+
+            if ( bGoodUtil )
+            {                
+                m_fWeight += (fWeightAdjustment*0.1f);
+                // BotMessage("bGoodUtil == true");
+            }
+            else 
+            {
+                
+                m_fWeight -= (fWeightAdjustment*0.1f);
+                // BotMessage("bGoodUtil == false");
+            }
+            if ( m_fWeight > 2.0f ) // maximum weight
+                m_fWeight = 2.0f; 
+            else if ( m_fWeight < 0.25f ) // minimum weight
+                m_fWeight = 0.25f;
+
+            UTIL_DebugMsg(bot.m_pPlayer,"New Weight (" + DebugMessage() + ") is " + m_fWeight,DEBUG_UTIL );
+        }
+     
+        iNumUtilsChosen = 0;
+        m_iNumTimesChosenThisLife = 0;
+        m_iPreviousScore = iCurrentScore;                       
+    }*/
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
@@ -1305,11 +1366,12 @@ class CBotGetArmorUtil : CBotUtil
     {
         return "CBotGetArmorUtil";
     }  
-   float calculateUtility ( RCBot@ bot )
+   
+    float calculateUtility ( RCBot@ bot )
     {
         float healthPercent = float(bot.m_pPlayer.pev.armorvalue) / 100;
 
-        return (1.0f - healthPercent);
+        return 0.75f*(1.0f - healthPercent);
     }
 
     RCBotSchedule@ execute ( RCBot@ bot )
@@ -1461,7 +1523,7 @@ class CBotRoamUtil : CBotUtil
     }         
     float calculateUtility ( RCBot@ bot )
     {
-        return (0.01);
+        return (0.0001f);
     }
 
     void setNextDo ()
@@ -1491,9 +1553,12 @@ class CBotRoamUtil : CBotUtil
 class CBotUtilities 
 {
     array <CBotUtil@>  m_Utils;
+    RCBot@ m_pBot;
+    //int m_iNumUtilsChosen = 0;
 
     CBotUtilities ( RCBot@ bot )
     {
+            @m_pBot = bot;
             m_Utils.insertLast(CBotGetHealthUtil());
             m_Utils.insertLast(CBotGetArmorUtil());
             m_Utils.insertLast(CBotGotoObjectiveUtil());
@@ -1510,8 +1575,12 @@ class CBotUtilities
     {
         for ( uint i = 0; i < m_Utils.length(); i ++ )
         {
-             m_Utils[i].reset();            
+             m_Utils[i].reset();                        
+             //m_Utils[i].calculateWeight(m_pBot,m_iNumUtilsChosen);
         }
+
+        //m_iNumUtilsChosen = 0;
+    
     }
 
     RCBotSchedule@  execute ( RCBot@ bot )
@@ -1520,12 +1589,14 @@ class CBotUtilities
 
         for ( uint i = 0; i < m_Utils.length(); i ++ )
         {
-            if ( m_Utils[i].canDo(bot) )
-            {
-                   
-                m_Utils[i].setUtility(m_Utils[i].calculateUtility(bot));
+            CBotUtil@ util = m_Utils[i];
+
+            if ( util.canDo(bot) )
+            {                                   
+                //util.setUtility(util.calculateUtility(bot)*util.getWeight());
+                util.setUtility(util.calculateUtility(bot));
                // UTIL_DebugMsg(bot.m_pPlayer,"Utility = " + m_Utils[i].utility);
-                UtilsCanDo.insertLast(m_Utils[i]);
+                UtilsCanDo.insertLast(util);
             }
         }
 
@@ -1539,7 +1610,9 @@ class CBotUtilities
                 RCBotSchedule@ sched = chosenUtil.execute(bot);
 
                 if ( sched !is null )
-                {                    
+                {     
+                    //chosenUtil.chosen();     
+                    //m_iNumUtilsChosen++;          
                     UTIL_DebugMsg(bot.m_pPlayer,"Chosen Utility = " + chosenUtil.DebugMessage() + " Value = " + chosenUtil.utility, DEBUG_UTIL );
                     chosenUtil.setNextDo();
 

@@ -299,7 +299,7 @@ void WaypointRemoveType ( const CCommand@ args )
 
 	CBasePlayer@ player = ListenPlayer();
 
-	for ( int i = 0 ; i < args.ArgC(); i ++ )
+	for ( int i = 1 ; i < args.ArgC(); i ++ )
 	{
 		types.insertLast(args.Arg(i));
 	}
