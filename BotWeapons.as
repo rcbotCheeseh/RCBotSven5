@@ -74,7 +74,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_uzi",100.0,2000.0,WEAP_FL_NONE,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_medkit",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_grapple",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_handgrenade",50.0,512.0,WEAP_FL_GRENADE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,1)); 
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_handgrenade",50.0,512.0,WEAP_FL_GRENADE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,15)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.6,"weapon_sniperrifle",512.0,8000.0,WEAP_FL_SNIPE,10)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_m249",60.0,2400.0,WEAP_FL_NONE,11)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_minigun",0.0,3000.0,WEAP_FL_NONE,15)); 

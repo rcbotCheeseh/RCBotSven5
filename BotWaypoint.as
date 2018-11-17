@@ -933,10 +933,11 @@ class CWaypoints
 		}
 	}
 
-	int getNearestFlaggedWaypoint ( CBasePlayer@ player, int iFlags )
+	int getNearestFlaggedWaypoint ( CBaseEntity@ entity, int iFlags )
 	{
 		int iIndex = -1;
 		float min_distance = 0;
+		Vector vOrigin = UTIL_EntityOrigin(entity);
 		
 		for( int i = 0; i < m_iNumWaypoints; i ++ )
 		{
@@ -945,7 +946,7 @@ class CWaypoints
 
 			if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
 			{
-				float distance = m_Waypoints[i].distanceFrom(player.pev.origin);
+				float distance = m_Waypoints[i].distanceFrom(vOrigin);
 
 				if ( iIndex == -1 || distance < min_distance )
 				{

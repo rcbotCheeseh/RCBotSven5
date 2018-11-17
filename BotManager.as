@@ -46,6 +46,8 @@ final class RCBot : BotManager::BaseBot
 
 	CBotWeapons@ m_pWeapons;
 
+	EHandle m_pNearestTank;
+
 	float m_flStuckTime = 0;
 
 	Vector m_vLastSeeEnemy;
@@ -56,6 +58,20 @@ final class RCBot : BotManager::BaseBot
 	int m_iCurrentHealthArmor;
 
 	float m_flJumpTime = 0.0f;
+
+	void setNearestTank ( CBaseEntity@ pTank )
+	{
+		//BotMessage("setNearestTank");
+
+		if ( m_pNearestTank.GetEntity() is null )
+			m_pNearestTank = pTank;
+		else if ( m_pNearestTank.GetEntity() != pTank )
+		{
+			if ( distanceFrom(pTank) < distanceFrom(m_pNearestTank.GetEntity()) )
+				m_pNearestTank = pTank;
+		}
+		
+	}
 
 	RCBot( CBasePlayer@ pPlayer )
 	{
@@ -108,6 +124,29 @@ final class RCBot : BotManager::BaseBot
 						sched.addTask(CBotMoveToOrigin(vTalker));
 						sched.addTask(CBotWaitTask(90.0f));
 						OK = true;
+					}
+				}
+				else if ( args[1] == "use" )
+				{
+					RCBotSchedule@ sched = SCHED_CREATE_NEW();
+					
+					CBaseEntity@ pTank = UTIL_FindNearestEntity ( "func_tank", talker.EyePosition(), 200.0f, false, false );
+
+					if ( pTank !is null )
+					{
+						if ( UTIL_CanUseTank(m_pPlayer,pTank) )
+						{
+							RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+
+							if ( task !is null )
+							{
+								sched.addTask(task);
+								sched.addTask(CBotMoveToOrigin(vTalker));
+								sched.addTask(CBotTaskUseTank(pTank));
+								
+								OK = true;
+							}
+						}
 					}
 				}
 				else if ( args[1] == "press") 
@@ -346,6 +385,16 @@ case 	CLASS_BARNACLE	:
 		}
 
 		return false;
+	}
+
+	bool hasEnemy ()
+	{
+		return m_pEnemy.GetEntity() !is null;
+	}
+
+	CBaseEntity@ getEnemy ()
+	{
+		return m_pEnemy.GetEntity();
 	}
 
 	bool canGotoWaypoint ( CWaypoint@ currWpt, CWaypoint@ succWpt )
@@ -696,6 +745,9 @@ case 	CLASS_BARNACLE	:
 		if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )
 			return false;
 
+		if ( entity.pev.flags & FL_GODMODE == FL_GODMODE )
+			return false;
+
 		// can't heal the dead -- revive will be done separately
 		if ( entity.pev.deadflag != DEAD_NO )
 			return false;
@@ -949,6 +1001,14 @@ case 	CLASS_BARNACLE	:
 			else if ( getEnemyFactor(ent) < getEnemyFactor(m_pEnemy) )
 				m_pEnemy = ent;
 		}
+
+		if ( ent.GetClassname() == "func_tank" )
+		{
+			if ( UTIL_CanUseTank(m_pPlayer,ent) )
+			{
+				setNearestTank(ent);
+			}
+		}
 	}
 
 	void lostVisible ( CBaseEntity@ ent )
@@ -969,6 +1029,11 @@ case 	CLASS_BARNACLE	:
 		if ( m_pRevive.GetEntity() is ent )
 		{
 			m_pRevive = null;
+		}
+
+		if ( m_pNearestTank.GetEntity() is ent )
+		{
+			m_pNearestTank = null;
 		}
 	}
 

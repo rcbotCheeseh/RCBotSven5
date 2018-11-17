@@ -36,7 +36,7 @@
 
 	Vector UTIL_EyePosition ( CBaseEntity@ entity )
 	{
-		return entity.EyePosition();
+		return entity.EyePosition() - Vector(0,0,16);
 	}	
 
 	Vector UTIL_EntityOrigin ( CBaseEntity@ entity )
@@ -418,6 +418,32 @@ bool UTIL_DoorIsOpen ( CBaseDoor@ door, CBaseEntity@ pActivator )
 		return true;
 
 	return false;
+}
+/**
+ * UTIL_CanUseTank
+ * @param CBaseEntity pTankEnt tank entity
+ * @return true if a player can use the tank
+ */
+bool UTIL_CanUseTank ( CBaseEntity@ pBot, CBaseEntity@ pTankEnt )
+{
+	CBaseTank@ pTank = cast<CBaseTank@>(pTankEnt);
+
+	if ( pTank is null )
+	{
+		//BotMessage("pTank is null");
+		return false;
+	}
+
+	if ( pTank.pev.effects & EF_NODRAW == EF_NODRAW )
+		return false;
+
+	if ( !pTank.IsTriggered(pBot) )
+	{
+		//BotMessage("!pTank.IsTriggered()");
+		return false;
+	}
+
+	return ( pTank.GetController() is null );
 }
 /**
  * UTIL_FindNearestEntity

@@ -7,7 +7,7 @@ class CBotVisibles
 {
 	CBotVisibles ( RCBot@ bot )
 	{
-		@m_pCurrentEntity = null;
+		m_pCurrentEntityHandle = null;
 		@bits_body = CBits(g_Engine.maxEntities+1);
 		@bits_head = CBits(g_Engine.maxEntities+1);
 		@m_pBot = bot;
@@ -92,6 +92,7 @@ class CBotVisibles
 	{
 		CBasePlayer@ player = m_pBot.m_pPlayer;
 		int iLoops = 0;
+		CBaseEntity@ m_pCurrentEntity = m_pCurrentEntityHandle.GetEntity();
 		CBaseEntity@ pStart = m_pCurrentEntity;
 
 		if ( m_pNearestAvoid.GetEntity() !is null )
@@ -174,6 +175,8 @@ class CBotVisibles
 
 		}while ( iLoops < iMaxLoops );
 
+		m_pCurrentEntityHandle = m_pCurrentEntity;
+
 		if ( isAvoiding() )
 		{
 			m_pBot.setAvoiding(true);;
@@ -194,7 +197,7 @@ class CBotVisibles
 		return UTIL_EntityOrigin(m_pNearestAvoid.GetEntity());
 	}
 
-	CBaseEntity@ m_pCurrentEntity = null;
+	EHandle m_pCurrentEntityHandle;
 	//array<int> m_VisibleList;
 	int iMaxLoops = 200;
 	CBits@ bits_body;

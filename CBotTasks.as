@@ -856,6 +856,109 @@ class CBotTaskRevivePlayer : RCBotTask
      }
 }
 
+class CBotTaskUseTank : RCBotTask
+{
+
+    EHandle m_pTank;
+    float m_fUseTankTime;    
+
+     CBotTaskUseTank ( CBaseEntity@ pTank )
+     {
+         m_fUseTankTime = 0.0f;
+
+         m_pTank = pTank;
+     }
+
+     void execute ( RCBot@ bot )
+     {
+         CBaseTank@ pTank = cast<CBaseTank@>( m_pTank.GetEntity());
+
+         if ( pTank is null )
+         {        
+             Failed();
+             BotMessage("pTank is null");
+             return;
+         }
+
+         if ( pTank.GetController() !is null )
+         {
+            if ( pTank.GetController() !is bot.m_pPlayer )
+            {
+                Failed();
+                  BotMessage(" pTank.GetController() !is bot.m_pPlayer ");
+                return;
+            }
+            // controlling tank
+            else
+            {
+                if ( m_fUseTankTime == 0.0f )
+                    m_fUseTankTime = g_Engine.time + 30.0f;
+                else if ( m_fUseTankTime < g_Engine.time )
+                {
+                    // stop using tank
+                    bot.PressButton(IN_USE);
+                     BotMessage(" m_fUseTankTime < g_Engine.time  ");
+                    Complete();
+                }
+
+                // don't use normal weapons
+                bot.ceaseFire(true);
+                bot.StopMoving();
+                
+                // check for enemies
+                if ( bot.hasEnemy() )
+                {
+                    bot.setLookAt(UTIL_EntityOrigin(bot.getEnemy()));
+                    bot.PressButton(IN_ATTACK);
+                }
+            }
+         }
+         else
+         {
+        
+            if ( Math.RandomLong(0,100)> 50 )
+                bot.PressButton(IN_USE);
+        
+
+            bot.setLookAt(UTIL_EntityOrigin(pTank));
+            
+         }
+
+         // check if tank is being used 
+     }
+}
+/*
+class CBotTaskClimbLadder : RCBotTask
+{
+    bool isGoingUp = false;
+    Vector m_vStart;
+    Vector m_vEnd;
+    Vector m_vAngles;
+    int state = 0;
+
+    CBotTaskClimbLadder ( Vector vLadderStart, Vector vLadderEnd )
+    {
+        m_vStart = vLadderStart;
+        m_vEnd = vLadderEnd;
+
+        isGoingUp = ( m_vEnd.z > m_vStart.z );
+
+        m_vAngles = Math.VecToAngles( vLadderEnd - vLadderStart );
+    }
+
+     void execute ( RCBot@ bot )
+     {
+
+        switch ( state )
+        {
+            case 0:
+                // look at end point from start
+
+        }
+        
+     }  
+}*/
+
 class CBotTaskHealPlayer : RCBotTask 
 {
     float m_fLastVisibleTime = 0.0f;
@@ -1474,7 +1577,40 @@ class CBotFindLastEnemyUtil : CBotUtil
     }
 }
 
+class CBotUseTankUtil : CBotUtil
+{
+    string DebugMessage ()
+    {
+        return "CBotUseTankUtil";
+    }      
+    float calculateUtility( RCBot@ bot )
+    {
+        // same as weapon
+        return 1.0 - bot.m_pWeapons.getNumWeaponsPercent(bot);
+    }
+    bool canDo (RCBot@ bot)
+    {
+        if ( bot.m_pNearestTank.GetEntity() !is null )
+            return CBotUtil::canDo(bot);
 
+        return false;
+    }  
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        int iRandomGoal = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pNearestTank.GetEntity(),W_FL_TANK);
+
+        if ( iRandomGoal != -1 )
+        {
+            RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal);
+
+            sched.addTask(CBotTaskUseTank(bot.m_pNearestTank.GetEntity()));
+
+            return sched;
+        }
+
+        return null;
+    }
+}
 
 class CBotGotoEndLevelUtil : CBotUtil
 {
@@ -1569,6 +1705,7 @@ class CBotUtilities
             m_Utils.insertLast(CBotRoamUtil());
             m_Utils.insertLast(CBotHealPlayerUtil());
             m_Utils.insertLast(CBotRevivePlayerUtil());
+            m_Utils.insertLast(CBotUseTankUtil());
     }
 
     void reset ()
