@@ -21,7 +21,7 @@ const int PRIORITY_TASK = 3;
 const int PRIORITY_HURT = 4;
 const int PRIORITY_ATTACK = 5;
 const int PRIORITY_LADDER = 6;
-	
+const int PRIORITY_OVERRIDE = 7;
 
 // ------------------------------------
 // BOT BASE - START
@@ -94,68 +94,54 @@ final class RCBot : BotManager::BaseBot
 	}
 
 	void ClientSay ( CBaseEntity@ talker, array<string> args )
-	{
-		bool OK = false;
-
+	{		
 		if ( args.length() > 1 )
 		{
-				Vector vTalker = talker.pev.origin;
+			bool OK = false;
+			bool bBotHeard = false;
 			
-				if ( args[1] == "come")
-				{
-					RCBotSchedule@ sched = SCHED_CREATE_NEW();
-					RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+			Vector vTalker = talker.pev.origin;
+		
+			if ( args[1] == "come")
+			{
+				RCBotSchedule@ sched = SCHED_CREATE_NEW();
+				RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
 
-					if ( task !is null )
-					{
-						sched.addTask(task);
-						sched.addTask(CBotMoveToOrigin(vTalker));
-						OK = true;
-					}
+				bBotHeard = true;
+
+				if ( task !is null )
+				{
+					sched.addTask(task);
+					sched.addTask(CBotMoveToOrigin(vTalker));
+					OK = true;
 				}
-				else if ( args[1] == "wait")
-				{
-					RCBotSchedule@ sched = SCHED_CREATE_NEW();
-					RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+			}
+			else if ( args[1] == "wait")
+			{
+				RCBotSchedule@ sched = SCHED_CREATE_NEW();
+				RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
 
-					if ( task !is null )
-					{
-						sched.addTask(task);
-						sched.addTask(CBotMoveToOrigin(vTalker));
-						sched.addTask(CBotWaitTask(90.0f));
-						OK = true;
-					}
+				bBotHeard = true;
+
+				if ( task !is null )
+				{
+					sched.addTask(task);
+					sched.addTask(CBotMoveToOrigin(vTalker));
+					sched.addTask(CBotWaitTask(90.0f));
+					OK = true;
 				}
-				else if ( args[1] == "use" )
+			}
+			else if ( args[1] == "use" )
+			{
+				RCBotSchedule@ sched = SCHED_CREATE_NEW();
+				
+				CBaseEntity@ pTank = UTIL_FindNearestEntity ( "func_tank", talker.EyePosition(), 200.0f, false, false );
+
+				bBotHeard = true;
+
+				if ( pTank !is null )
 				{
-					RCBotSchedule@ sched = SCHED_CREATE_NEW();
-					
-					CBaseEntity@ pTank = UTIL_FindNearestEntity ( "func_tank", talker.EyePosition(), 200.0f, false, false );
-
-					if ( pTank !is null )
-					{
-						if ( UTIL_CanUseTank(m_pPlayer,pTank) )
-						{
-							RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
-
-							if ( task !is null )
-							{
-								sched.addTask(task);
-								sched.addTask(CBotMoveToOrigin(vTalker));
-								sched.addTask(CBotTaskUseTank(pTank));
-								
-								OK = true;
-							}
-						}
-					}
-				}
-				else if ( args[1] == "press") 
-				{
-					RCBotSchedule@ sched = SCHED_CREATE_NEW();
-					
-					CBaseEntity@ pButton = UTIL_FindNearestEntity ( "func_button", talker.EyePosition(), 128.0f, true, false );
-
-					if ( pButton !is null )
+					if ( UTIL_CanUseTank(m_pPlayer,pTank) )
 					{
 						RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
 
@@ -163,56 +149,170 @@ final class RCBot : BotManager::BaseBot
 						{
 							sched.addTask(task);
 							sched.addTask(CBotMoveToOrigin(vTalker));
-							sched.addTask(CUseButtonTask(pButton));
+							sched.addTask(CBotTaskUseTank(pTank));
 							
 							OK = true;
 						}
 					}
 				}
-				else if ( args[1] == "pickup" )
+			}
+			else if ( args[1] == "press") 
+			{
+				RCBotSchedule@ sched = SCHED_CREATE_NEW();
+				
+				CBaseEntity@ pButton = UTIL_FindNearestEntity ( "func_button", talker.EyePosition(), 128.0f, true, false );
+
+				bBotHeard = true;
+
+				if ( pButton !is null )
 				{
-					if ( args.length > 3 )
+					RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+
+					if ( task !is null )
+					{
+						sched.addTask(task);
+						sched.addTask(CBotMoveToOrigin(vTalker));
+						sched.addTask(CUseButtonTask(pButton));
+						
+						OK = true;
+					}
+				}
+			}
+			else if ( args[1] == "follow" )
+			{
+				bBotHeard = true;
+
+				if ( args.length > 2 )
+				{
+					CBaseEntity@ pPlayerToFollow = null;
+
+					if ( args[2] == "me" )
+					{
+						@pPlayerToFollow = talker;
+					}
+					else 
+					{
+						@pPlayerToFollow = UTIL_FindPlayer(args[2]);
+					}
+
+					if ( pPlayerToFollow !is null && pPlayerToFollow !is m_pPlayer )
 					{
 						RCBotSchedule@ sched = SCHED_CREATE_NEW();
 						RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
 
-						if ( task !is null )
+						sched.addTask(task);
+						sched.addTask(CBotTaskFollow(pPlayerToFollow));
+						OK = true;
+					}
+				}				
+			}
+			else if ( args[1] == "heal" )
+			{
+				bBotHeard = true;
+
+				if ( args.length > 2 )
+				{
+					CBaseEntity@ pPlayerToHeal = null;
+
+					if ( args[2] == "me" )
+					{
+						@pPlayerToHeal = talker;
+					}
+					else 
+					{
+						@pPlayerToHeal = UTIL_FindPlayer(args[2]);
+					}
+
+					if ( pPlayerToHeal !is null && pPlayerToHeal !is m_pPlayer )
+					{
+						RCBotSchedule@ sched = SCHED_CREATE_NEW();
+						RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+
+						sched.addTask(task);
+						sched.addTask(CBotTaskHealPlayer(pPlayerToHeal));
+						OK = true;
+					}
+				}
+			}
+			else if ( args[1] == "revive" )
+			{
+				bBotHeard = true;
+
+				if ( args.length > 2 )
+				{
+					CBaseEntity@ pPlayerToRevive = null;
+
+					if ( args[2] == "me" )
+					{
+						@pPlayerToRevive = talker;
+					}
+					else 
+					{
+						@pPlayerToRevive = UTIL_FindPlayer(args[2]);
+					}
+
+					if ( pPlayerToRevive !is null && pPlayerToRevive !is m_pPlayer  )
+					{
+						if ( pPlayerToRevive.pev.deadflag >= DEAD_RESPAWNABLE )
 						{
-							sched.addTask(task);									
-							
-							
-								if ( args[3] == "ammo" )
-								{
-									sched.addTask(CFindAmmoTask());
-									OK = true;
-								}
-								else if ( args[3] == "weapon" )
-								{
-									sched.addTask(CFindWeaponTask());
-									OK = true;
-								}
-								else if ( args[3] ==  "health")
-								{
-									sched.addTask(CFindHealthTask());
-									OK = true;
-								}
-								else if ( args[3] ==  "armor")
-								{
-									sched.addTask(CFindArmorTask());
-									OK = true;
-								}
-							
+							RCBotSchedule@ sched = SCHED_CREATE_NEW();
+							RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+
+							sched.addTask(task);
+							sched.addTask(CBotTaskRevivePlayer(pPlayerToRevive));
+							OK = true;
 						}
 					}
 				}
-			
-			
-		}
+			}			
+			else if ( args[1] == "pickup" )
+			{
+				bBotHeard = true;
+
+				if ( args.length > 3 )
+				{
+					RCBotSchedule@ sched = SCHED_CREATE_NEW();
+					RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+
+					if ( task !is null )
+					{
+						sched.addTask(task);									
+						
+						
+						if ( args[3] == "ammo" )
+						{
+							sched.addTask(CFindAmmoTask());
+							OK = true;
+						}
+						else if ( args[3] == "weapon" )
+						{
+							sched.addTask(CFindWeaponTask());
+							OK = true;
+						}
+						else if ( args[3] ==  "health")
+						{
+							sched.addTask(CFindHealthTask());
+							OK = true;
+						}
+						else if ( args[3] ==  "armor")
+						{
+							sched.addTask(CFindArmorTask());
+							OK = true;
+						}
+					
+					}
+				}
+			}
 		
-		if ( OK )
-			Say("AFFIRMATIVE");
-		else 
-			Say("NEGATIVE");		
+			if ( bBotHeard )
+			{
+				if ( OK )
+					Say("AFFIRMATIVE");
+				else 
+					Say("NEGATIVE");		
+			}
+		}
+
 	}
 
 	bool isEntityVisible ( CBaseEntity@ pent )
@@ -634,6 +734,7 @@ case 	CLASS_BARNACLE	:
 
 		return m_pCurrentSchedule;
 	}
+
 
 	RCBotTask@ SCHED_CREATE_PATH ( Vector vOrigin )
 	{
@@ -1175,16 +1276,19 @@ case 	CLASS_BARNACLE	:
 
 		if ( !ceasedFiring() )
 		{	
+			CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
+
 			if ( pCurrentWeapon !is null && pCurrentWeapon.needToReload(this) )
 			{
-				// attack
-				if( Math.RandomLong( 0, 100 ) < 99 )
+				if ( pEnemy !is null )
+					TakeCover(UTIL_EntityOrigin(pEnemy));
+				else if( Math.RandomLong( 0, 100 ) < 99 )
 					PressButton(IN_RELOAD);
 
 			}
-			else if ( m_pEnemy.GetEntity() !is null && pCurrentWeapon !is null )
+			else if ( pEnemy !is null && pCurrentWeapon !is null )
 			{
-				float fDist = distanceFrom(m_pEnemy.GetEntity());
+				float fDist = distanceFrom(pEnemy);
 
 				bool bPressAttack1 = pCurrentWeapon.shouldFire();
 				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon.CanUseSecondary() && pCurrentWeapon.secondaryWithinRange(fDist);

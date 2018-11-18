@@ -291,7 +291,6 @@ uint UTIL_StringMatch ( string truncated, string search_in )
 {
 	uint len = search_in.Length();
 	uint trunc_len = truncated.Length();
-
 	
 	if ( trunc_len > len )
 		return 0;
@@ -312,7 +311,7 @@ uint UTIL_StringMatch ( string truncated, string search_in )
 
 		while ( search_i < len )
 		{
-			if ( uint8(truncated[trunc_i]) == uint8(search_in[search_i]) )
+			if ( uint8(tolower(truncated[trunc_i])) == uint8(tolower(search_in[search_i])) )
 			{
 				search_i++;
 				trunc_i ++;

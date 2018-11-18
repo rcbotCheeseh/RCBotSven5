@@ -818,7 +818,7 @@ class CBotTaskRevivePlayer : RCBotTask
             m_fLastVisibleTime = g_Engine.time;
 
         // Look at player
-        bot.setLookAt(vHeal);
+        bot.setLookAt(vHeal,PRIORITY_OVERRIDE);
 
         if ( !bot.isCurrentWeapon(medikit) )
         {
@@ -853,6 +853,49 @@ class CBotTaskRevivePlayer : RCBotTask
                 bot.StopMoving();
             }
         }
+     }
+}
+
+class CBotTaskFollow : RCBotTask
+{
+    EHandle m_pFollow;
+    float m_fLastVisibleTime;
+
+     CBotTaskFollow ( CBaseEntity@ pFollow )
+     {
+         m_pFollow = pFollow;
+         m_fLastVisibleTime = 0.0f;
+     }
+
+     void execute ( RCBot@ bot )
+     {
+         Vector vFollow;
+         CBaseEntity@ pFollow;
+
+         @pFollow = m_pFollow.GetEntity();
+
+         if ( pFollow is null )
+         {
+            Failed();
+            return;
+         }
+         
+        if ( m_fLastVisibleTime == 0.0f )
+            m_fLastVisibleTime = g_Engine.time + 3.0f;
+        else if ( bot.isEntityVisible(pFollow) )
+            m_fLastVisibleTime = g_Engine.time + 3.0f;
+        else if ( m_fLastVisibleTime < g_Engine.time )
+        {
+            Failed();
+            return;
+        }
+
+        vFollow = UTIL_EntityOrigin(pFollow);
+
+        bot.setLookAt(vFollow);
+
+        if ( bot.distanceFrom(vFollow) > 128 )
+            bot.setMove(vFollow);
      }
 }
 
@@ -993,7 +1036,7 @@ class CBotTaskHealPlayer : RCBotTask
             m_fLastVisibleTime = g_Engine.time;
 
         // Look at player
-        bot.setLookAt(vHeal);
+        bot.setLookAt(vHeal,PRIORITY_OVERRIDE);
 
         if ( !bot.isCurrentWeapon(medikit) )
         {
