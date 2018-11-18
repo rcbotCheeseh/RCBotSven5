@@ -381,6 +381,7 @@ namespace BotManager
 		HookReturnCode MapChange()
 		{
 			m_Bots.resize( 0 );
+			g_Profiles.resetProfiles();
 
 			//g_MasterEntities = CMasterEntities();
 

@@ -72,6 +72,14 @@
 			}
 		}
 
+		void resetProfiles ()
+		{
+			for ( uint i = 0; i < m_Profiles.length(); i ++ )
+			{
+				m_Profiles[i].m_bUsed = false;
+			}
+		}
+
 		BotProfile@ getRandomProfile ()
 		{
 			array<BotProfile@> UnusedProfiles;
