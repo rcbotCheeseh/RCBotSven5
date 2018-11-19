@@ -42,6 +42,10 @@ say any of the following messages for bots to follow commands
     '<bot name> wait [here/there/etc...]' - bot will move to your location and wait for 90 sec
     '<bot name> come [here/there/etc...'] - bot will move to your location but not wait
     '<bot name> pickup [a/some] <ammo/weapon/health/armor>' - bot will move to your location and attempt to pickup what you wanted
+    '<bot name> use [this tank]' - bot will use the nearest tank
+    '<bot name> follow [me/<player name>]' - bot will follow you or player with <playername>
+    '<bot name> heal [me/<player name>]' - bot will heal you or player with <playername>
+    '<bot name> revive [me/<player name>]' - bot will revive you or player with <playername>
 
 # Waypointing
 
