@@ -1265,6 +1265,15 @@ case 	CLASS_BARNACLE	:
 	{
 		CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
 
+		if ( m_pBlocking.GetEntity() !is null )
+		{
+			CBaseEntity@ pBlocking = m_pBlocking.GetEntity();
+
+			if ( pBlocking.GetClassname() == "func_pushable" )
+			{
+				PressButton(IN_USE);
+			}
+		}
 		//if ( m_pEnemy.GetEntity() !is null )
 		//	BotMessage("ENEMY");
 
