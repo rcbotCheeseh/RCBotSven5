@@ -1037,8 +1037,15 @@ class CWaypoints
 			if ( m_Waypoints[i].hasFlags(W_FL_DELETED) )
 				continue;					
 
-			if ( !bIgnoreUnreachable && m_Waypoints[i].hasFlags(W_FL_UNREACHABLE))
-				continue;
+			if ( !bIgnoreUnreachable )
+			{
+				if ( m_Waypoints[i].hasFlags(W_FL_UNREACHABLE) )
+					continue;
+				if ( m_Waypoints[i].hasFlags(W_FL_LADDER) )
+					continue;
+				if ( m_Waypoints[i].hasFlags(W_FL_JUMP) )
+					continue;
+			}
 
 			distance = m_Waypoints[i].distanceFrom(vecLocation);
 			
@@ -1530,6 +1537,8 @@ final class RCBotNavigator
 
 		float touch_distance = 64;
 
+		bool bTouchedWpt = false;
+
 		if ( wpt.hasFlags(W_FL_CROUCH) )
 			touch_distance = 32;
 		else if ( wpt.hasFlags(W_FL_JUMP))
@@ -1537,11 +1546,13 @@ final class RCBotNavigator
 		else if ( wpt.hasFlags(W_FL_STAY_NEAR)  )
 			touch_distance = 32;
 		else if ( wpt.hasFlags(W_FL_LADDER) || bot.m_pPlayer.pev.movetype == MOVETYPE_FLY )
-			touch_distance = 32;
+		{
+			bTouchedWpt = abs(wpt.m_vOrigin.z - bot.m_pPlayer.pev.origin.z) < 16;			
+		}
 
 		//BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
 
-		if ( (distance < touch_distance) || (distance > (m_fPreviousDistance+touch_distance)) )
+		if ( bTouchedWpt || (distance < touch_distance) || (distance > (m_fPreviousDistance+touch_distance)) )
 		{
 			bot.touchedWpt(wpt);
 
