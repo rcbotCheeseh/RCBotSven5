@@ -1547,7 +1547,7 @@ final class RCBotNavigator
 			touch_distance = 32;
 		else if ( wpt.hasFlags(W_FL_LADDER) || bot.m_pPlayer.pev.movetype == MOVETYPE_FLY )
 		{
-			bTouchedWpt = abs(wpt.m_vOrigin.z - bot.m_pPlayer.pev.origin.z) < 16;			
+			bTouchedWpt = (distance < 32) && (abs(wpt.m_vOrigin.z - bot.m_pPlayer.pev.origin.z) < 16);
 		}
 
 		//BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
