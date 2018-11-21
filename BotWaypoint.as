@@ -517,6 +517,9 @@ class CWaypoint
 
 	void addPath ( int wpt )
 	{
+		// can't add paths to unreachables -- for visibles only
+		if ( hasFlags(W_FL_UNREACHABLE) )
+			return;
 
 		if ( wpt == iIndex )
 			return;
@@ -525,6 +528,9 @@ class CWaypoint
 			CWaypoint@ pwpt = g_Waypoints.getWaypointAtIndex(wpt);
 			
 			if ( pwpt.hasFlags(W_FL_DELETED) )
+				return;
+			// can't add paths to unreachables
+			if ( pwpt.hasFlags(W_FL_UNREACHABLE) )
 				return;
 
 			if ( m_PathsTo.length() < 32 )

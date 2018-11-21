@@ -499,6 +499,8 @@ case 	CLASS_BARNACLE	:
 
 	bool canGotoWaypoint ( CWaypoint@ currWpt, CWaypoint@ succWpt )
 	{
+		if ( succWpt.hasFlags(W_FL_UNREACHABLE) )
+			return false;
 		if ( succWpt.hasFlags(W_FL_GRAPPLE) )
 		{
 			if ( !HasWeapon("weapon_grapple") )	
