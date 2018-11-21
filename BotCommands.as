@@ -27,6 +27,7 @@ CConCommand@ m_pRCBotWaypointRemoveType;
 CConCommand@ m_pRCBotWaypointGiveType;
 CConCommand@ m_pDebugMessages;
 CConCommand@ m_pRCBotKillbots;
+CConCommand@ m_pRCBotKickbots;
 CConCommand@ m_pNotouchMode;
 CConCommand@ m_pExplo;
 CConCommand@ m_pNoTargetMode;
@@ -36,6 +37,7 @@ CConCommand@ m_pPathWaypointRemovePathsTo;
 CConCommand@ m_pDebugBot;
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
+//CCVar@ m_pAutoConfig;
 
 //bool g_DebugOn = false;
 bool g_NoTouch = false;
@@ -86,12 +88,14 @@ void PluginInit()
 	@m_pNoTargetMode = @CConCommand("notarget","monsters dont shoot",@NoTargetMode);
   
 	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
+	@m_pRCBotKickbots = @CConCommand( "kickbots", "Kicks all bots", @RCBot_Kickbots );
 
 	@m_pRCBotSearch = @CConCommand( "search", "test search func", @RCBotSearch );
 
 	@m_pVisRevs = CCVar("visrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 
+	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
 
 void NoTargetMode ( const CCommand@ args )
@@ -377,14 +381,18 @@ void RCBot_Killbots( const CCommand@ args )
 	for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
 	{
 		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
-		
-		if( pPlayer is null )
-			continue;
-			
-		if( ( pPlayer.pev.flags & FL_FAKECLIENT ) == 0 )
-			continue;
-			
-		pPlayer.Killed(pPlayer.pev, 0);
+		if( pPlayer !is null && ( pPlayer.pev.flags & FL_FAKECLIENT ) != 0 )
+			pPlayer.Killed(pPlayer.pev, 0);
+	}
+}
+
+void RCBot_Kickbots( const CCommand@ args )
+{
+	for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+	{
+		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+		if( pPlayer !is null && ( pPlayer.pev.flags & FL_FAKECLIENT ) != 0 )
+			g_AdminControl.KickPlayer(pPlayer);
 	}
 }
 
@@ -394,7 +402,23 @@ void RCBot_Killbots( const CCommand@ args )
 void AddBotCallback( const CCommand@ args )
 {
 	BotManager::BaseBot@ pBot = g_BotManager.CreateBot( );
-
+	/*if (m_pAutoConfig.GetBool()) {
+		File@ configFile = g_FileSystem.OpenFile( "scripts/plugins/BotManager/config/config.ini", OpenFile::READ);
+		if ( configFile !is null )
+			while ( !configFile.EOFReached() )
+			{
+				string fileLine; configFile.ReadLine( fileLine );
+				fileLine.Trim();
+				if ( fileLine.Length() > 1 ) {
+					if ( fileLine[0] == "!" ) {
+						NetworkMessage message( MSG_ONE, NetworkMessages::NetworkMessageType(9), pBot.Player.edict() );
+						message.WriteString( fileLine.SubString(1) );
+						message.End();
+					} else if ( fileLine[0] != "#" )
+						g_EngineFuncs.ServerCommand( fileLine );
+				}
+			}
+	}*/
 }
 
 void WaypointInfo ( const CCommand@ args )
