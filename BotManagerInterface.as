@@ -307,7 +307,7 @@ namespace BotManager
 
 			//SayMessage(ListenPlayer(),"YOU TYPED " + args[0] + " | " + args[1]);
 
-			CBasePlayer@ talking_to = UTIL_FindPlayer(args[0]);
+			CBasePlayer@ talking_to = UTIL_FindPlayer(args[0],talker,true);
 
 			if ( talker is null )
 				return HOOK_CONTINUE;
@@ -384,6 +384,7 @@ namespace BotManager
 			g_Profiles.resetProfiles();
 
 			//g_MasterEntities = CMasterEntities();
+			g_bTeleportSet = false;
 
 			if ( g_Waypoints.Load() )
 				BotMessage("Waypoints Loaded!");

@@ -200,6 +200,64 @@ final class CFindHealthTask : RCBotTask
         Failed();
     }
 }
+//CBasePlayer@ UTIL_FindNearestPlayer ( Vector vOrigin,
+// float minDistance = 512.0f, CBasePlayer@ ignore = null, bool onGroundOnly = false )
+final class CBotTaskWaitNoPlayer : RCBotTask
+{
+    Vector m_vOrigin;
+    float m_fWaitTime;
+    EHandle pNearestPlayer;
+
+    CBotTaskWaitNoPlayer(Vector vOrigin)
+    {
+        m_vOrigin = vOrigin;
+        m_fWaitTime = 0.0f;
+        pNearestPlayer = null;
+    }
+
+    string DebugString ()
+    {
+        return "CBotTaskWaitNoPlayer";
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        CBaseEntity@ pNearest;
+
+        if ( m_fWaitTime == 0.0f ) 
+        {
+            pNearestPlayer = UTIL_FindNearestPlayer(m_vOrigin,128.0f,bot.m_pPlayer,false,true);
+            m_fWaitTime = g_Engine.time + 3.0f;            
+        }
+
+        @pNearest = pNearestPlayer.GetEntity();
+
+        if ( pNearest is null )
+        {
+            Complete();            
+            return;
+        }
+
+        if ( pNearest.pev.velocity.Length() > 0 )
+        {
+            m_fWaitTime = g_Engine.time + 3.0f;
+        }
+
+        if ( m_fWaitTime < g_Engine.time )
+        {
+            Complete();
+             return;
+        }
+
+        if ( (pNearest.pev.origin - m_vOrigin).Length() > 128 )
+        {
+            Complete();
+            return;
+        }
+         // look at player
+         bot.setLookAt(pNearest.pev.origin);
+    }    
+}
 
 final class CFindAmmoTask : RCBotTask 
 {

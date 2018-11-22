@@ -6,8 +6,10 @@
 CWaypoints g_Waypoints;
 CWaypointTypes g_WaypointTypes;
 
-const int W_FL_TEAM	= ((1<<0) + (1<<1));  /* allow for 4 teams (0-3) */
-const int W_FL_TEAM_SPECIFIC = (1<<2);  /* waypoint only for specified team */
+const int W_FL_UNDEFINED_0 = (1<<0);//	= ((1<<0) + (1<<1));  /* allow for 4 teams (0-3) */
+const int W_FL_WAIT_NO_PLAYER = (1<<1); // bots wait until space is clear to avoid over crowding
+const int W_FL_TEAM_UP = (1<<2); //	bot waits a while for allies to come by
+//const int W_FL_TEAM_SPECIFIC = (1<<2);  /* waypoint only for specified team */
 const int W_FL_CROUCH	= 	(1<<3);  /* must crouch to reach this waypoint */
 const int W_FL_LADDER	= 	(1<<4);  /* waypoint on a ladder */
 const int W_FL_LIFT		= 	(1<<5);  // lift button
@@ -15,7 +17,7 @@ const int W_FL_DOOR		= 	(1<<6);  /* wait for door to open */
 const int W_FL_HEALTH	= 	(1<<7);  /* health kit (or wall mounted) location */
 const int W_FL_ARMOR	= 	(1<<8);  /* armor (or HEV) location */
 const int W_FL_AMMO		=	(1<<9);  /* ammo location */
-const int W_FL_CHECK_GROUND	= (1<<10); /* checks for lift at this point */
+const int W_FL_CHECK_GROUND	= (1<<10); /* checks for platform at this point */
 const int W_FL_IMPORTANT	= (1<<11);/* flag position (or hostage or president) */
 const int W_FL_BARNEY_POINT  = (1<<12);
 const int W_FL_DEFEND_ZONE  =  (1<<13);
@@ -202,11 +204,11 @@ class CWaypointTypes
 
 					switch ( flag )
 					{
-						case W_FL_TEAM :
-							name = "team";
+						case W_FL_WAIT_NO_PLAYER :
+							name = "wait_noplayer";
 							break;
-						case W_FL_TEAM_SPECIFIC :
-							name = "teamspecific";
+						case W_FL_TEAM_UP :
+							name = "teamup";
 							break;
 						case W_FL_CROUCH :
 							name = "crouch";
@@ -1560,32 +1562,26 @@ final class RCBotNavigator
 
 		if ( bTouchedWpt || (distance < touch_distance) || (distance > (m_fPreviousDistance+touch_distance)) )
 		{
-			bot.touchedWpt(wpt);
+			CWaypoint@ pNextWpt = null;
+			CWaypoint@ pThirdWpt = null;
+
+			int iTimesToPop = 0;
+
+			if ( m_currentRoute.length() > 1 )
+			{
+				@pNextWpt = g_Waypoints.getWaypointAtIndex(m_currentRoute[1]);
+			}
+			if ( m_currentRoute.length() > 2 )
+				@pThirdWpt = g_Waypoints.getWaypointAtIndex(m_currentRoute[2]);
+
+			iTimesToPop = bot.touchedWpt(wpt,pNextWpt,pThirdWpt);
 
 			m_fNextTimeout = g_Engine.time + 5.0;
 
-			m_currentRoute.removeAt(0);
-
-			// check if next waypoint is grapple
-			if ( m_currentRoute.length() > 1 )
+			while ( (m_currentRoute.length()) > 0 && (iTimesToPop > 0) )
 			{
-				CWaypoint@ pNextWpt = g_Waypoints.getWaypointAtIndex(m_currentRoute[0]);
-
-				if ( pNextWpt !is null )
-				{					
-					if ( pNextWpt.hasFlags(W_FL_GRAPPLE) )
-					{
-						CWaypoint@ pAfterGrapple = g_Waypoints.getWaypointAtIndex(m_currentRoute[1]);
-
-						if ( pAfterGrapple !is null )
-						{							
-							// skip the grapple waypoint
-							m_currentRoute.removeAt(0);
-
-							bot.grapple(pNextWpt.m_vOrigin,pAfterGrapple.m_vOrigin);
-						}
-					}
-				}
+				m_currentRoute.removeAt(0);
+				iTimesToPop--;
 			}
 
 			m_fPreviousDistance = 9999.0;

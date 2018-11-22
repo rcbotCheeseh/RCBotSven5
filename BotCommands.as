@@ -35,6 +35,8 @@ CConCommand@ m_pRCBotWaypointToggleType;
 CConCommand@ m_pPathWaypointRemovePathsFrom;
 CConCommand@ m_pPathWaypointRemovePathsTo;
 CConCommand@ m_pDebugBot;
+CConCommand@ m_pTeleportSet;
+CConCommand@ m_pTeleport;
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
 //CCVar@ m_pAutoConfig;
@@ -44,6 +46,8 @@ bool g_NoTouch = false;
 bool g_NoTouchChange = false;
 int g_DebugLevel = 0;
 EHandle g_DebugBot = null;
+Vector g_vTeleportSet = Vector(0,0,0);
+bool g_bTeleportSet = false;
 
 CBasePlayer@ ListenPlayer ()
 {
@@ -86,7 +90,8 @@ void PluginInit()
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
 	@m_pNotouchMode = @CConCommand("notouch","no touch mode",@NoTouchFunc);
 	@m_pNoTargetMode = @CConCommand("notarget","monsters dont shoot",@NoTargetMode);
-  
+	@m_pTeleportSet = @CConCommand("teleport_set","sets teleport destination",@TeleportSet);
+	@m_pTeleport = @CConCommand("teleport","teleport [player name] . teleport you or player",@Teleport);
 	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
 	@m_pRCBotKickbots = @CConCommand( "kickbots", "Kicks all bots", @RCBot_Kickbots );
 
@@ -96,6 +101,33 @@ void PluginInit()
 	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
+}
+
+void TeleportSet ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+
+	g_bTeleportSet = true;
+	g_vTeleportSet = player.pev.origin;
+
+	SayMessageAll(player,"teleport location set");
+}
+
+void Teleport ( const CCommand@ args )
+{
+	CBasePlayer@ pPlayer = ListenPlayer();
+
+	if ( args.ArgC() > 1 )
+	{
+		@pPlayer = UTIL_FindPlayer(args[1]);
+	}
+
+	if ( pPlayer !is null && g_bTeleportSet )
+	{
+		pPlayer.SetOrigin(g_vTeleportSet);
+
+		SayMessageAll(pPlayer,"teleported " + pPlayer.pev.netname);
+	}
 }
 
 void NoTargetMode ( const CCommand@ args )

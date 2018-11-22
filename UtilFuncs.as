@@ -86,7 +86,7 @@
 			return ret;
 	}	
 
-	CBasePlayer@ UTIL_FindNearestPlayer ( Vector vOrigin, float minDistance = 512.0f, CBasePlayer@ ignore = null, bool onGroundOnly = false )
+	CBasePlayer@ UTIL_FindNearestPlayer ( Vector vOrigin, float minDistance = 512.0f, CBasePlayer@ ignore = null, bool onGroundOnly = false, bool bMovingOnly = false )
 	{
 		CBasePlayer@ ret = null;
 
@@ -119,6 +119,12 @@
 						continue;
 
 					if ( pPlayer.pev.movetype == MOVETYPE_FLY )
+						continue;
+				}
+
+				if ( bMovingOnly )
+				{
+					if ( pPlayer.pev.velocity.Length() == 0.0f )
 						continue;
 				}
 
@@ -336,7 +342,7 @@ uint UTIL_StringMatch ( string truncated, string search_in )
 
 // Finds a player from a truncated name
 // e.g. 'wh' will find [m00]wh3y
-CBasePlayer@ UTIL_FindPlayer ( string szName )
+CBasePlayer@ UTIL_FindPlayer ( string szName, CBaseEntity@ pIgnore = null, bool bBotsOnly = false )
 {
 	CBasePlayer@ pBestMatch = null;
 	uint iBestMatch = 0;
@@ -348,6 +354,13 @@ CBasePlayer@ UTIL_FindPlayer ( string szName )
 
 		if( pPlayer is null )
 			continue;
+		if ( pPlayer is pIgnore )
+			continue;
+		if ( bBotsOnly )
+		{
+			if ( pPlayer.pev.flags & FL_FAKECLIENT != FL_FAKECLIENT )
+				continue;
+		}
 
 		iMatch = UTIL_StringMatch(szName,pPlayer.pev.netname);
 		

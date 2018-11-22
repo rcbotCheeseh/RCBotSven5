@@ -610,25 +610,52 @@ case 	CLASS_BARNACLE	:
 
 	float m_flWaitTime = 0.0f;
 
-	void touchedWpt ( CWaypoint@ wpt )                       
+	/**
+	 * @return the number of times the route stack may be popped
+	*/
+	int touchedWpt ( CWaypoint@ wpt, CWaypoint@ pNextWpt, CWaypoint@ pThirdWpt )                       
 	{
+		if ( pNextWpt !is null )
+		{					
+			if ( pNextWpt.hasFlags(W_FL_GRAPPLE) )
+			{
+				if ( pThirdWpt !is null )
+				{			
+					grapple(pNextWpt.m_vOrigin,pThirdWpt.m_vOrigin);
+
+					// pop the current and next two waypoints
+					return 3;
+				}
+			}
+			else if( pNextWpt.hasFlags(W_FL_WAIT_NO_PLAYER) )
+			{
+				if ( m_pCurrentSchedule is null )
+					m_pCurrentSchedule = RCBotSchedule();
+				
+				m_pCurrentSchedule.addTaskFront(CBotTaskWaitNoPlayer(pNextWpt.m_vOrigin));
+			}			
+		}
+				
 		if ( wpt.hasFlags(W_FL_WAIT) )
 			m_flWaitTime = g_Engine.time + 1.0f;
 
 		if ( wpt.hasFlags(W_FL_JUMP) )
 			Jump();
 		if ( wpt.hasFlags(W_FL_CROUCHJUMP) )
-			{
+		{
 			Jump();
-			}
+		}
 
-			if( wpt.hasFlags(W_FL_HUMAN_TOWER) )
-			{
-				if ( m_pCurrentSchedule !is null )
-				{
-					m_pCurrentSchedule.addTaskFront(CBotHumanTowerTask(wpt.m_vOrigin));
-				}
-			}
+		if( wpt.hasFlags(W_FL_HUMAN_TOWER) )
+		{
+			if ( m_pCurrentSchedule is null )
+				m_pCurrentSchedule = RCBotSchedule();
+			
+			m_pCurrentSchedule.addTaskFront(CBotHumanTowerTask(wpt.m_vOrigin));
+		}
+
+		// pop only one waypoint
+		return 1;
 	}
 	
 
