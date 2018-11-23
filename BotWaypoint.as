@@ -1555,7 +1555,10 @@ final class RCBotNavigator
 			touch_distance = 32;
 		else if ( wpt.hasFlags(W_FL_LADDER) || bot.m_pPlayer.pev.movetype == MOVETYPE_FLY )
 		{
-			bTouchedWpt = (distance < 32) && (abs(wpt.m_vOrigin.z - bot.m_pPlayer.pev.origin.z) < 16);
+			float length2d = (wpt.m_vOrigin - bot.m_pPlayer.pev.origin).Length2D();
+			float zdiff = abs(wpt.m_vOrigin.z - bot.m_pPlayer.pev.origin.z);
+			UTIL_DebugMsg(bot.m_pPlayer,"Length2d is " + length2d + " zdiff is " + zdiff,DEBUG_NAV);
+			bTouchedWpt = (length2d < 16) && (zdiff < 16);
 		}
 
 		//BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
@@ -1763,6 +1766,9 @@ final class RCBotNavigator
 
 								if ( !currWpt.hasFlags(W_FL_TELEPORT) && !succWpt.hasFlags(W_FL_TELEPORT) )								
 									fCost += (succWpt.distanceFrom(currWpt.m_vOrigin));
+								// add extra cost to human tower waypoints
+								if ( currWpt.hasFlags(W_FL_HUMAN_TOWER) )
+									fCost += 512.0f;
 
 								if ( succ.isOpen() || succ.isClosed() )
 								{

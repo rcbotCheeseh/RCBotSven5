@@ -165,7 +165,7 @@ class CBotVisibles
 					{
 						CBaseEntity@ pentOwner = g_EntityFuncs.Instance(m_pCurrentEntity.pev.owner);
 
-						if ( m_pBot.IsEnemy(pentOwner,false) )
+						if ( pentOwner is m_pBot.m_pPlayer || m_pBot.IsEnemy(pentOwner,false) )
 							m_pBot.TakeCover(UTIL_EntityOrigin(m_pCurrentEntity));
 					}
 				}

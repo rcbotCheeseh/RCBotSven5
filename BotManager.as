@@ -338,12 +338,12 @@ final class RCBot : BotManager::BaseBot
 
 	float HealthPercent ()
 	{
-		return (float(m_pPlayer.pev.health))/m_pPlayer.pev.max_health;
+		return (float(m_pPlayer.pev.health))/100;
 	}
 
 	float totalHealth ()
 	{
-		return (float(m_pPlayer.pev.health + m_pPlayer.pev.armorvalue))/(m_pPlayer.pev.max_health + m_pPlayer.pev.armortype);
+		return (float(m_pPlayer.pev.health + m_pPlayer.pev.armorvalue))/(100 + m_pPlayer.pev.armortype);
 	}
 
 	bool BreakableIsEnemy ( CBaseEntity@ pBreakable )
@@ -368,6 +368,7 @@ final class RCBot : BotManager::BaseBot
 				case 3:
 				case 10:
 				case 11:
+				UTIL_DebugMsg(m_pPlayer,"pBreakable.Classify() false",DEBUG_THINK);
 				return false;
 				default:
 				break;
@@ -406,9 +407,12 @@ final class RCBot : BotManager::BaseBot
 				(vSize.y >= vMySize.y) ||
 				(vSize.z >= (vMySize.z/2)) )
 			{
+				UTIL_DebugMsg(m_pPlayer,"BreakableIsEnemy() true",DEBUG_THINK);
 				return true;
 			}
 		}
+
+		UTIL_DebugMsg(m_pPlayer,"BreakableIsEnemy() false",DEBUG_THINK);
 
 		return false;
 	}	
@@ -510,7 +514,7 @@ case 	CLASS_BARNACLE	:
 		{
 			TraceResult tr;
 
-			g_Utility.TraceLine( succWpt.m_vOrigin, succWpt.m_vOrigin - Vector(0,0,128.0f), ignore_monsters,dont_ignore_glass, null, tr );
+			g_Utility.TraceLine( succWpt.m_vOrigin, succWpt.m_vOrigin - Vector(0,0,64.0f), ignore_monsters,dont_ignore_glass, null, tr );
 			
 			// no ground?
 			if ( tr.flFraction >= 1.0f )
@@ -608,13 +612,13 @@ case 	CLASS_BARNACLE	:
 		return m_pPlayer.pev.origin;
 	}
 
-	float m_flWaitTime = 0.0f;
-
 	/**
 	 * @return the number of times the route stack may be popped
 	*/
 	int touchedWpt ( CWaypoint@ wpt, CWaypoint@ pNextWpt, CWaypoint@ pThirdWpt )                       
 	{
+		UTIL_DebugMsg(m_pPlayer,"touchedWpt()",DEBUG_NAV);
+
 		if ( pNextWpt !is null )
 		{					
 			if ( pNextWpt.hasFlags(W_FL_GRAPPLE) )
@@ -637,7 +641,12 @@ case 	CLASS_BARNACLE	:
 		}
 				
 		if ( wpt.hasFlags(W_FL_WAIT) )
-			m_flWaitTime = g_Engine.time + 1.0f;
+		{
+			if ( m_pCurrentSchedule is null )
+				m_pCurrentSchedule = RCBotSchedule();
+			
+			m_pCurrentSchedule.addTaskFront(CBotTaskWait(1.75f));
+		}
 
 		if ( wpt.hasFlags(W_FL_JUMP) )
 			Jump();
@@ -898,6 +907,12 @@ case 	CLASS_BARNACLE	:
 	}
 
 
+	void reachedGoal()
+	{
+		m_fNextTakeCover = g_Engine.time;
+	}
+	
+
 	void TakeCover ( Vector vOrigin )
 	{
 		if ( m_fNextTakeCover < g_Engine.time )
@@ -912,6 +927,9 @@ case 	CLASS_BARNACLE	:
 		g_PlayerFuncs.SayTextAll(m_pPlayer,"[RCBOT] " + m_pPlayer.pev.netname + ": \"" + text + "\"");
 	}
 
+	float m_fLastHurt = 0.0f;
+	Vector m_vHurtOrigin;
+
 	void hurt ( DamageInfo@ damageInfo )
 	{
 		CBaseEntity@ attacker = damageInfo.pAttacker;
@@ -923,13 +941,13 @@ case 	CLASS_BARNACLE	:
 			if ( isEntityVisible(attacker) )
 			{
 				TakeCover(vAttacker);
-
+				m_fLastHurt = 0.0f;
 				//BotMessage("Take Cover!!!");
 			}
 			else
 			{
-				setLookAt(vAttacker,PRIORITY_HURT);
-
+				m_vHurtOrigin = vAttacker;
+				m_fLastHurt = g_Engine.time + 3.0f;
 				//BotMessage("Look!!!");
 			}
 		}
@@ -1220,14 +1238,23 @@ case 	CLASS_BARNACLE	:
 		//	navigator.execute(this);
 		float fStuckSpeed = 0.1*m_fDesiredMoveSpeed;
 
+		if ( m_pPlayer.pev.groundentity !is null )
+		{
+			CBaseEntity@ pGroundEnt = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);
+
+			if ( pGroundEnt !is null )
+			{
+				// on a lift / platform - don't move
+				if ( pGroundEnt.pev.velocity.Length() > 0 )
+					StopMoving();
+			}
+		}
+
 		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
 			fStuckSpeed /= 2;
 		// for courch jump
 		if ( m_flJumpTime + 1.0f > g_Engine.time )
 			PressButton(IN_DUCK);
-
-		if ( m_flWaitTime > g_Engine.time )
-			setMoveSpeed(0.0f);
 
 		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > fStuckSpeed) )
 		{
@@ -1250,6 +1277,11 @@ case 	CLASS_BARNACLE	:
 		PressButton(IN_JUMP);
 	}
 
+	/**
+	 * DoLook()
+	 *
+	 * look priority will sort everything out
+	 **/
 	void DoLook ()
 	{
 		CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
@@ -1266,14 +1298,18 @@ case 	CLASS_BARNACLE	:
 		else if ( IsOnLadder() )		
 		{
 			setLookAt(m_vMoveTo,PRIORITY_LADDER);
-		}
+		}		
+		else if ( m_fLastHurt > g_Engine.time )
+		{
+			setLookAt(m_vHurtOrigin,PRIORITY_HURT);
+		}		
 		else if ( hasHeardNoise() )
 		{
 			setLookAt(m_vNoiseOrigin,PRIORITY_LISTEN);
 		}
 		else if ( m_bLastSeeEnemyValid )
 		{
-			setLookAt(m_vLastSeeEnemy);
+			setLookAt(m_vLastSeeEnemy,PRIORITY_WAYPOINT);
 		}
 		else if (m_bMoveToValid )
 		{			
@@ -1376,3 +1412,119 @@ BotManager::BaseBot@ CreateRCBot( CBasePlayer@ pPlayer )
 {
 	return @RCBot( pPlayer );
 }
+/*
+enum eCamLookState
+{
+	BOTCAM_NONE = 0,
+	BOTCAM_BOT,
+	BOTCAM_ENEMY,
+	BOTCAM_WAYPOINT,
+	BOTCAM_FP
+}
+
+// one bot cam, other players can tune into it
+class CBotCam
+{
+
+	CBotCam ()
+	{
+		Clear();	
+	}
+
+	void Spawn ()
+	{
+		if ( m_bTriedToSpawn )
+			return;
+
+		m_bTriedToSpawn = true;
+
+		// Redfox http://www.foxbot.net
+		@m_pCameraEdict = gEntityFuncs.CreateEntity("info_target",null,false);
+		// /Redfox
+		
+		if ( !FNullEnt(m_pCameraEdict) )
+		{
+			// Redfox http://www.foxbot.net
+			g_EntityFuncs.DispatchSpawn(m_pCameraEdict);
+			
+			gEntityFuncs.SetModel(m_pCameraEdict, "models/mechgibs.mdl");
+
+			m_pCameraEdict.pev.takedamage = DAMAGE_NO;
+			m_pCameraEdict.pev.solid = SOLID_NOT;
+			m_pCameraEdict.pev.movetype = MOVETYPE_FLY; //noclip
+			m_pCameraEdict.pev.classname = "entity_botcam";
+			m_pCameraEdict.pev.nextthink = g_Engine.time;
+			m_pCameraEdict.pev.renderamt = 0;
+			// /Redfox
+		}		
+	}
+
+	void Think ()
+	{
+		if ( m_fNextChangeBotTime < g_Engine.time )
+		{
+			m_fNextChangeBotTime = g_Engine.time + 5.0f;
+		}
+	}
+
+	void Clear ()
+	{
+		@m_pCurrentBot = null;
+		m_iState = BOTCAM_NONE;
+		@m_pCameraEdict = null;
+		m_fNextChangeBotTime = 0;
+		m_fNextChangeState = 0;
+		m_bTriedToSpawn = false;				
+	}
+
+	bool TuneIn ( CBasePlayer@ pPlayer )
+	{
+		if ( m_pCameraEdict is null )
+		{			
+			return false;
+		}
+
+		g_EngineFuncs.SetView(pPlayer,m_pCameraEdict);
+	}
+
+	void TuneOff ( CBasePlayer@ pPlayer )
+	{
+		g_EngineFuncs.SetView(pPlayer,pPlayer);
+	}
+
+	bool IsWorking ()
+	{
+		return (m_pCameraEdict !is null);
+	}
+
+	bool BotHasEnemy ()
+	{
+		if ( m_pCurrentBot is null)
+			return false;
+
+		return (m_pCurrentBot.m_pEnemy.GetEntity() !is null);
+	}
+
+
+	void SetCurrentBot(RCBot@ pBot)
+	{
+		@m_pCurrentBot = pBot;
+		m_fNextChangeBotTime = g_Engine.time + Math.RandomFloat(5.0,7.5);
+		m_fNextChangeState = g_Engine.time;
+	}
+
+	private RCBot@ m_pCurrentBot;
+	eCamLookState m_iState;
+	CBaseEntity@ m_pCameraEdict;
+	float m_fNextChangeBotTime;
+	float m_fNextChangeState;
+	bool m_bTriedToSpawn;
+	//float m_fThinkTime;
+	TraceResult tr;
+	int m_iPositionSet;
+	Vector vBotOrigin;
+
+	//HudText m_Hudtext;
+	//BOOL m_TunedIn[MAX_PLAYERS];
+}
+*/

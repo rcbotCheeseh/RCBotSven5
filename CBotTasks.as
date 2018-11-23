@@ -200,6 +200,28 @@ final class CFindHealthTask : RCBotTask
         Failed();
     }
 }
+
+final class CBotTaskWait : RCBotTask
+{
+     float m_fWaitTime = 0.0f;
+     float m_fWait = 0.0f;
+
+     CBotTaskWait ( float fWaitTime )
+     {
+         m_fWait = fWaitTime;
+     }
+
+    void execute ( RCBot@ bot )
+    {
+        if ( m_fWaitTime == 0.0f )
+            m_fWaitTime = g_Engine.time + m_fWait;
+        else if ( m_fWaitTime < g_Engine.time )
+            Complete();
+
+        bot.StopMoving();
+    }
+}
+
 //CBasePlayer@ UTIL_FindNearestPlayer ( Vector vOrigin,
 // float minDistance = 512.0f, CBasePlayer@ ignore = null, bool onGroundOnly = false )
 final class CBotTaskWaitNoPlayer : RCBotTask
@@ -238,7 +260,7 @@ final class CBotTaskWaitNoPlayer : RCBotTask
             return;
         }
 
-        if ( pNearest.pev.velocity.Length() > 0 )
+        if ( pNearest.pev.velocity.Length() > 0 && bot.isEntityVisible(pNearest) )
         {
             m_fWaitTime = g_Engine.time + 3.0f;
         }
@@ -256,6 +278,7 @@ final class CBotTaskWaitNoPlayer : RCBotTask
         }
          // look at player
          bot.setLookAt(pNearest.pev.origin);
+
     }    
 }
 
@@ -774,7 +797,7 @@ final class CFindPathTask : RCBotTask
         case NavigatorState_ReachedGoal:
 
             UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_ReachedGoal",DEBUG_NAV);
-            //m_pContainingSchedule.addTaskFront(CBotMoveToOrigin());
+            bot.reachedGoal();
             Complete();
             break;
         }
@@ -1448,7 +1471,7 @@ class CBotGetHealthUtil : CBotUtil
     }    
     float calculateUtility ( RCBot@ bot )
     {
-        float healthPercent = float(bot.m_pPlayer.pev.health) / bot.m_pPlayer.pev.max_health;
+        float healthPercent = float(bot.m_pPlayer.pev.health) / 100;
      
         return (1.0f - healthPercent);
     }

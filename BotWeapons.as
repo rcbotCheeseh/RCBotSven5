@@ -74,7 +74,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_uzi",100.0,2000.0,WEAP_FL_NONE,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_medkit",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_grapple",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_handgrenade",50.0,512.0,WEAP_FL_GRENADE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,15)); 
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_handgrenade",50.0,512.0,WEAP_FL_GRENADE|WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,15)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.6,"weapon_sniperrifle",512.0,8000.0,WEAP_FL_SNIPE,10)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_m249",60.0,2400.0,WEAP_FL_NONE,11)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_minigun",0.0,3000.0,WEAP_FL_NONE,15)); 
@@ -190,7 +190,7 @@ class CBotWeapon
         int index = weap.PrimaryAmmoIndex();
 
         if ( index >= 0 )
-            return bot.m_pPlayer.m_rgAmmo(index);
+            return bot.m_pPlayer.m_rgAmmo(index) + weap.m_iClip;
 
         return 0;
     }    
@@ -202,7 +202,7 @@ class CBotWeapon
         int index = weap.SecondaryAmmoIndex();
 
         if ( index >= 0 )
-            return bot.m_pPlayer.m_rgAmmo(index);
+            return bot.m_pPlayer.m_rgAmmo(index) + weap.m_iClip2;
 
         return 0;
     }      
@@ -424,7 +424,7 @@ class CBotWeapons
                 continue;
             }
 
-            if ( botPlayer.pev.waterlevel > 1 && !weapon.CanUseUnderwater() )
+            if ( botPlayer.pev.waterlevel > 2 && !weapon.CanUseUnderwater() )
                 continue;
  
             if ( target !is null )

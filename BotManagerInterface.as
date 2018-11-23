@@ -80,7 +80,7 @@ namespace BotManager
 		/** forces bot to look at vector */
 		void setLookAt ( Vector origin, int priority = 0 )
 		{
-			if ( (m_iCurrentPriority >= m_iLookPriority) || (priority >= m_iLookPriority) )
+			if ( (m_iCurrentPriority > m_iLookPriority) || (priority > m_iLookPriority) )
 			{
 				m_vLookAtIsValid = true;
 				m_vLookAt = origin;
