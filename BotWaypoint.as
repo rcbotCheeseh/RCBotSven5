@@ -1456,6 +1456,7 @@ final class RCBotNavigator
 
 		UTIL_DebugMsg(bot.m_pPlayer,"m_iCurrentWaypoint == " + m_iCurrentWaypoint,DEBUG_NAV);
 		m_fNextTimeout = 0;
+
 		if ( iStart == -1 || iGoalWpt == -1 )
 		{
 			UTIL_DebugMsg(bot.m_pPlayer,"iStart == -1 OR iGOAL == -1 (FAIL)",DEBUG_NAV);

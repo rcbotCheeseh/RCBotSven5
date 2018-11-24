@@ -99,8 +99,12 @@ class RCBotSchedule
 
 	int execute (RCBot@ bot)
 	{        
+        //UTIL_DebugMsg(bot.m_pPlayer,"execute()",DEBUG_TASK);
         if ( m_pTasks.length() == 0 )
+        {
+            UTIL_DebugMsg(bot.m_pPlayer,"execute() m_pTasks.length() == 0",DEBUG_TASK);
             return SCHED_TASK_OK;
+        }
 
         RCBotTask@ m_pCurrentTask = m_pTasks[0];
 
@@ -118,6 +122,10 @@ class RCBotSchedule
              
                 return SCHED_TASK_OK;
             }
+            else
+            {
+                UTIL_DebugMsg(bot.m_pPlayer,"m_pCurrentTask.m_bComplete",DEBUG_TASK);
+            }
         }
         else if ( m_pCurrentTask.timedOut() )
         {
@@ -129,7 +137,7 @@ class RCBotSchedule
         }
         else if ( m_pCurrentTask.m_bFailed )
         {
-            UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" FAILED",DEBUG_NAV);
+            UTIL_DebugMsg(bot.m_pPlayer,m_pCurrentTask.DebugString()+" FAILED",DEBUG_TASK);
 
             return SCHED_TASK_FAIL;
         }
@@ -754,6 +762,7 @@ final class CFindPathTask : RCBotTask
     RCBotNavigator@ navigator = null;
     int m_iGoalWpt;
     EHandle m_pEntity;
+    OnPathFail@ failCommand;
 
     string DebugString ()
     {
@@ -763,10 +772,11 @@ final class CFindPathTask : RCBotTask
     /**
      * @param pEntity - Find moving target
      */ 
-    CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null )
+    CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null, OnPathFail@ onFail = null )
     {
         m_pEntity = pEntity;
         m_iGoalWpt = wpt;
+        @failCommand= onFail;
     }
 
     void execute ( RCBot@ bot )
@@ -787,10 +797,16 @@ final class CFindPathTask : RCBotTask
             UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_Complete",DEBUG_NAV);
         break;
         case NavigatorState_InProgress:
+            // found goal 
+            // path find didn't fail
+            @failCommand = null;
             // waiting...
              UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_InProgress",DEBUG_NAV);
         break;
         case NavigatorState_Fail:
+            if ( failCommand !is null )
+                failCommand.execute();
+
              UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_Fail",DEBUG_NAV);
             Failed();
         break;
@@ -806,9 +822,9 @@ final class CFindPathTask : RCBotTask
 
 class CFindPathSchedule : RCBotSchedule
 {
-    CFindPathSchedule ( RCBot@ bot, int iWpt )
+    CFindPathSchedule ( RCBot@ bot, int iWpt, CObjectivePathFail@ failCommand = null )
     {
-        addTask(CFindPathTask(bot,iWpt));
+        addTask(CFindPathTask(bot,iWpt,null,failCommand));
     }
 }
 
@@ -1574,19 +1590,6 @@ class CBotMoveToOrigin : RCBotTask
     }
 }
 
-class CBotWaitTask : RCBotTask
-{
-    CBotWaitTask ( float fTime = 0.0f )
-    {
-        m_fTimeout = fTime;
-    }
-
-    void execute (RCBot@bot )
-    {
-        bot.StopMoving();
-    }
-}
-
 class CBotGetArmorUtil : CBotUtil
 {
     string DebugMessage ()
@@ -1617,8 +1620,51 @@ class CBotGetArmorUtil : CBotUtil
     }    
 }
 
+
+class CObjectiveReachedTask : RCBotTask
+{
+    CBotGotoObjectiveUtil@ m_util;
+
+    CObjectiveReachedTask ( CBotGotoObjectiveUtil@ util )
+    {
+        @m_util = util;
+    }
+
+    void execute (RCBot@bot )
+    {
+        m_util.completed();
+        Complete();
+    }
+}
+
+
+class OnPathFail
+{
+    void execute ()
+    {
+
+    }
+}
+
+final class CObjectivePathFail : OnPathFail
+{
+    CBotGotoObjectiveUtil@ m_util;
+
+    CObjectivePathFail ( CBotGotoObjectiveUtil@ util )
+    {
+        @m_util = util;
+    }
+
+    void execute ()
+    {
+        m_util.completed();
+    }
+}
+
 class CBotGotoObjectiveUtil : CBotUtil
 {
+    int m_iLastGoal = -1;
+
     string DebugMessage ()
     {
         return "CBotGotoObjectiveUtil";
@@ -1633,8 +1679,17 @@ class CBotGotoObjectiveUtil : CBotUtil
 
     void reset ()
     {
-        failed.clear();
+        // do not clear
+        //failed.clear();
         m_fNextDo = 0;
+    }
+
+    void completed ()
+    {
+        if ( m_iLastGoal != -1 )
+            failed.add(m_iLastGoal);
+
+        m_iLastGoal = -1;
     }
 
     void setNextDo ()
@@ -1646,17 +1701,20 @@ class CBotGotoObjectiveUtil : CBotUtil
     {
         int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT,failed);
 
+        m_iLastGoal = iRandomGoal;
+
         if ( iRandomGoal != -1 )
         {
-            RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal);
-
+            // If path cannot be found, waypoint will be added to 'failed waypoints'
+            RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal,CObjectivePathFail(this));
+  // similarly, If goal is reached, waypoint will be added to 'failed waypoints' so bot doesn't keep going back
+            sched.addTask(CObjectiveReachedTask(this));
+           
             sched.addTask(CFindButtonTask());
-
-            failed.add(iRandomGoal);
-
+          
             return sched;
         }
-        else
+        else // all objective waypoints have been ticked off - clear all 'failed waypoints' just in case
             failed.clear();
 
         return null;

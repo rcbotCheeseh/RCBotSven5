@@ -299,7 +299,10 @@ uint UTIL_StringMatch ( string truncated, string search_in )
 	uint trunc_len = truncated.Length();
 	
 	if ( trunc_len > len )
+	{
+		//BotMessage("trunc_len > len");
 		return 0;
+	}
 
 	uint total_len = len - trunc_len;	
 	uint i = 0;
@@ -308,7 +311,7 @@ uint UTIL_StringMatch ( string truncated, string search_in )
 	uint contiguous_match = 0;
 	uint max_match = 0;
 
-	while ( i < total_len )
+	while ( i <= total_len )
 	{
 
 		trunc_i = 0;
@@ -322,10 +325,12 @@ uint UTIL_StringMatch ( string truncated, string search_in )
 				search_i++;
 				trunc_i ++;
 				contiguous_match ++;
+
+				//BotMessage("contiguous_match ++");
 			}
 			else
 			{
-				
+				//BotMessage("uint8(tolower("+truncated[trunc_i]+")) != uint8(tolower("+search_in[search_i]+"))");
 				break;
 			}
 		}
@@ -333,10 +338,14 @@ uint UTIL_StringMatch ( string truncated, string search_in )
 		if ( contiguous_match > max_match )
 		{
 			max_match = contiguous_match;
+			//BotMessage("contiguous_match > max_match");
 		}
 
 		i++;
 	}
+
+	//BotMessage(" i >= total_len ");
+
 	return max_match;
 }
 
@@ -351,9 +360,11 @@ CBasePlayer@ UTIL_FindPlayer ( string szName, CBaseEntity@ pIgnore = null, bool 
 	{
 		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
 		uint iMatch = 0;
+		
 
 		if( pPlayer is null )
 			continue;
+			BotMessage("UTIL_FindPlayer " + pPlayer.pev.netname);
 		if ( pPlayer is pIgnore )
 			continue;
 		if ( bBotsOnly )
@@ -368,6 +379,7 @@ CBasePlayer@ UTIL_FindPlayer ( string szName, CBaseEntity@ pIgnore = null, bool 
 		{			
 			@pBestMatch = pPlayer;
 			iBestMatch = iMatch;
+			BotMessage("iBestMatch == " + iMatch);
 		}
 	}
 

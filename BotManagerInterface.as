@@ -5,6 +5,158 @@
 *	This is a sample script.
 */
 
+
+enum eCamLookState
+{
+	BOTCAM_NONE = 0,
+	BOTCAM_BOT,
+	BOTCAM_ENEMY,
+	BOTCAM_WAYPOINT,
+	BOTCAM_FP
+}
+// one bot cam, other players can tune into it
+class CBotCam
+{
+
+	CBotCam ()
+	{
+		Clear();	
+	}
+
+	void Spawn ()
+	{
+		if ( m_bTriedToSpawn )
+			return;
+
+		m_bTriedToSpawn = true;
+
+		// Redfox http://www.foxbot.net
+		@m_pCameraEdict = g_EntityFuncs.CreateEntity("info_target",null,false);
+		// /Redfox
+
+		if ( m_pCameraEdict is null )
+			return;
+		
+		if ( !FNullEnt(m_pCameraEdict.edict()) )
+		{
+			// Redfox http://www.foxbot.net
+			g_EntityFuncs.DispatchSpawn(m_pCameraEdict.edict());
+			
+			//g_EntityFuncs.SetModel(m_pCameraEdict, "models/mechgibs.mdl");
+
+			m_pCameraEdict.pev.takedamage = DAMAGE_NO;
+			m_pCameraEdict.pev.solid = SOLID_NOT;
+			m_pCameraEdict.pev.movetype = MOVETYPE_FLY; //noclip
+			//m_pCameraEdict.pev.classname = string_t("entity_botcam");
+			m_pCameraEdict.pev.nextthink = g_Engine.time;
+			m_pCameraEdict.pev.renderamt = 0;
+			// /Redfox
+		}		
+	}
+
+	void Think ()
+	{
+		if ( m_bTriedToSpawn == false )
+			return;
+		
+		if ( m_fNextChangeBotTime < g_Engine.time )
+		{
+			m_fNextChangeBotTime = g_Engine.time + 5.0f;
+
+			@m_pCurrentBot = cast<RCBot@>(g_BotManager.RandomBot());
+		}
+
+		UpdateCamera();
+	}
+
+	void UpdateCamera ()
+	{
+		if ( m_pCurrentBot !is null )
+		{
+			if ( m_pCameraEdict is null )
+				return;
+
+			CBasePlayer@ pPlayer = m_pCurrentBot.m_pPlayer;
+			// Ok set noise to forward vector
+			g_EngineFuncs.MakeVectors(pPlayer.pev.v_angle);
+			Vector vOrigin = pPlayer.EyePosition() - (g_Engine.v_forward * 128.0f);
+			vOrigin.z = pPlayer.EyePosition().z;
+			Vector vAngles = Math.VecToAngles(pPlayer.EyePosition() - vOrigin);
+
+			m_pCameraEdict.SetOrigin(vOrigin);
+			m_pCameraEdict.pev.v_angle = vAngles;
+			m_pCameraEdict.pev.angles = vAngles;
+			
+		}
+	}
+
+	void Clear ()
+	{
+		@m_pCurrentBot = null;
+		m_iState = BOTCAM_NONE;
+		@m_pCameraEdict = null;
+		m_fNextChangeBotTime = 0;
+		m_fNextChangeState = 0;
+		m_bTriedToSpawn = false;				
+	}
+
+	bool TuneIn ( CBasePlayer@ pPlayer )
+	{
+		Spawn();
+		
+		if ( m_pCameraEdict is null )
+		{			
+			return false;
+		}
+
+		g_EngineFuncs.SetView(pPlayer.edict(),m_pCameraEdict.edict());
+
+		return true;
+	}
+
+	void TuneOff ( CBasePlayer@ pPlayer )
+	{
+		g_EngineFuncs.SetView(pPlayer.edict(),pPlayer.edict());
+	}
+
+	bool IsWorking ()
+	{
+		return (m_pCameraEdict !is null);
+	}
+
+	bool BotHasEnemy ()
+	{
+		if ( m_pCurrentBot is null)
+			return false;
+
+		return (m_pCurrentBot.m_pEnemy.GetEntity() !is null);
+	}
+
+
+	void SetCurrentBot(RCBot@ pBot)
+	{
+		@m_pCurrentBot = pBot;
+		m_fNextChangeBotTime = g_Engine.time + Math.RandomFloat(5.0,7.5);
+		m_fNextChangeState = g_Engine.time;
+	}
+
+	RCBot@ m_pCurrentBot;
+	eCamLookState m_iState;
+	CBaseEntity@ m_pCameraEdict;
+	float m_fNextChangeBotTime;
+	float m_fNextChangeState;
+	bool m_bTriedToSpawn;
+	//float m_fThinkTime;
+	TraceResult tr;
+	int m_iPositionSet;
+	Vector vBotOrigin;
+
+	//HudText m_Hudtext;
+	//BOOL m_TunedIn[MAX_PLAYERS];
+}
+
+CBotCam g_BotCam;
+
 namespace BotManager
 {
 
@@ -332,6 +484,8 @@ namespace BotManager
 				return;
 			
 			m_bInitialized = true;
+			g_BotCam.Clear();
+			//g_Game.PrecacheModel("models/mechgibs.mdl");
 			g_Hooks.RegisterHook( Hooks::Player::PlayerTakeDamage, PlayerTakeDamageHook( this.PlayerTakeDamage) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay) );
 			g_Hooks.RegisterHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
@@ -381,7 +535,9 @@ namespace BotManager
 		HookReturnCode MapChange()
 		{
 			m_Bots.resize( 0 );
+			g_BotCam.Clear();
 			g_Profiles.resetProfiles();
+			//g_Game.PrecacheModel("models/mechgibs.mdl");
 
 			//g_MasterEntities = CMasterEntities();
 			g_bTeleportSet = false;
@@ -484,6 +640,18 @@ namespace BotManager
 
 			return null;
 		}
+
+		BaseBot@ RandomBot ( )
+		{
+			BaseBot@ ret = null;
+
+			if ( m_Bots.length () > 0 ) 
+			{
+				@ret = m_Bots[Math.RandomLong(0,m_Bots.length()-1)];
+			}
+
+			return ret;
+		}		
 		
 		void RemoveBot( BaseBot@ pBot, const bool bDisconnect )
 		{
@@ -527,6 +695,8 @@ namespace BotManager
 			}
 			
 			g_Waypoints.runVisibility();
+
+			g_BotCam.Think();
 			
 		}
 

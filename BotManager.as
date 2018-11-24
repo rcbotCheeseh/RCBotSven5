@@ -127,7 +127,7 @@ final class RCBot : BotManager::BaseBot
 				{
 					sched.addTask(task);
 					sched.addTask(CBotMoveToOrigin(vTalker));
-					sched.addTask(CBotWaitTask(90.0f));
+					sched.addTask(CBotTaskWait(90.0f));
 					OK = true;
 				}
 			}
@@ -540,7 +540,10 @@ case 	CLASS_BARNACLE	:
 					CBaseDoor@ door = cast<CBaseDoor@>( ent );
 
 					if ( !UTIL_DoorIsOpen(door,m_pPlayer) )
+					{
+						//BotMessage("UTIL_DoorIsOpen() == false");
 						return false;
+					}
 				}
 				else
 					return false;
@@ -1101,11 +1104,14 @@ case 	CLASS_BARNACLE	:
 			m_pWeapons.DoWeapons(this,m_pEnemy);
 	}
 
+	/** Smaller factors are better */
 	float getEnemyFactor ( CBaseEntity@ entity )
 	{
 		float fFactor = distanceFrom(entity.pev.origin) * entity.pev.size.Length();
 
 		if ( entity.GetClassname() == "func_breakable" )
+			fFactor *= 2;
+		else if ( entity.GetClassname() == "monster_male_assassin" )
 			fFactor /= 2;
 
 		return fFactor;
@@ -1395,12 +1401,19 @@ case 	CLASS_BARNACLE	:
 		if ( m_pCurrentSchedule !is null )
 		{
 			if ( m_pCurrentSchedule.execute(this) == SCHED_TASK_FAIL )
+			{
 				@m_pCurrentSchedule = null;
+				//BotMessage("m_pCurrentSchedule.execute(this) == SCHED_TASK_FAIL");
+			}
 			else if ( m_pCurrentSchedule.numTasksRemaining() == 0 )
+			{
 				@m_pCurrentSchedule = null;			
+				//BotMessage("m_pCurrentSchedule.numTasksRemaining() == 0");
+			}
 		}
 		else
 		{
+			//BotMessage("m_pCurrentSchedule == null");
 			@m_pCurrentSchedule = utils.execute(this);
 		}
 
@@ -1412,119 +1425,3 @@ BotManager::BaseBot@ CreateRCBot( CBasePlayer@ pPlayer )
 {
 	return @RCBot( pPlayer );
 }
-/*
-enum eCamLookState
-{
-	BOTCAM_NONE = 0,
-	BOTCAM_BOT,
-	BOTCAM_ENEMY,
-	BOTCAM_WAYPOINT,
-	BOTCAM_FP
-}
-
-// one bot cam, other players can tune into it
-class CBotCam
-{
-
-	CBotCam ()
-	{
-		Clear();	
-	}
-
-	void Spawn ()
-	{
-		if ( m_bTriedToSpawn )
-			return;
-
-		m_bTriedToSpawn = true;
-
-		// Redfox http://www.foxbot.net
-		@m_pCameraEdict = gEntityFuncs.CreateEntity("info_target",null,false);
-		// /Redfox
-		
-		if ( !FNullEnt(m_pCameraEdict) )
-		{
-			// Redfox http://www.foxbot.net
-			g_EntityFuncs.DispatchSpawn(m_pCameraEdict);
-			
-			gEntityFuncs.SetModel(m_pCameraEdict, "models/mechgibs.mdl");
-
-			m_pCameraEdict.pev.takedamage = DAMAGE_NO;
-			m_pCameraEdict.pev.solid = SOLID_NOT;
-			m_pCameraEdict.pev.movetype = MOVETYPE_FLY; //noclip
-			m_pCameraEdict.pev.classname = "entity_botcam";
-			m_pCameraEdict.pev.nextthink = g_Engine.time;
-			m_pCameraEdict.pev.renderamt = 0;
-			// /Redfox
-		}		
-	}
-
-	void Think ()
-	{
-		if ( m_fNextChangeBotTime < g_Engine.time )
-		{
-			m_fNextChangeBotTime = g_Engine.time + 5.0f;
-		}
-	}
-
-	void Clear ()
-	{
-		@m_pCurrentBot = null;
-		m_iState = BOTCAM_NONE;
-		@m_pCameraEdict = null;
-		m_fNextChangeBotTime = 0;
-		m_fNextChangeState = 0;
-		m_bTriedToSpawn = false;				
-	}
-
-	bool TuneIn ( CBasePlayer@ pPlayer )
-	{
-		if ( m_pCameraEdict is null )
-		{			
-			return false;
-		}
-
-		g_EngineFuncs.SetView(pPlayer,m_pCameraEdict);
-	}
-
-	void TuneOff ( CBasePlayer@ pPlayer )
-	{
-		g_EngineFuncs.SetView(pPlayer,pPlayer);
-	}
-
-	bool IsWorking ()
-	{
-		return (m_pCameraEdict !is null);
-	}
-
-	bool BotHasEnemy ()
-	{
-		if ( m_pCurrentBot is null)
-			return false;
-
-		return (m_pCurrentBot.m_pEnemy.GetEntity() !is null);
-	}
-
-
-	void SetCurrentBot(RCBot@ pBot)
-	{
-		@m_pCurrentBot = pBot;
-		m_fNextChangeBotTime = g_Engine.time + Math.RandomFloat(5.0,7.5);
-		m_fNextChangeState = g_Engine.time;
-	}
-
-	private RCBot@ m_pCurrentBot;
-	eCamLookState m_iState;
-	CBaseEntity@ m_pCameraEdict;
-	float m_fNextChangeBotTime;
-	float m_fNextChangeState;
-	bool m_bTriedToSpawn;
-	//float m_fThinkTime;
-	TraceResult tr;
-	int m_iPositionSet;
-	Vector vBotOrigin;
-
-	//HudText m_Hudtext;
-	//BOOL m_TunedIn[MAX_PLAYERS];
-}
-*/

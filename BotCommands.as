@@ -37,6 +37,7 @@ CConCommand@ m_pPathWaypointRemovePathsTo;
 CConCommand@ m_pDebugBot;
 CConCommand@ m_pTeleportSet;
 CConCommand@ m_pTeleport;
+CConCommand@ m_pBotCam;
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
 //CCVar@ m_pAutoConfig;
@@ -95,6 +96,8 @@ void PluginInit()
 	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
 	@m_pRCBotKickbots = @CConCommand( "kickbots", "Kicks all bots", @RCBot_Kickbots );
 
+	@m_pBotCam = @CConCommand( "botcam", "Bot camera", @RCBot_BotCam );
+
 	@m_pRCBotSearch = @CConCommand( "search", "test search func", @RCBotSearch );
 
 	@m_pVisRevs = CCVar("visrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
@@ -111,6 +114,21 @@ void TeleportSet ( const CCommand@ args )
 	g_vTeleportSet = player.pev.origin;
 
 	SayMessageAll(player,"teleport location set");
+}
+
+void RCBot_BotCam ( const CCommand@ args )
+{
+	CBasePlayer@ pPlayer = ListenPlayer();
+
+	if ( args.ArgC() > 1 )
+	{
+		if ( args[1] == "on" )
+			g_BotCam.TuneIn(pPlayer);
+		else if ( args[1] == "off" ) 
+			g_BotCam.TuneOff(pPlayer);
+	}
+
+	
 }
 
 void Teleport ( const CCommand@ args )
@@ -161,35 +179,31 @@ void Explo ( const CCommand@ args )
 
 void NoTouchFunc ( const CCommand@ args )
 {
-	CBasePlayer@ player = ListenPlayer();
+	CBasePlayer@ pPlayer = ListenPlayer();
 
 	g_NoTouchChange = true;
 
-	// not doing anything yet
-	g_NoTouch = !g_NoTouch;	
-
-	if ( player !is null )
+	if ( pPlayer !is null )
 	{
-		Observer@ o = player.GetObserver();	
+		Observer@ o = pPlayer.GetObserver();	
 
-		if ( o !is null )
+		if( !o.IsObserver() )
 		{
-				if ( g_NoTouch == false )
-				{
-					o.StopObserver(true);
-				}
-				else
-				{
-					o.StartObserver(player.pev.origin, player.pev.angles, false);
-				}
-			
+			g_NoTouch = true;
+			o.StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );		
+
+		}
+		else 
+		{
+			o.StopObserver(true);
+			g_NoTouch = false;
 		}
 	}
 
 	if ( g_NoTouch )
-		SayMessageAll(player,"No touch mode disabled");
+		SayMessageAll(pPlayer,"No touch mode disabled");
 	else 	
-		SayMessageAll(player,"No touch mode enabled");			
+		SayMessageAll(pPlayer,"No touch mode enabled");			
 }
 	const int DEBUG_NAV = 1;
 	const int DEBUG_TASK = 2;
@@ -237,9 +251,12 @@ void DebugMessages ( const CCommand@ args )
 
 void DebugBot ( const CCommand@ args )
 {
+	
 	if ( args.ArgC() > 1 )
+	{
+		BotMessage("Finding player " + args[1]);
 		g_DebugBot = UTIL_FindPlayer(args[1]);
-
+	}
 	if ( g_DebugBot.GetEntity() !is null )
 		SayMessageAll(ListenPlayer(),"Debug '"+g_DebugBot.GetEntity().pev.netname+"' (if bot)");
 	else

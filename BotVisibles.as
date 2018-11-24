@@ -97,8 +97,10 @@ class CBotVisibles
 
 		if ( m_pNearestAvoid.GetEntity() !is null )
 		{
-			if ( CanAvoid(m_pNearestAvoid) )
-				m_fNearestAvoidDist = m_pBot.distanceFrom(m_pNearestAvoid);
+			CBaseEntity@ pAvoid = m_pNearestAvoid.GetEntity();
+
+			if ( CanAvoid(pAvoid) )
+				m_fNearestAvoidDist = m_pBot.distanceFrom(pAvoid);
 			else
 				m_pNearestAvoid = null;
 		}
@@ -149,9 +151,9 @@ class CBotVisibles
 
 					if ( CanAvoid(m_pCurrentEntity) )
 					{
-						if ( m_pNearestAvoid.GetEntity() is null || (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist) )
+						if ( m_pNearestAvoid.GetEntity() is null || ( (m_pNearestAvoid.GetEntity() !is m_pCurrentEntity) && (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist)) )
 						{
-							m_pNearestAvoid =  m_pCurrentEntity;
+							m_pNearestAvoid = m_pCurrentEntity;							
 						}
 					}
 				}

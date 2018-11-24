@@ -207,6 +207,11 @@ class CBotWeapon
         return 0;
     }      
 
+    bool isGrenade ( )
+    {
+        return m_pWeaponInfo.m_iFlags & WEAP_FL_GRENADE == WEAP_FL_GRENADE;
+    }
+
     bool isExplosive ( RCBot@ bot )
     {
        if ( (m_pWeaponInfo.m_iFlags & (WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_SECONDARY_EXPLOSIVE)) > 0 )
@@ -415,6 +420,17 @@ class CBotWeapons
             {
                 if ( !weapon.isExplosive(pBot) )
                     continue;
+            }
+
+            if ( weapon.isGrenade() )
+            {
+                if ( target !is null )
+                {
+                    if ( (target.pev.flags & FL_ONGROUND) != FL_ONGROUND )
+                    {
+                        continue;
+                    }
+                }
             }
 
             // out of ammo
