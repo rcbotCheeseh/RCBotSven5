@@ -348,7 +348,7 @@ final class RCBot : BotManager::BaseBot
 
 	bool BreakableIsEnemy ( CBaseEntity@ pBreakable )
 	{
-		
+		//BotMessage("BreakableIsEnemy()");
 	// i. explosives required to blow breakable
 	// ii. OR is not a world brush (non breakable) and can be broken by shooting
 		if ( ((pBreakable.pev.flags & FL_WORLDBRUSH) != FL_WORLDBRUSH) && ((pBreakable.pev.spawnflags & 1)!=1) )

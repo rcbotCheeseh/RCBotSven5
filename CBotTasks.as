@@ -1171,30 +1171,36 @@ class CBotTaskHealPlayer : RCBotTask
 class CBotHumanTowerTask : RCBotTask
 {
     Vector m_vOrigin;
-
+    float m_fTime;
     CBotHumanTowerTask ( Vector vOrigin )
     {
         m_vOrigin = vOrigin;
 
         setTimeout(15.0f);
+        m_fTime = 0.0f;
     }
 
      void execute ( RCBot@ bot )
      {
          CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
 
+         if ( m_fTime == 0.0f ) 
+            m_fTime = g_Engine.time + 6.0f; // wait for six second max
+        else if ( m_fTime < g_Engine.time )
+            Failed();
+
         bot.setMoveSpeed(bot.m_pPlayer.pev.maxspeed/2);
 
          if ( groundPlayer !is null )
          {
-            Vector vPlayer = UTIL_EntityOrigin(groundPlayer);
-
-            
+            Vector vPlayer = UTIL_EntityOrigin(groundPlayer);            
 
             if ( UTIL_yawAngleFromEdict(vPlayer,bot.m_pPlayer.pev.v_angle,bot.m_pPlayer.pev.origin) < 15 )    
                 bot.setMove(vPlayer);
 
             bot.setLookAt(vPlayer);
+
+            m_fTime = g_Engine.time + 6.0f; // wait for another six second max
 
             if ( bot.m_pPlayer.pev.groundentity is groundPlayer.edict() )
                 {
@@ -1211,7 +1217,6 @@ class CBotHumanTowerTask : RCBotTask
          }
          else
          {
-
             if ( bot.distanceFrom(m_vOrigin) > 96 )
             {
                 bot.setMove(m_vOrigin);
@@ -1229,6 +1234,8 @@ class CBotHumanTowerTask : RCBotTask
                     // stand up 
                     // look at player
                     bot.setLookAt(UTIL_EntityOrigin(playerOnTop));
+
+                    m_fTime = g_Engine.time + 6.0f; // wait for another six second max
                 }
                 else 
                 {

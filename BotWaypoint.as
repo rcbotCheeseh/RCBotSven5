@@ -1053,6 +1053,8 @@ class CWaypoints
 					continue;
 				if ( m_Waypoints[i].hasFlags(W_FL_JUMP) )
 					continue;
+				if ( m_Waypoints[i].hasFlags(W_FL_HUMAN_TOWER) )
+					continue;
 			}
 
 			distance = m_Waypoints[i].distanceFrom(vecLocation);
