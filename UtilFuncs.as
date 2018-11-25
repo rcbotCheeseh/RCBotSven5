@@ -246,17 +246,20 @@
 		
     bool UTIL_IsVisible ( Vector vFrom, CBaseEntity@ pTo, CBaseEntity@ ignore )
     {
+		return UTIL_IsVisible(vFrom,UTIL_EntityOrigin(pTo),ignore);
+    }   
+		
+    bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ pTo, CBaseEntity@ ignore )
+    {
         TraceResult tr;
-
-		Vector vTo = UTIL_EntityOrigin(pTo);
 
         g_Utility.TraceLine( vFrom, vTo, ignore_monsters, dont_ignore_glass , ignore !is null ? null : ignore.edict(), tr );
 
         CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
 
-        return tr.flFraction >= 1.0f || (pTo is pEntity);
+        return tr.flFraction >= 1.0f || ((pTo is pEntity)&&(pTo !is null));
     }   
-		        
+		 	        
 
 CBaseEntity@ FIND_ENTITY_BY_TARGETNAME(CBaseEntity@ startEntity, string name )
 {

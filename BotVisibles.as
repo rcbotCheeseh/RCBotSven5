@@ -139,7 +139,7 @@ class CBotVisibles
 					bBodyVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity,player);
 
 					if ( m_pCurrentEntity.pev.flags & FL_MONSTER == FL_MONSTER )
-						bHeadVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity.EyePosition());
+						bHeadVisible = UTIL_IsVisible(player.EyePosition(),m_pCurrentEntity.EyePosition(),m_pCurrentEntity,player);
 				
 					flags = getFlags(bBodyVisible,bHeadVisible);
 

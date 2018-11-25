@@ -348,7 +348,7 @@ final class RCBot : BotManager::BaseBot
 
 	bool BreakableIsEnemy ( CBaseEntity@ pBreakable )
 	{
-		//BotMessage("BreakableIsEnemy()");
+	//	BotMessage("BreakableIsEnemy()");
 	// i. explosives required to blow breakable
 	// ii. OR is not a world brush (non breakable) and can be broken by shooting
 		if ( ((pBreakable.pev.flags & FL_WORLDBRUSH) != FL_WORLDBRUSH) && ((pBreakable.pev.spawnflags & 1)!=1) )
@@ -400,6 +400,8 @@ final class RCBot : BotManager::BaseBot
 				}
 			}
 
+			
+			/*
 			Vector vSize = pBreakable.pev.size;
 			Vector vMySize = m_pPlayer.pev.size;
 			
@@ -408,8 +410,10 @@ final class RCBot : BotManager::BaseBot
 				(vSize.z >= (vMySize.z/2)) )
 			{
 				UTIL_DebugMsg(m_pPlayer,"BreakableIsEnemy() true",DEBUG_THINK);
-				return true;
-			}
+				return* true;
+			}*/
+
+			return true;
 		}
 
 		UTIL_DebugMsg(m_pPlayer,"BreakableIsEnemy() false",DEBUG_THINK);
@@ -431,6 +435,8 @@ final class RCBot : BotManager::BaseBot
 			if ( pBestWeapon is null ) 
 				return false;
 		}
+
+		//BotMessage(szClassname);
 
 		if ( szClassname == "func_breakable" )
 			return BreakableIsEnemy(entity);
@@ -1343,6 +1349,13 @@ case 	CLASS_BARNACLE	:
 			if ( pBlocking.GetClassname() == "func_pushable" )
 			{
 				PressButton(IN_USE);
+			}
+			else if ( pBlocking.GetClassname() == "func_breakable" )
+			{
+				if ( BreakableIsEnemy(pBlocking) )
+				{
+					m_pEnemy = pBlocking;
+				}
 			}
 		}
 		//if ( m_pEnemy.GetEntity() !is null )
