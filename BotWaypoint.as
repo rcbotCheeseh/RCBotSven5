@@ -941,7 +941,7 @@ class CWaypoints
 		}
 	}
 
-	int getNearestFlaggedWaypoint ( CBaseEntity@ entity, int iFlags )
+	int getNearestFlaggedWaypoint ( CBaseEntity@ entity, int iFlags, CFailedWaypointsList@ failed = null )
 	{
 		int iIndex = -1;
 		float min_distance = 0;
@@ -954,6 +954,9 @@ class CWaypoints
 
 			if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
 			{
+				if ( failed !is null && failed.contains(i) )
+					continue;
+
 				float distance = m_Waypoints[i].distanceFrom(vOrigin);
 
 				if ( iIndex == -1 || distance < min_distance )
@@ -1000,11 +1003,11 @@ class CWaypoints
 			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
 				continue;	
 
-			if ( failed.contains(i) )
-				continue;
-
 			if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
 			{
+				if ( failed !is null && failed.contains(i) )
+					continue;
+
 				wpts.insertLast(i);
 			}
 		}
@@ -1383,6 +1386,14 @@ class CFailedWaypointsList
     {
         return list.find(iwpt) >= 0;
     }
+
+	void remove ( int iwpt )
+	{
+		int idx = list.find(iwpt);
+
+		if ( idx >= 0 )
+			list.removeAt(idx);
+	}
 
     void clear ()
     {

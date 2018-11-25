@@ -1516,11 +1516,39 @@ class CBotGetHealthUtil : CBotUtil
     }
 }
 
+class CWeaponGoalReached : RCBotTask
+{
+    CBotGetWeapon@ m_util;
+
+    CWeaponGoalReached ( CBotGetWeapon@ util )
+    {
+        @m_util = util;
+    }
+
+    void execute ( RCBot@ bot ) 
+    {
+        m_util.goalReached();
+        Complete();
+    }
+}
+
 class CBotGetWeapon : CBotUtil
 {
+    CFailedWaypointsList failed;
+    int m_iLastGoal = -1;
+
     string DebugMessage ()
     {
         return "CBotGetWeapon";
+    }
+
+    void goalReached ()
+    {
+        if ( m_iLastGoal != -1 )
+        {
+            failed.remove(m_iLastGoal);
+            m_iLastGoal = -1;
+        }
     }
 
    float calculateUtility ( RCBot@ bot )
@@ -1533,14 +1561,23 @@ class CBotGetWeapon : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_WEAPON);				
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_WEAPON,failed);				
+        
+        m_iLastGoal = iWpt;
 
         if ( iWpt != -1 )
         {
             RCBotSchedule@ sched = CFindPathSchedule(bot,iWpt);
+
             sched.addTask(CFindWeaponTask());
+            sched.addTask(CWeaponGoalReached(this));
+
+            failed.add(m_iLastGoal);
+
             return sched;
         }
+        else
+            failed.clear();
 
         return null;
     }    
