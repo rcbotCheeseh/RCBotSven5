@@ -16,20 +16,6 @@ class CBotVisibles
 	EHandle m_pNearestAvoid = null;
 	float m_fNearestAvoidDist = 0;
 
-	bool CanAvoid ( CBaseEntity@ ent )
-	{
-		if ( m_pBot.distanceFrom(ent) > 200 )
-			return false;
-		if ( ent == m_pBot.m_pPlayer )
-			return false;
-		if ( ent.pev.flags & FL_CLIENT == FL_CLIENT )
-			return true;
-		if ( ent.pev.flags & FL_MONSTER == FL_MONSTER )
-			return true;
-
-		return false;		
-	}
-
 	int getFlags ( bool bBodyVisible, bool bHeadVisible )
 	{
 		int ret = 0;
@@ -99,7 +85,7 @@ class CBotVisibles
 		{
 			CBaseEntity@ pAvoid = m_pNearestAvoid.GetEntity();
 
-			if ( CanAvoid(pAvoid) )
+			if ( m_pBot.CanAvoid(pAvoid) )
 				m_fNearestAvoidDist = m_pBot.distanceFrom(pAvoid);
 			else
 				m_pNearestAvoid = null;
@@ -149,7 +135,7 @@ class CBotVisibles
 						continue;		
 					}
 
-					if ( CanAvoid(m_pCurrentEntity) )
+					if ( m_pBot.CanAvoid(m_pCurrentEntity) )
 					{
 						if ( m_pNearestAvoid.GetEntity() is null || ( (m_pNearestAvoid.GetEntity() !is m_pCurrentEntity) && (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist)) )
 						{

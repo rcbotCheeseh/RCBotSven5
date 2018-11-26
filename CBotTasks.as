@@ -581,7 +581,9 @@ final class CFindButtonTask : RCBotTask
 
 final class CUseButtonTask : RCBotTask
 {
-    CBaseEntity@ m_pButton;
+    EHandle m_pButton;
+    bool m_bIsMomentary;
+    bool m_bMomentaryStarted;
     
     string DebugString ()
     {
@@ -590,20 +592,35 @@ final class CUseButtonTask : RCBotTask
 
     CUseButtonTask ( CBaseEntity@ button )
     {
-        @m_pButton = button;
-        m_fDefaultTimeout = 4.0;
+        m_pButton = button;
+        m_fDefaultTimeout = 10.0f;
+        m_bIsMomentary = (button.GetClassname() == "momentary_rot_button");
+        m_bMomentaryStarted = false;
     } 
 
     void execute ( RCBot@ bot )
     {
-        Vector vOrigin = UTIL_EntityOrigin(m_pButton);
+        CBaseEntity@ pButton = m_pButton.GetEntity();
 
-        if ( m_pButton.pev.frame != 0 )
+        if ( pButton is null )
+        {
             Complete();
+            return;
+        }
+        Vector vOrigin = UTIL_EntityOrigin(pButton);
+        float fButtonVelocity = pButton.pev.avelocity.Length();
+
+        if ( pButton.pev.frame != 0 )
+            Complete();
+        else if ( m_bIsMomentary && m_bMomentaryStarted )
+        {
+            if ( fButtonVelocity == 0.0 )
+                Complete();
+        }
 
         bot.setLookAt(vOrigin,PRIORITY_TASK);
 
-        if ( bot.distanceFrom(m_pButton) > 64 )
+        if ( bot.distanceFrom(pButton) > 64 )
         {
             bot.setMove(vOrigin);
             UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(m_pCharger.pev.origin)",DEBUG_TASK);
@@ -612,13 +629,15 @@ final class CUseButtonTask : RCBotTask
         {
             bot.StopMoving();
 
-            UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);
+            UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);            
 
             if ( Math.RandomLong(0,100) < 99 )
             {
                 bot.PressButton(IN_USE);
             }
-        
+
+            if (fButtonVelocity>0.0f)
+                m_bMomentaryStarted = true;
         }
     }
 }
@@ -1172,12 +1191,15 @@ class CBotHumanTowerTask : RCBotTask
 {
     Vector m_vOrigin;
     float m_fTime;
+    float m_fJumpTime;
+
     CBotHumanTowerTask ( Vector vOrigin )
     {
         m_vOrigin = vOrigin;
 
-        setTimeout(15.0f);
+       // setTimeout(15.0f);
         m_fTime = 0.0f;
+        m_fJumpTime = 0.0f;
     }
 
      void execute ( RCBot@ bot )
@@ -1185,7 +1207,7 @@ class CBotHumanTowerTask : RCBotTask
          CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
 
          if ( m_fTime == 0.0f ) 
-            m_fTime = g_Engine.time + 6.0f; // wait for six second max
+            m_fTime = g_Engine.time + 10.0f; // wait for ten second max
         else if ( m_fTime < g_Engine.time )
             Failed();
 
@@ -1200,14 +1222,21 @@ class CBotHumanTowerTask : RCBotTask
 
             bot.setLookAt(vPlayer);
 
-            m_fTime = g_Engine.time + 6.0f; // wait for another six second max
+            m_fTime = g_Engine.time + 5.0f; // wait for another six second max
 
             if ( bot.m_pPlayer.pev.groundentity is groundPlayer.edict() )
-                {
-                    bot.StopMoving();
+            {
+                
+                bot.StopMoving();
 
+                if ( m_fJumpTime == 0.0f )
+                    m_fJumpTime = g_Engine.time + 1.5f;
+                else if ( m_fJumpTime < g_Engine.time )
+                {
+                    bot.PressButton(IN_JUMP);
                     Complete();
                 }
+            }
 
             else if ( bot.distanceFrom(groundPlayer) < 96 )
             {
@@ -1501,7 +1530,7 @@ class CBotGetHealthUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_HEALTH);				
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_HEALTH);				
 
         if ( iWpt != -1 )
         {
@@ -1561,7 +1590,9 @@ class CBotGetWeapon : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_WEAPON,failed);				
+        Vector vOrigin = bot.m_pPlayer.pev.origin;
+
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(vOrigin,W_FL_WEAPON,failed);				
         
         m_iLastGoal = iWpt;
 
@@ -1600,7 +1631,7 @@ class CBotGetAmmo : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_AMMO);				
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_AMMO);				
 
         if ( iWpt != -1 )
         {
@@ -1650,7 +1681,7 @@ class CBotGetArmorUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer,W_FL_ARMOR);				
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_ARMOR);				
 
         if ( iWpt != -1 )
         {
@@ -1755,6 +1786,10 @@ class CBotGotoObjectiveUtil : CBotUtil
             sched.addTask(CObjectiveReachedTask(this));
            
             sched.addTask(CFindButtonTask());
+
+            CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(iRandomGoal);
+
+            bot.setObjectiveOrigin(pWpt.m_vOrigin);
           
             return sched;
         }
@@ -1823,7 +1858,7 @@ class CBotUseTankUtil : CBotUtil
     }  
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iRandomGoal = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pNearestTank.GetEntity(),W_FL_TANK);
+        int iRandomGoal = g_Waypoints.getNearestFlaggedWaypoint(UTIL_EntityOrigin(bot.m_pNearestTank.GetEntity()),W_FL_TANK);
 
         if ( iRandomGoal != -1 )
         {
@@ -1863,6 +1898,10 @@ class CBotGotoEndLevelUtil : CBotUtil
         if ( iRandomGoal != -1 )
         {
             RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal);
+
+            CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(iRandomGoal);
+
+            bot.setObjectiveOrigin(pWpt.m_vOrigin);            
 
             sched.addTask(CFindButtonTask());
 

@@ -692,6 +692,7 @@ class CWaypoints
 {
 	// Max waypoint is 1024 
 	private array<CWaypoint> m_Waypoints(MAX_WAYPOINTS);
+	//private array<float> m_fDanger(MAX_WAYPOINTS);
 
 	bool g_WaypointsOn = false;
 	int m_iNumWaypoints = 0;
@@ -941,12 +942,11 @@ class CWaypoints
 		}
 	}
 
-	int getNearestFlaggedWaypoint ( CBaseEntity@ entity, int iFlags, CFailedWaypointsList@ failed = null )
+	int getNearestFlaggedWaypoint ( Vector vOrigin, int iFlags, CFailedWaypointsList@ failed = null )
 	{
 		int iIndex = -1;
 		float min_distance = 0;
-		Vector vOrigin = UTIL_EntityOrigin(entity);
-		
+
 		for( int i = 0; i < m_iNumWaypoints; i ++ )
 		{
 			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )

@@ -93,6 +93,25 @@ final class RCBot : BotManager::BaseBot
 		m_pLastEnemy = null;
 	}
 
+	Vector m_vObjectiveOrigin;
+	bool m_bObjectiveOriginValid;
+
+	Vector getObjectiveOrigin ()
+	{
+		return m_vObjectiveOrigin;
+	}
+
+	bool isObjectiveOriginValid ()
+	{
+		return m_bObjectiveOriginValid;
+	}
+
+	void setObjectiveOrigin ( Vector vOrigin )
+	{
+		m_vObjectiveOrigin = vOrigin;
+		m_bObjectiveOriginValid = true;
+	}
+
 	void ClientSay ( CBaseEntity@ talker, array<string> args )
 	{		
 		if ( args.length() > 1 )
@@ -445,6 +464,9 @@ final class RCBot : BotManager::BaseBot
 			return false;
 
 		if ( entity.pev.deadflag != DEAD_NO )
+			return false;
+
+		if ( entity.pev.health <= 0 )
 			return false;
 
 		switch ( entity.Classify() )
@@ -1220,6 +1242,30 @@ case 	CLASS_BARNACLE	:
 		m_flStuckTime = 0;
 		m_pHeal = null;
 
+	}
+
+	bool CanAvoid ( CBaseEntity@ ent )
+	{
+		if ( distanceFrom(ent) > 200 )
+			return false;
+		if ( ent == m_pPlayer )
+			return false;
+		if ( m_pEnemy.GetEntity() is ent )
+		{
+			CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
+
+			if ( pCurrentWeapon !is null )
+			{
+				if ( pCurrentWeapon.IsMelee() )
+					return false;
+			}
+		}			
+		if ( ent.pev.flags & FL_CLIENT == FL_CLIENT )
+			return true;
+		if ( ent.pev.flags & FL_MONSTER == FL_MONSTER )
+			return true;
+
+		return false;		
 	}
 
 	void DoVisibles ()
