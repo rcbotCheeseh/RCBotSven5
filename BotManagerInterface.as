@@ -42,7 +42,7 @@ class CBotCam
 			// Redfox http://www.foxbot.net
 			g_EntityFuncs.DispatchSpawn(m_pCameraEdict.edict());
 			
-			//g_EntityFuncs.SetModel(m_pCameraEdict, "models/mechgibs.mdl");
+			g_EntityFuncs.SetModel(m_pCameraEdict, "models/mechgibs.mdl");
 
 			m_pCameraEdict.pev.takedamage = DAMAGE_NO;
 			m_pCameraEdict.pev.solid = SOLID_NOT;
@@ -57,7 +57,10 @@ class CBotCam
 	void Think ()
 	{
 		if ( m_bTriedToSpawn == false )
+		{
+			//BotMessage("m_bTriedToSpawn == false ");
 			return;
+		}
 		
 		if ( m_fNextChangeBotTime < g_Engine.time )
 		{
@@ -73,9 +76,13 @@ class CBotCam
 	{
 		if ( m_pCurrentBot !is null )
 		{
-			if ( m_pCameraEdict is null )
-				return;
+			//BotMessage("m_pCurrentBot !is null ");
 
+			if ( m_pCameraEdict is null )
+			{
+				//BotMessage("m_pCameraEdict is null ");
+				return;
+			}
 			CBasePlayer@ pPlayer = m_pCurrentBot.m_pPlayer;
 			// Ok set noise to forward vector
 			g_EngineFuncs.MakeVectors(pPlayer.pev.v_angle);
@@ -83,7 +90,11 @@ class CBotCam
 			vOrigin.z = pPlayer.EyePosition().z;
 			Vector vAngles = Math.VecToAngles(pPlayer.EyePosition() - vOrigin);
 
-			m_pCameraEdict.SetOrigin(vOrigin);
+			TraceResult tr;
+
+		   g_Utility.TraceLine( pPlayer.EyePosition(), vOrigin, ignore_monsters,dont_ignore_glass, m_pCurrentBot.m_pPlayer.edict(), tr );
+
+			m_pCameraEdict.SetOrigin(tr.vecEndPos);
 			m_pCameraEdict.pev.v_angle = vAngles;
 			m_pCameraEdict.pev.angles = vAngles;
 			
@@ -106,6 +117,7 @@ class CBotCam
 		
 		if ( m_pCameraEdict is null )
 		{			
+			BotMessage("Camera Edict is null");
 			return false;
 		}
 
@@ -477,15 +489,15 @@ namespace BotManager
 
 			return HOOK_CONTINUE;
 		}
-		
+
+
 		void PluginInit()
 		{
 			if( m_bInitialized )
 				return;
 			
 			m_bInitialized = true;
-			g_BotCam.Clear();
-			//g_Game.PrecacheModel("models/mechgibs.mdl");
+			
 			g_Hooks.RegisterHook( Hooks::Player::PlayerTakeDamage, PlayerTakeDamageHook( this.PlayerTakeDamage) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay) );
 			g_Hooks.RegisterHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );

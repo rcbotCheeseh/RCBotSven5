@@ -55,6 +55,17 @@ CBasePlayer@ ListenPlayer ()
 	return  g_PlayerFuncs.FindPlayerByIndex( 1 );
 }
 
+void MapInit()
+{
+	g_Game.AlertMessage( at_console, "************************\n" );	
+	g_Game.AlertMessage( at_console, "* MAPINIT() CALLED !!! *\n" );	
+	g_Game.AlertMessage( at_console, "************************\n" );	
+
+	g_BotCam.Clear();
+
+	g_Game.PrecacheModel("models/mechgibs.mdl");
+}
+
 void PluginInit()
 {
 	g_Module.ScriptInfo.SetAuthor( "Cheeseh" );
@@ -127,7 +138,6 @@ void RCBot_BotCam ( const CCommand@ args )
 		else if ( args[1] == "off" ) 
 			g_BotCam.TuneOff(pPlayer);
 	}
-
 	
 }
 
