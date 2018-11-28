@@ -61,7 +61,7 @@ void MapInit()
 	g_Game.AlertMessage( at_console, "* MAPINIT() CALLED !!! *\n" );	
 	g_Game.AlertMessage( at_console, "************************\n" );	
 
-	g_BotCam.Clear();
+	g_BotCam.Clear(true);
 
 	g_Game.PrecacheModel("models/mechgibs.mdl");
 }
@@ -113,7 +113,7 @@ void PluginInit()
 
 	@m_pVisRevs = CCVar("visrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
-
+g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
 
@@ -429,6 +429,15 @@ void RCBotSearch ( const CCommand@ args )
 					BotMessage("func_door UNLOCKED");
 				else 
 					BotMessage("func_door LOCKED!!");
+			}
+			if ( pent.GetClassname() == "func_breakable" )
+			{
+				if ( UTIL_BreakableIsEnemy(pent) )
+				{
+					BotMessage("Breakable IS AN ENEMY");
+				}
+				else
+					BotMessage("Breakable IS NOT AN ENEMY");
 			}
 			BotMessage(pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (UTIL_EntityOrigin(pent)-v).Length());			
 		}

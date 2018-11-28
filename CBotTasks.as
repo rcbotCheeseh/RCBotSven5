@@ -1277,6 +1277,33 @@ class CBotHumanTowerTask : RCBotTask
      }
 }
 
+class CBotTaskUseTeleporter : RCBotTask
+{
+    Vector m_vTeleport;
+
+    string DebugString ()
+    {
+        return "CBotTaskUseTeleporter";
+    } 
+
+    CBotTaskUseTeleporter ( Vector vTeleport )
+    {
+        m_vTeleport = vTeleport;
+        setTimeout(5.0f);
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        if ( bot.distanceFrom(m_vTeleport) > 200.0 )
+        {
+            Complete();
+        }
+        else
+            bot.StopMoving();
+    }
+
+}
+
 class CBotTaskFindCoverTask : RCBotTask
 {    
     RCBotCoverWaypointFinder@ finder;
@@ -1786,6 +1813,8 @@ class CBotGotoObjectiveUtil : CBotUtil
             sched.addTask(CObjectiveReachedTask(this));
            
             sched.addTask(CFindButtonTask());
+
+            sched.addTask(CBotTaskWait(2.0f));
 
             CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(iRandomGoal);
 

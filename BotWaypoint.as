@@ -1620,6 +1620,11 @@ final class RCBotNavigator
 
 			if ( m_fNextCheckVisible < g_Engine.time )
 			{
+				float fSeeWaypointFailTime = 3.0f;
+
+				if ( wpt.hasFlags(W_FL_LADDER) )
+					fSeeWaypointFailTime += 7.0f;
+
 				m_fNextCheckVisible = g_Engine.time + 1.0;
 
         		TraceResult tr;
@@ -1628,7 +1633,7 @@ final class RCBotNavigator
 
 				if ( tr.flFraction >= 1.0 )				
 					m_fLastSeeWaypoint = g_Engine.time;
-				else if ( m_fLastSeeWaypoint > 0 && ((g_Engine.time - m_fLastSeeWaypoint) > 3.0) )
+				else if ( m_fLastSeeWaypoint > 0 && ((g_Engine.time - m_fLastSeeWaypoint) > fSeeWaypointFailTime) )
 				{
 					UTIL_DebugMsg(bot.m_pPlayer,"BotNavigator FAIL",DEBUG_NAV);
 					m_fLastSeeWaypoint = 0;

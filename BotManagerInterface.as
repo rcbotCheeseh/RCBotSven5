@@ -20,7 +20,7 @@ class CBotCam
 
 	CBotCam ()
 	{
-		Clear();	
+		Clear(false);	
 	}
 
 	void Spawn ()
@@ -66,23 +66,37 @@ class CBotCam
 		{
 			m_fNextChangeBotTime = g_Engine.time + 5.0f;
 
-			@m_pCurrentBot = cast<RCBot@>(g_BotManager.RandomBot());
+			@m_pCurrentBot = g_BotManager.getBestBot();
+
+			/*if ( m_pCurrentBot !is null )
+			{
+				// Best bot is 
+				//BotMessage("BOTCAM, Best bot is " + m_pCurrentBot.m_pPlayer.pev.netname);
+			}*/
 		}
 
 		UpdateCamera();
 	}
 
+
+	/*eCamLookState chooseState ()
+	{
+
+	}*/
+
 	void UpdateCamera ()
 	{
 		if ( m_pCurrentBot !is null )
 		{
-			//BotMessage("m_pCurrentBot !is null ");
+			Vector vLookAt;
+			CBaseEntity@ pEntityFrom;
 
 			if ( m_pCameraEdict is null )
 			{
 				//BotMessage("m_pCameraEdict is null ");
 				return;
 			}
+
 			CBasePlayer@ pPlayer = m_pCurrentBot.m_pPlayer;
 			// Ok set noise to forward vector
 			g_EngineFuncs.MakeVectors(pPlayer.pev.v_angle);
@@ -101,14 +115,14 @@ class CBotCam
 		}
 	}
 
-	void Clear ()
+	void Clear (bool precached)
 	{
 		@m_pCurrentBot = null;
 		m_iState = BOTCAM_NONE;
 		@m_pCameraEdict = null;
 		m_fNextChangeBotTime = 0;
 		m_fNextChangeState = 0;
-		m_bTriedToSpawn = false;				
+		m_bTriedToSpawn = !precached;				
 	}
 
 	bool TuneIn ( CBasePlayer@ pPlayer )
@@ -451,6 +465,55 @@ namespace BotManager
 			return m_pCreateBotFn( pPlayer );
 		}
 
+		float getBotFitness ( RCBot@ bot )
+		{
+
+				float fBotFitness = 1;		
+
+				if ( bot.m_pPlayer.pev.deadflag < DEAD_RESPAWNABLE )
+				{
+					fBotFitness += bot.m_pPlayer.pev.frags;
+
+					if ( bot.hasEnemy() )
+					{
+						fBotFitness *= 2;					
+					}
+				}
+
+				return fBotFitness;
+		}
+
+		RCBot@ getBestBot ()
+		{
+			BaseBot@ ret = null;
+			float fTotalFitness = 0.0f;
+
+			for ( uint i = 0; i < m_Bots.length(); i ++ )
+			{
+				BaseBot@ bot = m_Bots[i];
+				RCBot@ rcbot = cast<RCBot@>(bot);
+
+				fTotalFitness += getBotFitness(rcbot);
+			}
+
+			float fRand = Math.RandomFloat(0,fTotalFitness);
+
+			fTotalFitness = 0.0f;
+
+			for ( uint i = 0; i < m_Bots.length(); i ++ )
+			{
+				BaseBot@ bot = m_Bots[i];
+				RCBot@ rcbot = cast<RCBot@>(bot);
+
+				fTotalFitness += getBotFitness(rcbot);
+
+				if ( fRand <= fTotalFitness )
+					return rcbot;				
+			}			
+
+			return null;		
+		}		
+
 		HookReturnCode PlayerTakeDamage ( DamageInfo@ damageInfo )
 		{
 			BaseBot@ pBot = FindBot(damageInfo.pVictim);
@@ -547,7 +610,7 @@ namespace BotManager
 		HookReturnCode MapChange()
 		{
 			m_Bots.resize( 0 );
-			g_BotCam.Clear();
+			
 			g_Profiles.resetProfiles();
 			//g_Game.PrecacheModel("models/mechgibs.mdl");
 

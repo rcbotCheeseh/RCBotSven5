@@ -678,6 +678,13 @@ case 	CLASS_BARNACLE	:
 			
 			m_pCurrentSchedule.addTaskFront(CBotTaskWait(1.75f));
 		}
+		if ( wpt.hasFlags(W_FL_TELEPORT) )
+		{
+			if ( m_pCurrentSchedule is null )
+				m_pCurrentSchedule = RCBotSchedule();
+			
+			m_pCurrentSchedule.addTaskFront(CBotTaskUseTeleporter(wpt.m_vOrigin));			
+		}
 
 		if ( wpt.hasFlags(W_FL_JUMP) )
 			Jump();
@@ -1246,6 +1253,8 @@ case 	CLASS_BARNACLE	:
 
 	bool CanAvoid ( CBaseEntity@ ent )
 	{
+		if ( IsOnLadder() )
+			return false;
 		if ( distanceFrom(ent) > 200 )
 			return false;
 		if ( ent == m_pPlayer )
@@ -1312,7 +1321,10 @@ case 	CLASS_BARNACLE	:
 			fStuckSpeed /= 2;
 		// for courch jump
 		if ( m_flJumpTime + 1.0f > g_Engine.time )
-			PressButton(IN_DUCK);
+		{
+			if ( !IsOnLadder() )
+				PressButton(IN_DUCK);
+		}
 
 		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > fStuckSpeed) )
 		{
