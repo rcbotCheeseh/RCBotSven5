@@ -828,6 +828,7 @@ final class CFindPathTask : RCBotTask
 
              UTIL_DebugMsg(bot.m_pPlayer,"NavigatorState_Fail",DEBUG_NAV);
             Failed();
+            bot.failedPath(true);
         break;
         case NavigatorState_ReachedGoal:
 
@@ -1975,6 +1976,9 @@ class CBotRoamUtil : CBotUtil
 
         if ( pWpt.hasFlags(W_FL_UNREACHABLE) )
             return null;
+
+        // reset failed path
+        bot.failedPath(false);
             
         return CFindPathSchedule(bot,iRandomGoal);
     }

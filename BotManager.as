@@ -59,6 +59,10 @@ final class RCBot : BotManager::BaseBot
 
 	float m_flJumpTime = 0.0f;
 
+	int m_iLastWaypointFrom = 0;
+	int m_iLastWaypointTo = 0;	
+	bool m_bLastPathFailed = false;
+
 	void setNearestTank ( CBaseEntity@ pTank )
 	{
 		//BotMessage("setNearestTank");
@@ -531,6 +535,11 @@ case 	CLASS_BARNACLE	:
 
 	bool canGotoWaypoint ( CWaypoint@ currWpt, CWaypoint@ succWpt )
 	{
+		if ( m_bLastPathFailed )
+		{
+			if ( currWpt.iIndex == m_iLastWaypointFrom && succWpt.iIndex == m_iLastWaypointTo )
+				return false;
+		}
 		if ( succWpt.hasFlags(W_FL_UNREACHABLE) )
 			return false;
 		if ( succWpt.hasFlags(W_FL_GRAPPLE) )
@@ -650,8 +659,16 @@ case 	CLASS_BARNACLE	:
 	{
 		UTIL_DebugMsg(m_pPlayer,"touchedWpt()",DEBUG_NAV);
 
+		if ( pThirdWpt !is null )
+			@pNextWpt = pThirdWpt;
+		else
+			@pNextWpt = null;
+
 		if ( pNextWpt !is null )
 		{					
+			m_iLastWaypointFrom = wpt.iIndex;
+			m_iLastWaypointTo = pNextWpt.iIndex;
+
 			if ( pNextWpt.hasFlags(W_FL_GRAPPLE) )
 			{
 				if ( pThirdWpt !is null )
@@ -1226,12 +1243,22 @@ case 	CLASS_BARNACLE	:
 		}
 	}
 
+	void failedPath ( bool failed )
+	{
+		m_bLastPathFailed = failed;
+	}
+
 	void SpawnInit ()
 	{
 		if ( init == true )
 			return;
 
-			m_flJumpTime = 0.0f;
+			@pNextWpt = null;
+
+		m_iLastWaypointFrom = -1;
+		m_iLastWaypointTo = -1;
+
+		m_flJumpTime = 0.0f;
 
 		m_fNextShoutMedic = 0.0f;
 
@@ -1347,6 +1374,8 @@ case 	CLASS_BARNACLE	:
 		PressButton(IN_JUMP);
 	}
 
+	CWaypoint@ pNextWpt = null;
+
 	/**
 	 * DoLook()
 	 *
@@ -1383,7 +1412,10 @@ case 	CLASS_BARNACLE	:
 		}
 		else if (m_bMoveToValid )
 		{			
-			setLookAt(m_vMoveTo,PRIORITY_WAYPOINT);
+			if ( pNextWpt !is null )
+				setLookAt(pNextWpt.m_vOrigin,PRIORITY_WAYPOINT);
+			else 
+				setLookAt(m_vMoveTo,PRIORITY_WAYPOINT);
 		}
 	}
 
@@ -1461,6 +1493,11 @@ case 	CLASS_BARNACLE	:
 					PressButton(IN_ATTACK2);
 
 				//BotMessage("SHOOTING ENEMY!!!\n");
+			}
+			else if ( pEnemy is null && pCurrentWeapon !is null )
+			{
+				if ( pCurrentWeapon.IsSniperRifle() && pCurrentWeapon.IsZoomed() )
+					PressButton(IN_ATTACK2);					
 			}
 		}
 	}
