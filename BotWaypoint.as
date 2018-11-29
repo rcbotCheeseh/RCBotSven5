@@ -726,18 +726,43 @@ class CWaypoints
 			BotMessage("Waypoints OFf");
 	}
 
+	bool m_bPrecachedsounds = false;
+
+	void precacheSounds ()
+	{
+		g_SoundSystem.PrecacheSound("weapons/mine_activate.wav");
+		g_SoundSystem.PrecacheSound("common/wpn_denyselect.wav");
+			
+		m_bPrecachedsounds = true;
+	}
+
+	void playsound ( CBaseEntity@ player, bool ok )
+	{
+		if ( player is null )
+			return;
+		if ( m_bPrecachedsounds == false )
+			return;
+
+		if ( ok )
+			g_SoundSystem.PlaySound(player.edict(),CHAN_AUTO,"weapons/mine_activate.wav",1,0);
+		else
+			g_SoundSystem.PlaySound(player.edict(),CHAN_AUTO,"common/wpn_denyselect.wav",1,0);		
+	}
+
 	void PathWaypoint_Create1 ( CBasePlayer@ player )
 	{
-		int wpt = getNearestWaypointIndex(player.pev.origin,player);
+		int wpt = getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
 		BotMessage("Nearest waypoint is " + wpt + "\n");
 
 		m_PathFrom = wpt;
+
+		playsound(player,wpt!=-1);
 	}
 
 	void PathWaypoint_Create2 ( CBasePlayer@ player )
 	{
-		int wpt = getNearestWaypointIndex(player.pev.origin,player);
+		int wpt = getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
 		BotMessage("Nearest waypoint is " + wpt + "\n");
 
@@ -747,21 +772,25 @@ class CWaypoints
 
 			pWpt.addPath(wpt);
 		}
+
+		playsound(player,wpt!=-1&& m_PathFrom != -1);
 	}
 
 
 	void PathWaypoint_Remove1 ( CBasePlayer@ player )
 	{
-		int wpt = getNearestWaypointIndex(player.pev.origin,player);
+		int wpt = getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
 		BotMessage("Nearest waypoint is " + wpt + "\n");
 
 		m_PathFrom = wpt;
+
+		playsound(player,wpt!=-1); 
 	}
 
 	void PathWaypoint_Remove2 ( CBasePlayer@ player )
 	{
-		int wpt = getNearestWaypointIndex(player.pev.origin,player);
+		int wpt = getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
 		BotMessage("Nearest waypoint is " + wpt + "\n");
 
@@ -771,6 +800,8 @@ class CWaypoints
 
 			pWpt.removePath(wpt);
 		}
+
+		playsound(player,wpt!=-1&& m_PathFrom != -1);
 	}
 
 
@@ -810,7 +841,7 @@ class CWaypoints
 		return pWpt.iIndex;
 	}
 	
-	void addWaypoint ( Vector vecLocation, int flags = 0, CBaseEntity@ ignore = null )
+	bool addWaypoint ( Vector vecLocation, int flags = 0, CBaseEntity@ ignore = null )
 	{
 		int index = freeWaypointIndex();
 
@@ -913,7 +944,10 @@ class CWaypoints
 
 			m_Waypoints[index].m_iFlags = flags;
 
+			return true;
 		}
+
+		return false;
 	}
 
 	int freeWaypointIndex ()
@@ -932,7 +966,7 @@ class CWaypoints
 
 	void WaypointInfo ( CBasePlayer@ player )
 	{
-		int index = getNearestWaypointIndex(player.pev.origin,player);
+		int index = getNearestWaypointIndex(player.pev.origin,player,-1,128);
 
 		if ( index != -1 ) 
 		{
@@ -1062,7 +1096,7 @@ class CWaypoints
 
 			distance = m_Waypoints[i].distanceFrom(vecLocation);
 			
-			if ( (nearestWptIdx == -1 ) || ( distance < minDistance) )
+			if ( distance < minDistance )
 			{
 				if ( !bCheckVisible || UTIL_IsVisible(vecLocation,m_Waypoints[i].m_vOrigin,player) )
 				{
@@ -1291,9 +1325,9 @@ final class RCBotCoverWaypointFinder
 
 		@m_pBot = bot;
 		
-		iStart = g_Waypoints.getNearestWaypointIndex(bot.origin(),bot.m_pPlayer,bot.m_iLastFailedWaypoint);
+		iStart = g_Waypoints.getNearestWaypointIndex(bot.origin(),bot.m_pPlayer,bot.m_iLastFailedWaypoint,400.0f);
 
-		iHideFrom = g_Waypoints.getNearestWaypointIndex(vHideFrom);
+		iHideFrom = g_Waypoints.getNearestWaypointIndex(vHideFrom,null,-1,128.0f);
 
 		if ( iHideFrom != -1 || iStart == -1 )
 		{

@@ -64,6 +64,8 @@ void MapInit()
 	g_BotCam.Clear(true);
 
 	g_Game.PrecacheModel("models/mechgibs.mdl");
+
+	g_Waypoints.precacheSounds();
 }
 
 void PluginInit()
@@ -288,7 +290,7 @@ void WaypointToggleType ( const CCommand@ args )
 
 	if ( flags > 0 )
 	{
-		int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+		int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
 		if ( wpt != -1 )
 		{
@@ -331,10 +333,11 @@ void WaypointGiveType ( const CCommand@ args )
 	}
 
 	int flags = g_WaypointTypes.parseTypes(types);
+	int wpt = -1;
 
 	if ( flags > 0 )
 	{
-		int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+		wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
 		if ( wpt != -1 )
 		{
@@ -347,8 +350,10 @@ void WaypointGiveType ( const CCommand@ args )
 			}
 
 			pWpt.m_iFlags |= flags;
-		}
+		}				
 	}	
+
+	g_Waypoints.playsound(player,flags>0&&wpt!=-1);
 }
 
 void WaypointClear ( const CCommand@ args )
@@ -369,7 +374,7 @@ void WaypointRemoveType ( const CCommand@ args )
 
 	int flags = g_WaypointTypes.parseTypes(types);
 
-	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
 	if ( wpt != -1 )
 	{
@@ -377,6 +382,8 @@ void WaypointRemoveType ( const CCommand@ args )
 
 		pWpt.m_iFlags &= ~flags;
 	}
+
+	g_Waypoints.playsound(player,flags>0&&wpt!=-1);
 }
 
 void GodModeFunc ( const CCommand@ args )
@@ -498,10 +505,12 @@ void WaypointLoad ( const CCommand@ args )
 {
 	g_Waypoints.Load();
 }
+
 void WaypointAdd ( const CCommand@ args )
 {
 	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 	array<string> types;
+
 	for ( int i = 1 ; i < args.ArgC(); i ++ )
 	{
 		types.insertLast(args.Arg(i));
@@ -512,7 +521,7 @@ void WaypointAdd ( const CCommand@ args )
 	if ( player.pev.flags & FL_DUCKING == FL_DUCKING )
 		flags = W_FL_CROUCH;
 
-	g_Waypoints.addWaypoint(player.pev.origin,flags,player);
+	g_Waypoints.playsound(player,g_Waypoints.addWaypoint(player.pev.origin,flags,player));
 }
 
 void WaypointOff ( const CCommand@ args )
@@ -527,14 +536,16 @@ void WaypointOn ( const CCommand@ args )
 
 void WaypointDelete ( const CCommand@ args )
 {
-CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 
-	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,100.0f,false);
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
 	if ( wpt != -1 )
 	{
 		g_Waypoints.deleteWaypoint(wpt);
 	}
+
+	g_Waypoints.playsound(player,wpt!=-1);
 	
 }
 
@@ -575,7 +586,9 @@ void PathWaypoint_RemovePathsFrom  ( const CCommand@ args )
 {
 	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 
-	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
+
+	g_Waypoints.playsound(player,wpt!=-1);
 
 	if ( wpt != -1 )
 	{
@@ -587,12 +600,14 @@ void PathWaypoint_RemovePathsTo ( const CCommand@ args )
 {
 	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
 
-	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player);
+	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
+	g_Waypoints.playsound(player,wpt!=-1);
 
 	if ( wpt != -1 )
 	{
 		g_Waypoints.PathWaypoint_RemovePathsTo(wpt);
 	}
+
 }
 // ------------------------------------
 // COMMANDS - 	end
