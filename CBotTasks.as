@@ -213,10 +213,12 @@ final class CBotTaskWait : RCBotTask
 {
      float m_fWaitTime = 0.0f;
      float m_fWait = 0.0f;
+     Vector m_vFace;
 
-     CBotTaskWait ( float fWaitTime )
+     CBotTaskWait ( float fWaitTime, Vector vface )
      {
          m_fWait = fWaitTime;
+         m_vFace = vface;
      }
 
     void execute ( RCBot@ bot )
@@ -225,6 +227,8 @@ final class CBotTaskWait : RCBotTask
             m_fWaitTime = g_Engine.time + m_fWait;
         else if ( m_fWaitTime < g_Engine.time )
             Complete();
+
+        bot.setLookAt(m_vFace);
 
         bot.StopMoving();
     }
@@ -627,14 +631,21 @@ final class CUseButtonTask : RCBotTask
         }
         else
         {
+
+           
             bot.StopMoving();
 
-            UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);            
+             if ( bot.m_pPlayer.FInViewCone(pButton) )
+             {
 
-            if ( Math.RandomLong(0,100) < 99 )
-            {
-                bot.PressButton(IN_USE);
-            }
+                UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);            
+
+                if ( m_bIsMomentary || ( Math.RandomLong(0,100) < 99)  )
+                {
+                    bot.PressButton(IN_USE);
+                }
+
+             }
 
             if (fButtonVelocity>0.0f)
                 m_bMomentaryStarted = true;
@@ -1589,6 +1600,41 @@ class CWeaponGoalReached : RCBotTask
     }
 }
 
+class CCheckoutNoiseUtil : CBotUtil
+{
+    string DebugMessage ()
+    {
+        return "CCheckoutNoiseUtil";
+    }      
+    float calculateUtility ( RCBot@ bot )
+    {        
+            return bot.totalHealth(); 
+    }
+
+    bool canDo (RCBot@ bot)
+    {
+        return bot.m_flHearNoiseTime + 10.0f > g_Engine.time;
+    }    
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        Vector vOrigin = bot.m_pPlayer.pev.origin;
+
+        int iRandomGoal = g_Waypoints.getNearestWaypointIndex(bot.m_vNoiseOrigin,null,-1,400.0,true,false);
+
+        if ( iRandomGoal != -1 )
+        {
+            RCBotSchedule@ sched = RCBotSchedule();
+            sched.addTask(CFindPathTask(bot,iRandomGoal));
+            sched.addTask(CBotTaskWait(1.0f,bot.m_vNoiseOrigin));
+
+            return sched;
+        }
+
+        return null;
+    }        
+}
+
 class CBotGetWeapon : CBotUtil
 {
     CFailedWaypointsList failed;
@@ -1813,11 +1859,11 @@ class CBotGotoObjectiveUtil : CBotUtil
   // similarly, If goal is reached, waypoint will be added to 'failed waypoints' so bot doesn't keep going back
             sched.addTask(CObjectiveReachedTask(this));
            
-            sched.addTask(CFindButtonTask());
-
-            sched.addTask(CBotTaskWait(2.0f));
+            sched.addTask(CFindButtonTask());            
 
             CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(iRandomGoal);
+
+            sched.addTask(CBotTaskWait(1.0f,pWpt.m_vOrigin));
 
             bot.setObjectiveOrigin(pWpt.m_vOrigin);
           
@@ -1858,8 +1904,9 @@ class CBotFindLastEnemyUtil : CBotUtil
         if ( iRandomGoal != -1 )
         {
             RCBotSchedule@ sched = RCBotSchedule();
-            sched.addTask(CFindPathTask(bot,iRandomGoal,bot.m_pEnemy.GetEntity()));
+            sched.addTask(CFindPathTask(bot,iRandomGoal,bot.m_pLastEnemy.GetEntity()));
             sched.addTask(CRemoveLastEnemy());
+            sched.addTask(CBotTaskWait(1.0,UTIL_EntityOrigin(bot.m_pLastEnemy.GetEntity())));
 
             return sched;
         }
@@ -2004,6 +2051,7 @@ class CBotUtilities
             m_Utils.insertLast(CBotHealPlayerUtil());
             m_Utils.insertLast(CBotRevivePlayerUtil());
             m_Utils.insertLast(CBotUseTankUtil());
+            m_Utils.insertLast(CCheckoutNoiseUtil());
     }
 
     void reset ()

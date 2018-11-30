@@ -119,6 +119,7 @@ class CBotVisibles
 					if ( !player.FInViewCone(m_pCurrentEntity) )
 					{
 						setVisible(m_pCurrentEntity,false,false);
+						//UTIL_DebugMsg(m_pBot.m_pPlayer,"!FInViewCone " + m_pCurrentEntity.GetClassname(),DEBUG_VISIBLES);
 						continue;
 					}			
 
@@ -132,6 +133,7 @@ class CBotVisibles
 					if ( flags == 0 )
 					{
 						setVisible(m_pCurrentEntity,false,false);
+					//	UTIL_DebugMsg(m_pBot.m_pPlayer,""+m_pCurrentEntity.GetClassname()+" flags == 0 " + m_pCurrentEntity.GetClassname(),DEBUG_VISIBLES);
 						continue;		
 					}
 
@@ -159,6 +161,7 @@ class CBotVisibles
 				}
 			}
 
+			//UTIL_DebugMsg(m_pBot.m_pPlayer,"setVisible("+m_pCurrentEntity.GetClassname()+","+(bBodyVisible?"true)":"false)"),DEBUG_VISIBLES);
 			setVisible(m_pCurrentEntity,bBodyVisible,bHeadVisible);
 
 		}while ( iLoops < iMaxLoops );

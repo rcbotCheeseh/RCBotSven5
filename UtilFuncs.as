@@ -51,6 +51,14 @@
 
 	}
 
+	Vector UTIL_EntityHitBoxRandom ( CBaseEntity@ entity )
+	{
+		return entity.pev.absmin + 
+		Vector(Math.RandomFloat(0,entity.pev.size.x),
+		Math.RandomFloat(0,entity.pev.size.y),
+		Math.RandomFloat(0,entity.pev.size.z));// (entity.pev.size / 2);
+	}
+
 	CBasePlayer@ UTIL_FindNearestPlayerOnTop ( CBasePlayer@ pOnTopOf, float minDistance = 512.0f )
 	{
 		CBasePlayer@ ret = null;
@@ -293,7 +301,7 @@
 		
     bool UTIL_IsVisible ( Vector vFrom, CBaseEntity@ pTo, CBaseEntity@ ignore )
     {
-		return UTIL_IsVisible(vFrom,UTIL_EntityOrigin(pTo),ignore);
+		return UTIL_IsVisible(vFrom,UTIL_EntityOrigin(pTo),pTo,ignore);
     }   
 		
     bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ pTo, CBaseEntity@ ignore )

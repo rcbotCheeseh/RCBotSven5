@@ -150,7 +150,7 @@ final class RCBot : BotManager::BaseBot
 				{
 					sched.addTask(task);
 					sched.addTask(CBotMoveToOrigin(vTalker));
-					sched.addTask(CBotTaskWait(90.0f));
+					sched.addTask(CBotTaskWait(90.0f,vTalker));
 					OK = true;
 				}
 			}
@@ -692,8 +692,13 @@ case 	CLASS_BARNACLE	:
 		{
 			if ( m_pCurrentSchedule is null )
 				m_pCurrentSchedule = RCBotSchedule();
+
+				Vector vface = wpt.m_vOrigin;
+
+				if ( pNextWpt !is null )
+					vface = pNextWpt.m_vOrigin;
 			
-			m_pCurrentSchedule.addTaskFront(CBotTaskWait(1.75f));
+			m_pCurrentSchedule.addTaskFront(CBotTaskWait(1.75f,vface));
 		}
 		if ( wpt.hasFlags(W_FL_TELEPORT) )
 		{
@@ -1205,7 +1210,7 @@ case 	CLASS_BARNACLE	:
 			if ( m_pEnemy.GetEntity() is null )
 				m_pEnemy = ent;
 			else if ( getEnemyFactor(ent) < getEnemyFactor(m_pEnemy) )
-				m_pEnemy = ent;
+				m_pEnemy = ent;		
 		}
 
 		if ( ent.GetClassname() == "func_tank" )
