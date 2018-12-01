@@ -1627,7 +1627,7 @@ final class RCBotNavigator
 
 			iTimesToPop = bot.touchedWpt(wpt,pNextWpt,pThirdWpt);
 
-			m_fNextTimeout = g_Engine.time + 5.0;
+			m_fNextTimeout = g_Engine.time + 30.0;
 
 			while ( (m_currentRoute.length()) > 0 && (iTimesToPop > 0) )
 			{

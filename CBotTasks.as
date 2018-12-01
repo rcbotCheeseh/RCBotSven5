@@ -598,7 +598,7 @@ final class CUseButtonTask : RCBotTask
     {
         m_pButton = button;
         m_fDefaultTimeout = 10.0f;
-        m_bIsMomentary = (button.GetClassname() == "momentary_rot_button");
+        m_bIsMomentary = (button.GetClassname() == "momentary_rot_button")||(button.GetClassname() == "func_rot_button");
         m_bMomentaryStarted = false;
     } 
 
@@ -622,29 +622,31 @@ final class CUseButtonTask : RCBotTask
                 Complete();
         }
 
-        bot.setLookAt(vOrigin,PRIORITY_TASK);
+        bot.setLookAt(vOrigin,PRIORITY_TASK+1);
 
-        if ( bot.distanceFrom(pButton) > 64 )
+        if ( (vOrigin-bot.m_pPlayer.pev.origin).Length2D() > 80 )
         {
             bot.setMove(vOrigin);
-            UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(m_pCharger.pev.origin)",DEBUG_TASK);
+            UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(vOrigin)",DEBUG_TASK);
         }
         else
-        {
-
-           
+        {           
             bot.StopMoving();
+
+            if ( vOrigin.z > (bot.m_pPlayer.EyePosition().z+8) )
+            {
+                if ( Math.RandomLong(0,100) > 50 )
+                    bot.PressButton(IN_JUMP);
+            }            
 
              if ( bot.m_pPlayer.FInViewCone(pButton) )
              {
-
                 UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);            
 
                 if ( m_bIsMomentary || ( Math.RandomLong(0,100) < 99)  )
                 {
                     bot.PressButton(IN_USE);
                 }
-
              }
 
             if (fButtonVelocity>0.0f)

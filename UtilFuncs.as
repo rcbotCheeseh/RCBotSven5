@@ -552,7 +552,7 @@ CBaseEntity@ UTIL_FindNearestEntity ( string classname, Vector vOrigin, float fM
 		// within reaching distance
 		if ( fDist < fMinDist )
 		{
-			if ( !bVisible || UTIL_IsVisible(vOrigin,UTIL_EntityOrigin(pent)) )
+			if ( !bVisible || UTIL_IsVisible(vOrigin,pent,pent) )
 			{
 				fMinDist = fDist;
 				@pNearest = pent;                           
