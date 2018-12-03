@@ -914,6 +914,9 @@ class CWaypoints
 						if ( dist > 96 )
 							continue;
 
+						if ( !UTIL_IsVisible(added.m_vOrigin,pent,ignore) )
+							continue;
+
 						if ( pent.pev.owner is null )
 						{					
 							if ( classname.SubString(0,7) == "weapon_")
@@ -1548,11 +1551,21 @@ final class RCBotNavigator
 		}
 	}*/
 
+	float m_fExecutionTime = 0.0f;
+
 	void execute ( RCBot@ bot )
-	{
+	{		
+		// whenever we touch a waypoint or execution is paused
+		// the timeout is reset
+		if ( m_fExecutionTime < g_Engine.time )
+		{
+			UTIL_DebugMsg(bot.m_pPlayer,"m_fExecutionTime < g_Engine.time",DEBUG_NAV);
+			m_fNextTimeout = g_Engine.time + 10.0f;
+		}
+
 		if ( m_fNextTimeout < g_Engine.time )
 		{
-			UTIL_DebugMsg(bot.m_pPlayer,"m_fNextTimeout < g_Engine.time",DEBUG_TASK);
+			UTIL_DebugMsg(bot.m_pPlayer,"m_fNextTimeout < g_Engine.time",DEBUG_NAV);
 			bot.m_iLastFailedWaypoint = m_iCurrentWaypoint;
 			state = NavigatorState_Fail;
 			return;
@@ -1627,7 +1640,7 @@ final class RCBotNavigator
 
 			iTimesToPop = bot.touchedWpt(wpt,pNextWpt,pThirdWpt);
 
-			m_fNextTimeout = g_Engine.time + 30.0;
+			m_fNextTimeout = g_Engine.time + 10.0f;
 
 			while ( (m_currentRoute.length()) > 0 && (iTimesToPop > 0) )
 			{
@@ -1722,11 +1735,12 @@ final class RCBotNavigator
 					else
 						bot.setBlockingEntity(null);
 				}
-
 			}
 		}	
 
-			return;
+		m_fExecutionTime = g_Engine.time + 0.5f;
+
+		return;
 	}
 
 	int iCurrentNode = -1;
