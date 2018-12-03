@@ -68,6 +68,8 @@
 						botModel = args[1];
 				}
 
+				profileFile.Close();
+
 				m_Profiles.insertLast(BotProfile(botName, botSensitivity, botModel));
 			}
 		}

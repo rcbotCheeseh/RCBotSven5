@@ -443,6 +443,9 @@ namespace BotManager
 		private CreateBotFn@ m_pCreateBotFn;
 		
 		private bool m_bInitialized = false;
+
+		uint m_iBotQuota = 0;
+		float m_fAddBotTime = 0;
 		
 		BotManager( CreateBotFn@ pCreateBotFn )
 		{
@@ -553,6 +556,43 @@ namespace BotManager
 			return HOOK_CONTINUE;
 		}
 
+		void ReadConfig ()
+		{
+			File@ config = g_FileSystem.OpenFile( "scripts/plugins/BotManager/config/config.ini", OpenFile::READ);
+
+			if ( config is null )
+				return;
+
+				while ( !config.EOFReached() )
+				{
+					string fileLine; 
+					
+					config.ReadLine( fileLine );
+
+					if ( fileLine[0] == "#" )
+						continue;
+
+					array<string> args = fileLine.Split( "=" );
+					if ( args.length() < 2 )
+						continue;
+
+					args[0].Trim(); 
+					args[1].Trim();
+
+					if ( args[0] == "quota" )
+					{
+						int val = atoi(args[1]);
+
+						if ( val <= g_Engine.maxClients )
+						{
+							m_iBotQuota = uint(val);
+						}
+					}
+				}
+
+				config.Close();
+		}
+
 
 		void PluginInit()
 		{
@@ -568,6 +608,8 @@ namespace BotManager
 			//g_Hooks.RegisterHook( Hooks::CEntityFuncs, DispatchKeyValueHook(this.DispatchKeyValue) );
 			@m_pScheduledFunction = g_Scheduler.SetInterval( @this, "Think", 0.1 );
 			@m_pWaypointDisplay = g_Scheduler.SetInterval(@this, "WaypointDisplay", 1);
+
+			ReadConfig();
 
 			//If the plugin was reloaded, find all bots and add them again.
 			for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
@@ -609,6 +651,8 @@ namespace BotManager
 		
 		HookReturnCode MapChange()
 		{
+		    m_fAddBotTime = g_Engine.time + 5.0f;
+
 			m_Bots.resize( 0 );
 			
 			g_Profiles.resetProfiles();
@@ -767,6 +811,16 @@ namespace BotManager
 				
 				pBot.Think();
 				pBot.RunPlayerMove();
+			}
+
+			if ( m_Bots.length() < m_iBotQuota )
+			{
+				if ( m_fAddBotTime < g_Engine.time )
+				{
+					BotManager::BaseBot@ pBot = g_BotManager.CreateBot( );
+
+					m_fAddBotTime = g_Engine.time + 5.0f;
+				}
 			}
 			
 			g_Waypoints.runVisibility();

@@ -38,8 +38,10 @@ CConCommand@ m_pDebugBot;
 CConCommand@ m_pTeleportSet;
 CConCommand@ m_pTeleport;
 CConCommand@ m_pBotCam;
+CConCommand@ m_pBotQuota;
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
+
 //CCVar@ m_pAutoConfig;
 
 //bool g_DebugOn = false;
@@ -108,7 +110,7 @@ void PluginInit()
 	@m_pTeleport = @CConCommand("teleport","teleport [player name] . teleport you or player",@Teleport);
 	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
 	@m_pRCBotKickbots = @CConCommand( "kickbots", "Kicks all bots", @RCBot_Kickbots );
-
+	@m_pBotQuota = @CConCommand ( "quota", "number of bots to add", @RCBot_Quota );
 	@m_pBotCam = @CConCommand( "botcam", "Bot camera", @RCBot_BotCam );
 
 	@m_pRCBotSearch = @CConCommand( "search", "test search func", @RCBotSearch );
@@ -117,6 +119,19 @@ void PluginInit()
 	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
+}
+
+void RCBot_Quota ( const CCommand@ args )
+{
+	if ( args.ArgC() > 1 )
+	{
+		int val = atoi(args[1]);
+
+		if ( val > g_Engine.maxClients )
+			val = g_Engine.maxClients;
+
+	  	g_BotManager.m_iBotQuota = uint(val);
+	}
 }
 
 void TeleportSet ( const CCommand@ args )
