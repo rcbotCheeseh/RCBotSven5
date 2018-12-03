@@ -54,7 +54,22 @@ bool g_bTeleportSet = false;
 
 CBasePlayer@ ListenPlayer ()
 {
-	return  g_PlayerFuncs.FindPlayerByIndex( 1 );
+	//If the plugin was reloaded, find all bots and add them again.
+	for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+	{
+		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+		
+		if( pPlayer is null )
+			continue;
+			
+		if( ( pPlayer.pev.flags & FL_FAKECLIENT ) == FL_FAKECLIENT )
+			continue;
+			
+		return  pPlayer;
+	}
+
+	return null;
+
 }
 
 void MapInit()
@@ -132,6 +147,8 @@ void RCBot_Quota ( const CCommand@ args )
 
 	  	g_BotManager.m_iBotQuota = uint(val);
 	}
+	else
+		BotMessage("quota is " + g_BotManager.m_iBotQuota);
 }
 
 void TeleportSet ( const CCommand@ args )
@@ -530,7 +547,7 @@ void WaypointLoad ( const CCommand@ args )
 
 void WaypointAdd ( const CCommand@ args )
 {
-	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player =  ListenPlayer();
 	array<string> types;
 
 	for ( int i = 1 ; i < args.ArgC(); i ++ )
@@ -558,7 +575,7 @@ void WaypointOn ( const CCommand@ args )
 
 void WaypointDelete ( const CCommand@ args )
 {
-	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player =  ListenPlayer();
 
 	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
@@ -578,35 +595,35 @@ void WaypointSave ( const CCommand@ args )
 
 void PathWaypoint_Create1 ( const CCommand@ args )
 {
-	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player =  ListenPlayer();
 
 	g_Waypoints.PathWaypoint_Create1(player);
 }
 
 void PathWaypoint_Create2 ( const CCommand@ args )
 {
-	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player = ListenPlayer();
 	
 	g_Waypoints.PathWaypoint_Create2(player);
 }
 
 void PathWaypoint_Remove1 ( const CCommand@ args )
 {
-	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player = ListenPlayer();
 
 	g_Waypoints.PathWaypoint_Remove1(player);
 }
 
 void PathWaypoint_Remove2 ( const CCommand@ args )
 {
-	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player = ListenPlayer();
 	
 	g_Waypoints.PathWaypoint_Remove2(player);
 }
 
 void PathWaypoint_RemovePathsFrom  ( const CCommand@ args )
 {
-	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player = ListenPlayer();
 
 	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 
@@ -620,7 +637,7 @@ void PathWaypoint_RemovePathsFrom  ( const CCommand@ args )
 
 void PathWaypoint_RemovePathsTo ( const CCommand@ args )
 {
-	CBasePlayer@ player = g_PlayerFuncs.FindPlayerByIndex( 1 );
+	CBasePlayer@ player =  ListenPlayer();
 
 	int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 	g_Waypoints.playsound(player,wpt!=-1);
