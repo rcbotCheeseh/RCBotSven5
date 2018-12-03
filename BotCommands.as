@@ -183,10 +183,17 @@ void Explo ( const CCommand@ args )
 		// Ok set noise to forward vector
 	g_EngineFuncs.MakeVectors(player.pev.v_angle);
 
+	int magnitude = 512;
+
+	if ( args.ArgC() > 1 )
+	{
+		magnitude = atoi(args[1]);
+	}
+
 	// CreateExplosion(const Vector& in vecCenter, const Vector& in vecAngles, edict_t@ pOwner, int iMagnitude, bool fDoDamage)
 	g_Utility.TraceLine( player.EyePosition(), player.EyePosition() + g_Engine.v_forward * 2048.0f, dont_ignore_monsters,dont_ignore_glass, player.edict(), tr );
 
-	g_EntityFuncs.CreateExplosion(tr.vecEndPos - g_Engine.v_forward*16,Vector(0,0,0),player.edict(),1024,true);
+	g_EntityFuncs.CreateExplosion(tr.vecEndPos - g_Engine.v_forward*16,Vector(0,0,0),player.edict(),magnitude,true);
 }
 
 void NoTouchFunc ( const CCommand@ args )
