@@ -317,7 +317,7 @@ class CWaypointTypes
 		//m_Types.insertLast(CWaypointType("button",W_FL_BUTTON,WptColor(200,200,255)));
 	}
 
-	void printInfo ( CBasePlayer@ player, int flags )
+	string getInfo ( CBasePlayer@ player, int flags )
 	{
 		string szflags = "";
 
@@ -333,8 +333,8 @@ class CWaypointTypes
 
 		if ( szflags == "" )
 			szflags = "NO FLAGS";
-		//BotMessage(szflags);
-		SayMessage(player,szflags);
+
+		return szflags;
 	}
 
 	WptColor getColour ( int flags )
@@ -975,7 +975,9 @@ class CWaypoints
 		{
 			CWaypoint@ wpt = m_Waypoints[index];
 
-			g_WaypointTypes.printInfo(player,wpt.m_iFlags);
+			string info = g_WaypointTypes.getInfo(player,wpt.m_iFlags);
+
+			SayMessage(player,"ID = " + index + " FLAGS = " + info);
 		}
 	}
 
