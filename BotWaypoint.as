@@ -2,6 +2,7 @@
 #include "FileBuffer"
 #include "UtilFuncs"
 #include "CBotBits"
+#include "BotWaypointScript"
 
 CWaypoints g_Waypoints;
 CWaypointTypes g_WaypointTypes;
@@ -953,6 +954,38 @@ class CWaypoints
 		return false;
 	}
 
+	int getIncompleteObjective ()
+	{
+		array<int> objectives = {};
+
+		for( int i = 0; i < m_iNumWaypoints; i ++ )
+		{
+			if ( (m_Waypoints[i].m_iFlags & W_FL_DELETED) == W_FL_DELETED )
+				continue;
+
+			if ( (m_Waypoints[i].m_iFlags & W_FL_IMPORTANT) == W_FL_IMPORTANT )
+			{
+
+				if ( !g_WaypointScripts.isObjectiveComplete(i) )
+				{
+					objectives.insertLast(i);
+					BotMessage("SCRIPT Waypoint " + i + " INCOMPLETE");
+				}
+				else
+				{
+					BotMessage("SCRIPT Waypoint " + i + " COMPLETE");
+				}
+			}
+		}
+
+		if ( objectives.length() > 0 )
+		{
+			return objectives[Math.RandomLong(0,objectives.length()-1)];
+		}
+
+		return -1;
+	}
+
 	int freeWaypointIndex ()
 	{
 		for( int i = 0; i < MAX_WAYPOINTS; i ++ )
@@ -1168,10 +1201,12 @@ class CWaypoints
 		
 		File@ f;
 
-		filename += ".rcwa";
-		
+		filename += ".rcwa";		
 
 		ClearWaypoints();
+
+		// read waypoint objective script
+		g_WaypointScripts.Read();
 
 		// try to open custom waypoint first		
 		@f  = g_FileSystem.OpenFile( "scripts/plugins/store/" + filename , OpenFile::READ);

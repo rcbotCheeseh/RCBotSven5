@@ -1850,7 +1850,13 @@ class CBotGotoObjectiveUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT,failed);
+        int iRandomGoal = -1;
+
+        // use script if exists
+        if ( g_WaypointScripts.ScriptExists() )
+            iRandomGoal = g_Waypoints.getIncompleteObjective();
+        else
+            iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT,failed);
 
         m_iLastGoal = iRandomGoal;
 
