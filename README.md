@@ -199,6 +199,35 @@ Many waypoints have been converted from RCBot 1, however some waypoint types now
     3. The 'wait lift' waypoint is now 'wait'
     4. Ladder waypoints aren't used, but bots can still climb ladders without the need for ladder waypoints. Just make sure the path is slightly angled so that bots do not look in the wrong direction going up the ladder.
     
+# cheats
+
+sometimes you need cheats during debugging to make things easier, some are below
+
+    as_command rcbot.godmode
+    as_command rcbot.noclip
+    as_command rcbot.notarget
+    as_command rcbot.notouch                       (puts player into observer mode, ensure survival mode is disabled)
+    as_command rcbot.explo [magnitude]             (creates an explosion to kill of bosses quickly)
+    as_command rcbot.teleport_wpt [waypoint id]    (teleports player to waypoint ID)
+    
+# automatically adding bots
+
+edit the config.ini file in BotManager/config
+
+change quota=0 to quota=[number of bots to add automatically]
+	
+# Bot cam
+
+There is a bot camera that the listen player can sit back and watch, which follows bots in third person. 
+
+switch on botcam
+
+    as_command rcbot.botcam on
+
+switch off botcam
+
+    as_command rcbot.botcam off
+    
 # Debugging
 
 To debug a bot use the command
