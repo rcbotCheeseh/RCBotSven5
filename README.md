@@ -242,6 +242,8 @@ Each line in the ini file indicates one objective or important waypoint (lines s
 	distance     (distance from waypoint in units)
 	frame        (frame for used buttons is typically 1)
 	
+use rcbot.search to get these values
+	
 *[operator] can be either
 
 	>            (greater than)
@@ -272,4 +274,11 @@ hplanet is the following:
  The line "176,   164,   325, null, null, null" means that entity index 325 will be null if completed (its a func_breakable)
  
  The point of using a script is to let bots know to no longer go to completed objectives, and know the order of objectives particularly for complex maps.
+ 
+ Tips:
+ 
+ check vertical opening doors have been opened by checking previous and after z origin 
+ check horizontally opened doors by checking previous and after x/y origin
+ check buttons have been pressed by checking frame == 1
+ 
 
