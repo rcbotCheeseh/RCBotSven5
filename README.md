@@ -243,6 +243,7 @@ Each line in the ini file indicates one objective or important waypoint (lines s
 	frame        (frame for used buttons is typically 1)
 	
 *[operator] can be either
+
 	>            (greater than)
 	<            (less than)
 	=            (equal to)
