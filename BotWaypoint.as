@@ -966,14 +966,21 @@ class CWaypoints
 			if ( (m_Waypoints[i].m_iFlags & W_FL_IMPORTANT) == W_FL_IMPORTANT )
 			{
 
-				if ( g_WaypointScripts.canDoObjective(i) == BotWaypointScriptResult_Incomplete )
+				switch ( g_WaypointScripts.canDoObjective(i) )				
 				{
+					case BotWaypointScriptResult_Incomplete:
 					objectives.insertLast(i);
-					BotMessage("SCRIPT Waypoint " + i + " INCOMPLETE");
-				}
-				else
-				{
-					BotMessage("SCRIPT Waypoint " + i + " COMPLETE");
+					BotMessage("SCRIPT Waypoint " + i + " BotWaypointScriptResult_Incomplete");
+					break;
+					case BotWaypointScriptResult_Complete:
+					BotMessage("SCRIPT Waypoint " + i + " BotWaypointScriptResult_Complete");
+					break;
+					case BotWaypointScriptResult_Previous_Incomplete:
+					BotMessage("SCRIPT Waypoint " + i + " BotWaypointScriptResult_Previous_Incomplete");
+					break;
+					case BotWaypointScriptResult_Error:
+					BotMessage("SCRIPT Waypoint " + i + " BotWaypointScriptResult_Error");
+					break;
 				}
 			}
 		}

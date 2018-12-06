@@ -59,7 +59,7 @@ BotObjectiveScript@ ObjectiveScriptRead ( string line )
 
     int id = atoi(args[0]);
     int prev = atoi(args[1]);
-    string ent = args[2];
+    int ent = atoi(args[2]);
     string param = args[3];
     string op = args[4];    
 
@@ -82,17 +82,17 @@ class BotObjectiveScript
 {
     int id;
     int previous_id;
-    string entity_name;
+    int entity_id;
     string parameter;
     ScriptOperator operator;
     float value;
 
     BotObjectiveScript ( int wptid, int prev_id,
-     string ent_name, string param, ScriptOperator op, float val )
+     int ent_id, string param, ScriptOperator op, float val )
     {
         id = wptid;
         previous_id = prev_id;
-        entity_name = ent_name;
+        entity_id = ent_id;
         parameter = param;
         operator = op;
         value = val;
@@ -181,9 +181,18 @@ class BotWaypointScript
 
         Vector vOrigin = pWpt.m_vOrigin;
 
-        if ( script.entity_name != "null" )
+        if ( script.entity_id != -1 )
         {
-            CBaseEntity@ pent =  UTIL_FindNearestEntity ( script.entity_name, vOrigin, 512.0f, false, false );
+            edict_t@ edict = g_EntityFuncs.IndexEnt(script.entity_id);
+            CBaseEntity@ pent = null;
+
+            if ( edict !is null )
+            {
+                if ( edict.free == 0 )
+                {
+                    @pent = g_EntityFuncs.Instance(edict);
+                }
+            }
 
             if ( pent is null )
             {

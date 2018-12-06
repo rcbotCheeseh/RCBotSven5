@@ -37,6 +37,7 @@ CConCommand@ m_pPathWaypointRemovePathsTo;
 CConCommand@ m_pDebugBot;
 CConCommand@ m_pTeleportSet;
 CConCommand@ m_pTeleport;
+CConCommand@ m_pTeleportWpt;
 CConCommand@ m_pBotCam;
 CConCommand@ m_pBotQuota;
 CCVar@ m_pVisRevs;
@@ -110,7 +111,7 @@ void PluginInit()
 	@m_pPathWaypointRemove2 = @CConCommand( "pathwaypoint_remove2", "removed a new path to", @PathWaypoint_Remove2 );
 	@m_pPathWaypointRemovePathsFrom = @CConCommand( "pathwaypoint_remove_from", "removes paths from this waypoint", @PathWaypoint_RemovePathsFrom );
 	@m_pPathWaypointRemovePathsTo = @CConCommand( "pathwaypoint_remove_to", "removedpaths to this waypoint", @PathWaypoint_RemovePathsTo );
-
+	@m_pTeleportWpt = @CConCommand( "teleport_wpt", "teleport to waypoint", @TeleportWpt );
 	@m_pRCBotWaypointInfo = @CConCommand ( "waypoint_info", "print waypoint info",@WaypointInfo);
 	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type(s)",@WaypointGiveType);
 	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type(s)",@WaypointRemoveType);
@@ -134,6 +135,22 @@ void PluginInit()
 	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
+}
+
+void TeleportWpt ( const CCommand@ args )
+{
+	if ( args.ArgC() > 1 )
+	{
+		int wpt = atoi(args[1]);
+
+		CBasePlayer@ player = ListenPlayer();
+
+		CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(wpt);
+
+		if ( pWpt !is null )
+			player.SetOrigin(pWpt.m_vOrigin);
+	}
+
 }
 
 void RCBot_Quota ( const CCommand@ args )
@@ -470,6 +487,8 @@ void RCBotSearch ( const CCommand@ args )
 	{
 		if ( (UTIL_EntityOrigin(pent) - v).Length() < distance )
 		{
+			int index = g_EntityFuncs.EntIndex(pent.edict());
+
 			if ( pent.GetClassname() == "func_door" )
 			{
 				CBaseDoor@ door = cast<CBaseDoor@>( pent );
@@ -489,7 +508,7 @@ void RCBotSearch ( const CCommand@ args )
 				else
 					BotMessage("Breakable IS NOT AN ENEMY");
 			}
-			BotMessage(pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (UTIL_EntityOrigin(pent)-v).Length());			
+			BotMessage("" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (UTIL_EntityOrigin(pent)-v).Length());			
 		}
 	}
 }
