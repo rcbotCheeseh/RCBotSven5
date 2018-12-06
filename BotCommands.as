@@ -459,12 +459,16 @@ void NoClipModeFunc ( const CCommand@ args )
 
 void RCBotSearch ( const CCommand@ args )
 {
+	float distance = 200.0f;
 	Vector v = ListenPlayer().pev.origin;
 	CBaseEntity@ pent = null;
 
+	if ( args.ArgC() > 1 )
+		distance = atof(args[1]);
+
 	while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
 	{
-		if ( (UTIL_EntityOrigin(pent) - v).Length() < 200 )
+		if ( (UTIL_EntityOrigin(pent) - v).Length() < distance )
 		{
 			if ( pent.GetClassname() == "func_door" )
 			{

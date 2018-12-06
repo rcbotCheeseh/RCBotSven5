@@ -104,6 +104,14 @@ class BotObjectiveScript
     }
 }
 
+enum BotWaypointScriptResult
+{
+    BotWaypointScriptResult_Error,
+    BotWaypointScriptResult_Previous_Incomplete,
+    BotWaypointScriptResult_Incomplete,
+    BotWaypointScriptResult_Complete
+}
+
 class BotWaypointScript
 {
     array<BotObjectiveScript@> m_scripts;
@@ -143,7 +151,7 @@ class BotWaypointScript
         }
     }
 
-    bool isObjectiveComplete ( int wptid )
+    BotWaypointScriptResult canDoObjective ( int wptid )
     {
         BotObjectiveScript@ script = getScript(wptid);
         CWaypoint@ pWpt;
@@ -151,15 +159,15 @@ class BotWaypointScript
         if ( script is null )
         {
             BotMessage("SCRIPT no script found for wpt id " + wptid);
-            return false;
+            return BotWaypointScriptResult_Error;
         }
 
         if ( script.previous_id >= 0 )
         {
-            if ( !isObjectiveComplete(script.previous_id) )
+            if ( canDoObjective(script.previous_id) != BotWaypointScriptResult_Complete )
             {
-                BotMessage("SCRIPT !isObjectiveComplete(script.previous_id) " + script.previous_id + " INCOMPLETE");
-                return false;
+                BotMessage("SCRIPT isObjectiveComplete(script.previous_id) != BotWaypointScriptResult_Complete" );
+                return BotWaypointScriptResult_Previous_Incomplete;
             }
         }
 
@@ -167,8 +175,8 @@ class BotWaypointScript
 
         if ( pWpt is null )
         {
-            BotMessage("SCRIPT pWpt is null INCOMPLETE");
-            return false;
+            BotMessage("SCRIPT pWpt is null, BotWaypointScriptResult_Error");
+            return BotWaypointScriptResult_Error;
         }
 
         Vector vOrigin = pWpt.m_vOrigin;
@@ -181,27 +189,29 @@ class BotWaypointScript
             {
                 if ( script.parameter == "null" )
                 {
-                    BotMessage("SCRIPT script.parameter == 'null' COMPLETE");
-                    return true;
+                    BotMessage("SCRIPT script.parameter == 'null' BotWaypointScriptResult_Complete");
+                    return BotWaypointScriptResult_Complete;
                 }
 
-                BotMessage("SCRIPT pent is null INCOMPLETE");
-                return false;
+                BotMessage("SCRIPT pent is null BotWaypointScriptResult_Incomplete");
+                return BotWaypointScriptResult_Incomplete;
             }
 
             if ( script.parameter == "distance" )
             {
                 float distance = (UTIL_EntityOrigin(pent) - vOrigin).Length();
 
-                return CheckScriptOperator(distance,script.operator,script.value);
+                if ( CheckScriptOperator(distance,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
             }
             else if ( script.parameter == "frame" )
             {
-                return CheckScriptOperator(pent.pev.frame,script.operator,script.value);
+                if ( CheckScriptOperator(pent.pev.frame,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
             }
         }        
 
-        return false;
+        return BotWaypointScriptResult_Incomplete;
     }
 
     BotObjectiveScript@ getScript ( int wptid )

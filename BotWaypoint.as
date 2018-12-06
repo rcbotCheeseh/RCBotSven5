@@ -966,7 +966,7 @@ class CWaypoints
 			if ( (m_Waypoints[i].m_iFlags & W_FL_IMPORTANT) == W_FL_IMPORTANT )
 			{
 
-				if ( !g_WaypointScripts.isObjectiveComplete(i) )
+				if ( g_WaypointScripts.canDoObjective(i) == BotWaypointScriptResult_Incomplete )
 				{
 					objectives.insertLast(i);
 					BotMessage("SCRIPT Waypoint " + i + " INCOMPLETE");
