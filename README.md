@@ -220,28 +220,34 @@ Also make sure
 # Objective Scripting
 a new addition to RCBOT AS edition is objective scripting for "important" waypoints. These are waypoints bots will use to complete objectives. an additional script for each map is optional which allows bots to understand which objectives to complete.
 
-Objective scripts are .ini files and exist in BotManager\scr
+Objective scripts are .ini files and exist in BotManager/scr
 
 the hplanet.ini has been done as an example
 
 Each line in the ini file indicates one objective or important waypoint (lines starting '#' are comments). 
 
-<important waypoint ID>,<previous important waypoint ID>,<important entity index>, <important entity index parameter>, <operator>, <value>
+    [important waypoint ID],[previous important waypoint ID],[important entity index],[important entity index parameter],[operator], [value]
 	
-<important waypoint ID> is the ID of the important (objective) waypoint. Use rcbot.waypoint_info to get the ID.
-<previous important waypoint ID> is the ID of the previous important waypoint that the bot needs to complete before this one. IF none, set this to -1. Usually the first objective will not have a previous objective.
-<important entity index> is the entity index of an entity to check against. use rcbot.search <distance> to list the entity index and parameters
-<important entity index parameter> can be any of the following
+*[important waypoint ID] is the ID of the important (objective) waypoint. Use rcbot.waypoint_info to get the ID.
+	
+*[previous important waypoint ID] is the ID of the previous important waypoint that the bot needs to complete before this one. IF none, set this to -1. Usually the first objective will not have a previous objective.
+	
+*[important entity index] is the entity index of an entity to check against. use rcbot.search <distance> to list the entity index and parameters
+    
+*[important entity index parameter] can be any of the following
+    
         x            (x origin)
 	y            (y origin)
 	z            (z origin)
 	distance     (distance from waypoint in units)
 	frame        (frame for used buttons is typically 1)
-<operator> can be either
+	
+*[operator] can be either
 	>            (greater than)
 	<            (less than)
 	=            (equal to)
-<value> can be any number 
+	      
+*[value] can be any number 
 	
 The objective is considered completed if the <important entity index parameter> <operator> <value> is true
 e.g.
