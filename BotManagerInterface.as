@@ -611,6 +611,8 @@ namespace BotManager
 
 			ReadConfig();
 
+			m_fAddBotTime = g_Engine.time + 10.0f;
+
 			//If the plugin was reloaded, find all bots and add them again.
 			for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
 			{

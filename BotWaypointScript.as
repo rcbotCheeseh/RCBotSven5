@@ -218,6 +218,27 @@ class BotWaypointScript
                 if ( CheckScriptOperator(pent.pev.frame,script.operator,script.value) )
                     return BotWaypointScriptResult_Complete;
             }
+            else if ( script.parameter == "x" )
+            {
+                Vector pentOrigin = UTIL_EntityOrigin(pent);
+
+                if ( CheckScriptOperator(pentOrigin.x,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+            }
+            else if ( script.parameter == "y" )
+            {
+                Vector pentOrigin = UTIL_EntityOrigin(pent);
+
+                if ( CheckScriptOperator(pentOrigin.y,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+            }
+            else if ( script.parameter == "z" )
+            {
+                Vector pentOrigin = UTIL_EntityOrigin(pent);
+
+                if ( CheckScriptOperator(pentOrigin.z,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+            }                        
         }        
 
         return BotWaypointScriptResult_Incomplete;

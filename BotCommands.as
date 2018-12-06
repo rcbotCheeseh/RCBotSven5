@@ -141,14 +141,25 @@ void TeleportWpt ( const CCommand@ args )
 {
 	if ( args.ArgC() > 1 )
 	{
-		int wpt = atoi(args[1]);
+		string arg = args[1];
+		CWaypoint@ pWpt = null;
 
 		CBasePlayer@ player = ListenPlayer();
+		int wpt = atoi(args[1]);
 
-		CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(wpt);
+		if ( arg == "important" )
+		{
+			wpt = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT);
+		}
+		
+		if ( wpt >= 0 )
+		{
 
-		if ( pWpt !is null )
-			player.SetOrigin(pWpt.m_vOrigin);
+			@pWpt = g_Waypoints.getWaypointAtIndex(wpt);
+		
+			if ( pWpt !is null )
+				player.SetOrigin(pWpt.m_vOrigin);
+		}
 	}
 
 }
@@ -508,7 +519,10 @@ void RCBotSearch ( const CCommand@ args )
 				else
 					BotMessage("Breakable IS NOT AN ENEMY");
 			}
-			BotMessage("" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (UTIL_EntityOrigin(pent)-v).Length());			
+
+			Vector vOrigin = UTIL_EntityOrigin(pent);
+
+			BotMessage("" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (vOrigin-v).Length() + " (x=" + vOrigin.x + ",y=" + vOrigin.y + ",z=" + vOrigin.z + ")" );			
 		}
 	}
 }
