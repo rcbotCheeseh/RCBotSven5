@@ -249,7 +249,7 @@ Each line in the ini file indicates one objective or important waypoint (lines s
 	      
 *[value] can be any number 
 	
-The objective is considered completed if the <important entity index parameter> <operator> <value> is true
+The objective is considered completed if the [important entity index parameter] [operator] [value] is true
 e.g.
 	....,frame, =, 1
 	
