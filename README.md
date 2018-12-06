@@ -216,4 +216,53 @@ And make sure to toggle either of the following
 Also make sure
 
     developer 1
+
+# Objective Scripting
+a new addition to RCBOT AS edition is objective scripting for "important" waypoints. These are waypoints bots will use to complete objectives. an additional script for each map is optional which allows bots to understand which objectives to complete.
+
+Objective scripts are .ini files and exist in BotManager\scr
+
+the hplanet.ini has been done as an example
+
+Each line in the ini file indicates one objective or important waypoint (lines starting '#' are comments). 
+
+<important waypoint ID>,<previous important waypoint ID>,<important entity index>, <important entity index parameter>, <operator>, <value>
+	
+<important waypoint ID> is the ID of the important (objective) waypoint. Use rcbot.waypoint_info to get the ID.
+<previous important waypoint ID> is the ID of the previous important waypoint that the bot needs to complete before this one. IF none, set this to -1. Usually the first objective will not have a previous objective.
+<important entity index> is the entity index of an entity to check against. use rcbot.search <distance> to list the entity index and parameters
+<important entity index parameter> can be any of the following
+        x            (x origin)
+	y            (y origin)
+	z            (z origin)
+	distance     (distance from waypoint in units)
+	frame        (frame for used buttons is typically 1)
+<operator> can be either
+	>            (greater than)
+	<            (less than)
+	=            (equal to)
+<value> can be any number 
+	
+The objective is considered completed if the <important entity index parameter> <operator> <value> is true
+e.g.
+	....,frame, =, 1
+	
+	will be true if a button is typically pressed and entity index is a button
+
+hplanet is the following:
+
+    #WID, prev, entity search, parameter, operator, value 
+    71,    -1,    204, distance,        >,  280
+    91,    -1,    205, frame,        =,  1
+    129,    71,   238,  frame,        =,  1 
+    164,   129,  336,  frame,        =,  1
+    176,   164,   325, null, null, null
+    180,   176,   391, frame, =, 1
+    196,   180,   400, frame, =, 1
+    193,   196,   423, distance, >, 180
     
+ The first two objectives don't have pre-requisite objectives. The lines with "frame,=,1" are buttons that when pressed will be considered complete.
+ The line "176,   164,   325, null, null, null" means that entity index 325 will be null if completed (its a func_breakable)
+ 
+ The point of using a script is to let bots know to no longer go to completed objectives, and know the order of objectives particularly for complex maps.
+
