@@ -19,21 +19,21 @@ bool CheckScriptOperator ( float check, ScriptOperator op, float value )
     {
         case Equals:
         ret = (check == value);
-        BotMessage("CheckScriptOperator " + check + "==" + value);
+       // BotMessage("CheckScriptOperator " + check + "==" + value);
         break;
         case LessThan:
         ret = (check < value);
-        BotMessage("CheckScriptOperator " + check + "<" + value);
+       // BotMessage("CheckScriptOperator " + check + "<" + value);
         break;
         case GreaterThan:
         ret = (check > value);
-        BotMessage("CheckScriptOperator " + check + ">" + value);
+       // BotMessage("CheckScriptOperator " + check + ">" + value);
         break;
         default:
         break;
     }
 
-    BotMessage("CheckScriptOperator result is " + (ret ? "TRUE" : "FALSE") );
+   // BotMessage("CheckScriptOperator result is " + (ret ? "TRUE" : "FALSE") );
 
     return ret;
 }
@@ -124,8 +124,14 @@ class BotWaypointScript
     void Read ()
     {
         string filename = "" + g_Engine.mapname + ".ini";
-        File@ f = g_FileSystem.OpenFile( "scripts/plugins/BotManager/scr/" + filename , OpenFile::READ);
+        File@ f;
+        
         m_scripts = { };
+
+        @f = g_FileSystem.OpenFile( "scripts/plugins/store/" + filename , OpenFile::READ);
+
+        if ( f is null )
+            @f = g_FileSystem.OpenFile( "scripts/plugins/BotManager/rcw/" + filename , OpenFile::READ);
 
         // Open the file in 'read' mode
 		if( f !is null ) 
@@ -158,7 +164,7 @@ class BotWaypointScript
 
         if ( script is null )
         {
-            BotMessage("SCRIPT no script found for wpt id " + wptid);
+            //BotMessage("SCRIPT no script found for wpt id " + wptid);
             return BotWaypointScriptResult_Error;
         }
 
@@ -166,7 +172,7 @@ class BotWaypointScript
         {
             if ( canDoObjective(script.previous_id) != BotWaypointScriptResult_Complete )
             {
-                BotMessage("SCRIPT isObjectiveComplete(script.previous_id) != BotWaypointScriptResult_Complete" );
+               // BotMessage("SCRIPT isObjectiveComplete(script.previous_id) != BotWaypointScriptResult_Complete" );
                 return BotWaypointScriptResult_Previous_Incomplete;
             }
         }
@@ -175,7 +181,7 @@ class BotWaypointScript
 
         if ( pWpt is null )
         {
-            BotMessage("SCRIPT pWpt is null, BotWaypointScriptResult_Error");
+           // BotMessage("SCRIPT pWpt is null, BotWaypointScriptResult_Error");
             return BotWaypointScriptResult_Error;
         }
 
@@ -198,11 +204,11 @@ class BotWaypointScript
             {
                 if ( script.parameter == "null" )
                 {
-                    BotMessage("SCRIPT script.parameter == 'null' BotWaypointScriptResult_Complete");
+                   // BotMessage("SCRIPT script.parameter == 'null' BotWaypointScriptResult_Complete");
                     return BotWaypointScriptResult_Complete;
                 }
 
-                BotMessage("SCRIPT pent is null BotWaypointScriptResult_Incomplete");
+               // BotMessage("SCRIPT pent is null BotWaypointScriptResult_Incomplete");
                 return BotWaypointScriptResult_Incomplete;
             }
 

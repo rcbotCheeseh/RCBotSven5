@@ -1165,8 +1165,8 @@ class CBotTaskHealPlayer : RCBotTask
         if ( m_fLastVisibleTime == 0.0f )
             m_fLastVisibleTime = g_Engine.time;
 
-        // Look at player
-        bot.setLookAt(vHeal,PRIORITY_OVERRIDE);
+        // Look at player!!! FFSS!!!! LOOK AT THE PLAYER!!!
+        bot.setLookAt(vHeal,PRIORITY_OVERRIDE+2); // + INFINITY!!!
 
         if ( !bot.isCurrentWeapon(medikit) )
         {
@@ -1293,6 +1293,8 @@ class CBotHumanTowerTask : RCBotTask
 
 class CBotTaskUseTeleporter : RCBotTask
 {
+    float m_fPrevDistance = 0.0f;
+
     Vector m_vTeleport;
 
     string DebugString ()
@@ -1308,12 +1310,21 @@ class CBotTaskUseTeleporter : RCBotTask
 
     void execute ( RCBot@ bot )
     {
-        if ( bot.distanceFrom(m_vTeleport) > 200.0 )
-        {
-            Complete();
-        }
-        else
+        float dist = bot.distanceFrom(m_vTeleport);
+
+        if ( dist < 32 )
             bot.StopMoving();
+        else if ( m_fPrevDistance > 0.0f )
+        {
+            bot.setMove(m_vTeleport);
+
+            if ( m_fPrevDistance < dist )
+            {
+                Complete();
+            }
+        }
+
+        m_fPrevDistance = dist;
     }
 
 }
@@ -1871,7 +1882,7 @@ class CBotGotoObjectiveUtil : CBotUtil
 
             CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(iRandomGoal);
 
-            sched.addTask(CBotTaskWait(1.0f,pWpt.m_vOrigin));
+          //  sched.addTask(CBotTaskWait(1.0f,pWpt.m_vOrigin));
 
             bot.setObjectiveOrigin(pWpt.m_vOrigin);
           
@@ -2112,7 +2123,11 @@ class CBotUtilities
             }
         }
         else
+        {
+
             reset();
+            bot.m_pPlayer.Killed(bot.m_pPlayer.pev, 0);
+        }
 
         return null;
     }

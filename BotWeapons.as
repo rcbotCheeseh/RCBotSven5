@@ -427,9 +427,14 @@ class CBotWeapons
                 if ( target !is null )
                 {
                     if ( (target.pev.flags & FL_ONGROUND) != FL_ONGROUND )
-                    {
+                    {                        
                         continue;
                     }
+
+                    Vector vTarget = UTIL_EntityOrigin(target);
+
+                    if ( vTarget.z > pBot.m_pPlayer.pev.origin.z )
+                        continue;
                 }
             }
 

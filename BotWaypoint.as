@@ -970,16 +970,16 @@ class CWaypoints
 				{
 					case BotWaypointScriptResult_Incomplete:
 					objectives.insertLast(i);
-					BotMessage("SCRIPT Waypoint " + i + " BotWaypointScriptResult_Incomplete");
+					BotMessage("SCRIPT Waypoint " + i + " AVAILABLE");
 					break;
 					case BotWaypointScriptResult_Complete:
-					BotMessage("SCRIPT Waypoint " + i + " BotWaypointScriptResult_Complete");
+					BotMessage("SCRIPT Waypoint " + i + " COMPLETE (NOT AVAILABLE)");
 					break;
 					case BotWaypointScriptResult_Previous_Incomplete:
-					BotMessage("SCRIPT Waypoint " + i + " BotWaypointScriptResult_Previous_Incomplete");
+					BotMessage("SCRIPT Waypoint " + i + " INCOMPLETE (NOT AVAILABLE)");
 					break;
 					case BotWaypointScriptResult_Error:
-					BotMessage("SCRIPT Waypoint " + i + " BotWaypointScriptResult_Error");
+					BotMessage("SCRIPT Waypoint " + i + " ERROR (NOT IN SCRIPT)");
 					break;
 				}
 			}
