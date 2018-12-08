@@ -1091,10 +1091,14 @@ case 	CLASS_BARNACLE	:
 		//If the bot is dead and can be respawned, send a button press
 		if( Player.pev.deadflag >= DEAD_RESPAWNABLE )
 		{
-			if( Math.RandomLong( 0, 100 ) > 10 )
-				PressButton(IN_ATTACK);
+			// don't press attack if we're dead and it's survival mode
+			if ( g_SurvivalMode.IsActive() )
+			{
+				if( Math.RandomLong( 0, 100 ) > 10 )
+					PressButton(IN_ATTACK);
 
-			SpawnInit();
+				SpawnInit();
+			}
 
 			return; // Dead , nothing else to do
 		}
