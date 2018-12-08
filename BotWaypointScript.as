@@ -87,7 +87,6 @@ class BotObjectiveScript
     ScriptOperator operator;
     float value;
     EHandle entity;
-    bool entity_init;
 
     BotObjectiveScript ( int wptid, int prev_id,
      int ent_id, string param, ScriptOperator op, float val )
@@ -98,8 +97,10 @@ class BotObjectiveScript
         parameter = param;
         operator = op;
         value = val;
-        entity_init = false;
+        
         entity = null;
+
+        initEntity();
     }    
 
     bool isForWaypoint ( int wptid )
@@ -109,18 +110,18 @@ class BotObjectiveScript
 
     void initEntity ()
     {
-        if ( entity_init == true )
-            return;
-
         if ( entity_id >= 0 && entity_id < g_Engine.maxEntities )
         {
             edict_t@ edict = g_EntityFuncs.IndexEnt(entity_id);
             
             if ( edict !is null )
-                entity = g_EntityFuncs.Instance(edict);
-        }
+            {
+                entity = g_EntityFuncs.Instance(edict);                
+            }
 
-        entity_init = true;        
+            if ( entity.GetEntity() is null )
+                BotMessage("SCRIPT ENTITY " + entity_id + " NOT FOUND" );
+        }    
     }
 }
 
@@ -226,6 +227,8 @@ class BotWaypointScript
                 return BotWaypointScriptResult_Incomplete;
             }
 
+            //BotMessage("ID: " + wptid + " " + script.parameter);
+
             if ( script.parameter == "distance" )
             {
                 float distance = (UTIL_EntityOrigin(pent) - vOrigin).Length();
@@ -258,7 +261,22 @@ class BotWaypointScript
 
                 if ( CheckScriptOperator(pentOrigin.z,script.operator,script.value) )
                     return BotWaypointScriptResult_Complete;
-            }                        
+            }            
+            else if ( script.parameter == "visible" )
+            {
+                float isVisible = 1;
+                
+                if ( pent.pev.effects & EF_NODRAW == EF_NODRAW )
+                    isVisible = 0;                
+
+                if ( CheckScriptOperator(isVisible,script.operator,script.value) )
+                {
+                   // BotMessage("VISIBLE CHECK OK");
+                    return BotWaypointScriptResult_Complete;
+                }
+                //else
+               // BotMessage("VISIBLE CHECK FAIL");
+            }                              
         }        
 
         return BotWaypointScriptResult_Incomplete;

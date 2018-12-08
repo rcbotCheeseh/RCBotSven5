@@ -262,6 +262,8 @@ namespace BotManager
 			{
 				m_vLookAtIsValid = true;
 				m_vLookAt = origin;
+
+				UTIL_DebugMsg(m_pPlayer,"LOOK AT priority is : " + priority,DEBUG_LOOK);
 			}
 		}
 

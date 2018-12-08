@@ -625,7 +625,7 @@ final class CUseButtonTask : RCBotTask
 
         bot.setLookAt(vOrigin,PRIORITY_TASK+1);
 
-        if ( (vOrigin-bot.m_pPlayer.pev.origin).Length2D() > 80 )
+        if ( (vOrigin-bot.m_pPlayer.pev.origin).Length2D() > 70 )
         {
             bot.setMove(vOrigin);
             UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(vOrigin)",DEBUG_TASK);

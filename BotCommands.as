@@ -297,6 +297,7 @@ void NoTouchFunc ( const CCommand@ args )
 	const int DEBUG_UTIL = 4;
 	const int DEBUG_THINK = 8;
 	const int DEBUG_VISIBLES = 16;
+	const int DEBUG_LOOK = 32;
 void DebugMessages ( const CCommand@ args )
 {
 	CBasePlayer@ player = ListenPlayer();
@@ -315,6 +316,8 @@ void DebugMessages ( const CCommand@ args )
 			iLevel = DEBUG_THINK;
 		else if ( args[1] == "visibles" )
 			iLevel = DEBUG_VISIBLES;	
+		else if ( args[1] == "look" )
+			iLevel = DEBUG_LOOK;
 
 		if ( g_DebugLevel & iLevel == iLevel )
 		{
