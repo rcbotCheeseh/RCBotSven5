@@ -189,9 +189,6 @@ class BotWaypointScript
             return BotWaypointScriptResult_Error;
         }
 
-        // initialize entity if not already done so
-        script.initEntity();
-
         if ( script.previous_id >= 0 )
         {
             if ( canDoObjective(script.previous_id) != BotWaypointScriptResult_Complete )
@@ -213,7 +210,7 @@ class BotWaypointScript
 
         if ( script.entity_id != -1 )
         {
-            CBaseEntity@ pent = script.entity;
+            CBaseEntity@ pent = script.entity.GetEntity();
 
             if ( pent is null )
             {
