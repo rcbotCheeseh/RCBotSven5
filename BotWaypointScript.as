@@ -86,6 +86,8 @@ class BotObjectiveScript
     string parameter;
     ScriptOperator operator;
     float value;
+    EHandle entity;
+    bool entity_init;
 
     BotObjectiveScript ( int wptid, int prev_id,
      int ent_id, string param, ScriptOperator op, float val )
@@ -96,11 +98,29 @@ class BotObjectiveScript
         parameter = param;
         operator = op;
         value = val;
+        entity_init = false;
+        entity = null;
     }    
 
     bool isForWaypoint ( int wptid )
     {
         return id == wptid;
+    }
+
+    void initEntity ()
+    {
+        if ( entity_init == true )
+            return;
+
+        if ( entity_id >= 0 && entity_id < g_Engine.maxEntities )
+        {
+            edict_t@ edict = g_EntityFuncs.IndexEnt(entity_id);
+            
+            if ( edict !is null )
+                entity = g_EntityFuncs.Instance(edict);
+        }
+
+        entity_init = true;        
     }
 }
 
@@ -168,6 +188,9 @@ class BotWaypointScript
             return BotWaypointScriptResult_Error;
         }
 
+        // initialize entity if not already done so
+        script.initEntity();
+
         if ( script.previous_id >= 0 )
         {
             if ( canDoObjective(script.previous_id) != BotWaypointScriptResult_Complete )
@@ -189,16 +212,7 @@ class BotWaypointScript
 
         if ( script.entity_id != -1 )
         {
-            edict_t@ edict = g_EntityFuncs.IndexEnt(script.entity_id);
-            CBaseEntity@ pent = null;
-
-            if ( edict !is null )
-            {
-                if ( edict.free == 0 )
-                {
-                    @pent = g_EntityFuncs.Instance(edict);
-                }
-            }
+            CBaseEntity@ pent = script.entity;
 
             if ( pent is null )
             {

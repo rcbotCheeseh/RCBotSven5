@@ -224,15 +224,23 @@ void NoTargetMode ( const CCommand@ args )
 {
 	CBasePlayer@ player = ListenPlayer();
 
+	if ( args.ArgC() > 1 )
+	{
+		@player = UTIL_FindPlayer(args[1]);
+	}
+
+	if ( player is null )
+		return;
+
 	if ( player.pev.flags & FL_NOTARGET == FL_NOTARGET )
 	{
 		player.pev.flags &= ~FL_NOTARGET;
-		SayMessageAll(player,"No target mode disabled");
+		SayMessageAll(player,"No target mode disabled on " +  player.pev.netname);
 	}
 	else
 	{
 		player.pev.flags |= FL_NOTARGET;
-		SayMessageAll(player,"No target mode enabled");
+		SayMessageAll(player,"No target mode enabled on " +  player.pev.netname);
 	}
 }
 
@@ -456,16 +464,24 @@ void WaypointRemoveType ( const CCommand@ args )
 void GodModeFunc ( const CCommand@ args )
 {
 	CBasePlayer@ player = ListenPlayer();
-	
+
+	if ( args.ArgC() > 1 )
+	{
+		@player = UTIL_FindPlayer(args[1]);
+	}
+
+	if ( player is null )
+		return;
+
 	if ( player.pev.flags & FL_GODMODE == FL_GODMODE )
 	{
 		player.pev.flags &= ~FL_GODMODE;
-		SayMessageAll(player,"God mode disabled");
+		SayMessageAll(player,"God mode disabled on " + player.pev.netname);
 	}
 	else 
 	{
 		player.pev.flags |= FL_GODMODE;
-		SayMessageAll(player,"God mode enabled");
+		SayMessageAll(player,"God mode enabled on " + player.pev.netname);
 	}
 }
 

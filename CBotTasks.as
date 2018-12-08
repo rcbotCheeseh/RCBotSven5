@@ -557,6 +557,17 @@ final class CFindButtonTask : RCBotTask
                         return;                                    
         }
 
+         @pent = UTIL_FindNearestEntity("momentary_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
+        if ( pent !is null )
+        {
+                        UTIL_DebugMsg(bot.m_pPlayer,"momentary_rot_button",DEBUG_TASK);
+                        // add Task to pick up health
+                        m_pContainingSchedule.addTask(CUseButtonTask(pent));
+                        Complete();
+                        return;                                    
+        }     
+        
          @pent = UTIL_FindNearestEntity("trigger_once",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
         if ( pent !is null )
@@ -567,17 +578,7 @@ final class CFindButtonTask : RCBotTask
                         Complete();
                         return;                                    
         }
-
-         @pent = UTIL_FindNearestEntity("momentary_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
-
-        if ( pent !is null )
-        {
-                        UTIL_DebugMsg(bot.m_pPlayer,"momentary_rot_button",DEBUG_TASK);
-                        // add Task to pick up health
-                        m_pContainingSchedule.addTask(CUseButtonTask(pent));
-                        Complete();
-                        return;                                    
-        }        
+   
 
         Failed();
     }
