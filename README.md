@@ -270,6 +270,7 @@ Each line in the ini file indicates one objective or important waypoint (lines s
 	z            (z origin)
 	distance     (distance from waypoint in units)
 	frame        (frame for used buttons is typically 1)
+	visible      (1 is visible, 0 is invisible [e.g. for func_wall_toggle])
 	
 use rcbot.search to get these values
 	
