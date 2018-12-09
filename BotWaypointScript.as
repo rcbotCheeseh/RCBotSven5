@@ -235,8 +235,12 @@ class BotWaypointScript
             }
             else if ( script.parameter == "frame" )
             {
+               // BotMessage("CHECKING FRAME");
                 if ( CheckScriptOperator(pent.pev.frame,script.operator,script.value) )
+                {
+                   // BotMessage("OK!");
                     return BotWaypointScriptResult_Complete;
+                }
             }
             else if ( script.parameter == "x" )
             {

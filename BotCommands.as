@@ -81,6 +81,7 @@ void MapInit()
 	g_Game.AlertMessage( at_console, "************************\n" );	
 
 	g_BotCam.Clear(true);
+	g_MapInit = true;
 
 	g_Game.PrecacheModel("models/mechgibs.mdl");
 

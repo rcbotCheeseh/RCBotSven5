@@ -6,6 +6,8 @@
 *	This is a sample script.
 */
 
+bool g_WaypointsLoaded = false;
+bool g_MapInit = false;
 
 enum eCamLookState
 {
@@ -609,6 +611,7 @@ namespace BotManager
 				return;
 			
 			m_bInitialized = true;
+			g_MapInit = false;
 			
 			g_Hooks.RegisterHook( Hooks::Player::PlayerTakeDamage, PlayerTakeDamageHook( this.PlayerTakeDamage) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay) );
@@ -638,7 +641,8 @@ namespace BotManager
 				m_Bots.insertLast( @CreateBot( @pPlayer ) );
 			}
 
-			g_Waypoints.Load();
+			g_WaypointsLoaded = false;
+
 		}
 		
 		HookReturnCode PlayerSpawn( CBasePlayer@ pPlayer )
@@ -672,11 +676,8 @@ namespace BotManager
 			//g_MasterEntities = CMasterEntities();
 			g_bTeleportSet = false;
 
-			if ( g_Waypoints.Load() )
-				BotMessage("Waypoints Loaded!");
-			else
-				BotMessage("No waypoints!");
-			
+			g_WaypointsLoaded = false;
+
 			return HOOK_CONTINUE;
 		}
 		
@@ -837,6 +838,17 @@ namespace BotManager
 			g_Waypoints.runVisibility();
 
 			g_BotCam.Think();
+
+			if ( g_WaypointsLoaded == false && g_MapInit == true )
+			{
+				if ( g_Waypoints.Load() )
+					BotMessage("Waypoints Loaded!");
+				else
+					BotMessage("No waypoints!");
+
+				g_WaypointsLoaded = true;
+				g_MapInit = false;
+			}
 			
 		}
 
