@@ -2055,6 +2055,7 @@ class CBotUtilities
 {
     array <CBotUtil@>  m_Utils;
     RCBot@ m_pBot;
+    float m_fNoUtilCanDoTime = 0;
     //int m_iNumUtilsChosen = 0;
 
     CBotUtilities ( RCBot@ bot )
@@ -2107,6 +2108,7 @@ class CBotUtilities
         {
             UtilsCanDo.sort(function(a,b) { return a.utility > b.utility; });
 
+            m_fNoUtilCanDoTime = 0;
             for ( uint i = 0; i < UtilsCanDo.length(); i ++ )
             {
                 CBotUtil@ chosenUtil = UtilsCanDo[i];
@@ -2122,12 +2124,20 @@ class CBotUtilities
                     return sched;
                 }
             }
+
         }
         else
         {
-
             reset();
-            bot.m_pPlayer.Killed(bot.m_pPlayer.pev, 0);
+
+            if ( m_fNoUtilCanDoTime == 0 )
+                m_fNoUtilCanDoTime = g_Engine.time + 10;
+            else if ( m_fNoUtilCanDoTime < g_Engine.time )
+            {
+                // ten seconds passed, still no util, suicide
+                bot.m_pPlayer.Killed(bot.m_pPlayer.pev, 0);
+                m_fNoUtilCanDoTime = 0;
+            }
         }
 
         return null;
