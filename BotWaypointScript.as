@@ -93,7 +93,7 @@ class BotObjectiveScript
     {
         id = wptid;
         previous_id = prev_id;
-        entity_id = ent_id;
+        entity_id = ent_id + g_ScriptEntityOffset;
         parameter = param;
         operator = op;
         value = val;

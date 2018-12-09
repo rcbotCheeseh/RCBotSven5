@@ -1,4 +1,5 @@
 #include "UtilFuncs"
+#include "BotCommands"
 #include "BotProfile"
 /*
 *	This file defines the interface to the bot manager
@@ -589,6 +590,12 @@ namespace BotManager
 						{
 							m_iBotQuota = uint(val);
 						}
+					}
+					else if ( args[0] == "script_entity_offset" )
+					{
+						int val = atoi(args[1]);
+
+						g_ScriptEntityOffset = val;					
 					}
 				}
 

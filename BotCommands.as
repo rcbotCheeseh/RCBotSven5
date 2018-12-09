@@ -40,11 +40,12 @@ CConCommand@ m_pTeleport;
 CConCommand@ m_pTeleportWpt;
 CConCommand@ m_pBotCam;
 CConCommand@ m_pBotQuota;
+CConCommand@ m_pScriptEntOffset;
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
 
 //CCVar@ m_pAutoConfig;
-
+int g_ScriptEntityOffset = 0;
 //bool g_DebugOn = false;
 bool g_NoTouch = false;
 bool g_NoTouchChange = false;
@@ -127,6 +128,7 @@ void PluginInit()
 	@m_pRCBotKillbots = @CConCommand( "killbots", "Kills all bots", @RCBot_Killbots );
 	@m_pRCBotKickbots = @CConCommand( "kickbots", "Kicks all bots", @RCBot_Kickbots );
 	@m_pBotQuota = @CConCommand ( "quota", "number of bots to add", @RCBot_Quota );
+	@m_pScriptEntOffset = @CConCommand ( "script_entity_offset", "offset for script entity index", @RCBot_ScriptEntityOffset );
 	@m_pBotCam = @CConCommand( "botcam", "Bot camera", @RCBot_BotCam );
 
 	@m_pRCBotSearch = @CConCommand( "search", "test search func", @RCBotSearch );
@@ -135,6 +137,18 @@ void PluginInit()
 	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
+}
+
+void RCBot_ScriptEntityOffset ( const CCommand@ args )
+{
+	if ( args.ArgC() > 1 )
+	{
+		string arg = args[1];
+
+		int offset = atoi(arg);
+
+		g_ScriptEntityOffset = offset;
+	}
 }
 
 void TeleportWpt ( const CCommand@ args )

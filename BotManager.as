@@ -1092,7 +1092,7 @@ case 	CLASS_BARNACLE	:
 		if( Player.pev.deadflag >= DEAD_RESPAWNABLE )
 		{
 			// don't press attack if we're dead and it's survival mode
-			//if ( g_SurvivalMode.IsActive() )
+			//if ( g_SurvivalMode.IsEnabled() && g_SurvivalMode.IsActive() )
 			{
 				if( Math.RandomLong( 0, 100 ) > 10 )
 					PressButton(IN_ATTACK);
