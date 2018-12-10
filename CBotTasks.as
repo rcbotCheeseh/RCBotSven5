@@ -522,6 +522,35 @@ class CUseGrappleTask : RCBotTask
 }
 */
 
+final class CCheckObjectiveTask : RCBotTask
+{
+    int m_iWpt;
+
+    CCheckObjectiveTask ( int iWptObjective )
+    {
+        m_iWpt = iWptObjective;
+    }
+
+    string DebugString ()
+    {
+        return "CCheckObjectiveTask";
+    }
+    void execute ( RCBot@ bot )
+    {
+        switch ( g_WaypointScripts.canDoObjective(m_iWpt) )				
+        {
+            case BotWaypointScriptResult_Error:
+            case BotWaypointScriptResult_Incomplete:
+                m_pContainingSchedule.addTask(CFindButtonTask());
+            break;
+            default:
+            break;
+        }
+
+        Complete();
+    }
+}
+
 final class CFindButtonTask : RCBotTask
 {
     CFindButtonTask ( )
@@ -545,6 +574,17 @@ final class CFindButtonTask : RCBotTask
                         Complete();
                         return;                                    
         }
+
+        @pent = UTIL_FindNearestEntity("button_target",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
+        if ( pent !is null )
+        {
+                        UTIL_DebugMsg(bot.m_pPlayer,"button_target",DEBUG_TASK);
+                        // add Task to pick up health
+                        m_pContainingSchedule.addTask(CUseButtonTask(pent));
+                        Complete();
+                        return;                                    
+        }        
 
         @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
@@ -1879,7 +1919,7 @@ class CBotGotoObjectiveUtil : CBotUtil
   // similarly, If goal is reached, waypoint will be added to 'failed waypoints' so bot doesn't keep going back
             sched.addTask(CObjectiveReachedTask(this));
            
-            sched.addTask(CFindButtonTask());            
+            sched.addTask(CCheckObjectiveTask(iRandomGoal));            
 
             CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(iRandomGoal);
 
