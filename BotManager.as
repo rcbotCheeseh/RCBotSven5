@@ -53,6 +53,7 @@ final class RCBot : BotManager::BaseBot
 	Vector m_vLastSeeEnemy;
 	bool m_bLastSeeEnemyValid = false;
 	EHandle m_pLastEnemy = null;
+	float m_fLastSeeEnemyTime = 0;
 
 	int m_iPrevHealthArmor;
 	int m_iCurrentHealthArmor;
@@ -660,9 +661,9 @@ case 	CLASS_BARNACLE	:
 		UTIL_DebugMsg(m_pPlayer,"touchedWpt()",DEBUG_NAV);
 
 		if ( pThirdWpt !is null )
-			@pNextWpt = pThirdWpt;
+			@m_pNextWpt = pThirdWpt;
 		else
-			@pNextWpt = null;
+			@m_pNextWpt = null;
 
 		if ( pNextWpt !is null )
 		{					
@@ -1224,6 +1225,8 @@ case 	CLASS_BARNACLE	:
 				m_pEnemy = ent;
 			else if ( getEnemyFactor(ent) < getEnemyFactor(m_pEnemy) )
 				m_pEnemy = ent;		
+
+			m_fLastSeeEnemyTime = g_Engine.time;
 		}
 
 		if ( ent.GetClassname() == "func_tank" )
@@ -1271,7 +1274,7 @@ case 	CLASS_BARNACLE	:
 		if ( init == true )
 			return;
 
-			@pNextWpt = null;
+			@m_pNextWpt = null;
 
 		m_iLastWaypointFrom = -1;
 		m_iLastWaypointTo = -1;
@@ -1392,7 +1395,7 @@ case 	CLASS_BARNACLE	:
 		PressButton(IN_JUMP);
 	}
 
-	CWaypoint@ pNextWpt = null;
+	CWaypoint@ m_pNextWpt = null;
 
 	/**
 	 * DoLook()
@@ -1424,14 +1427,14 @@ case 	CLASS_BARNACLE	:
 		{
 			setLookAt(m_vNoiseOrigin,PRIORITY_LISTEN);
 		}
-		else if ( m_bLastSeeEnemyValid )
+		else if ( m_bLastSeeEnemyValid && ((m_fLastSeeEnemyTime+5) > g_Engine.time) )
 		{
 			setLookAt(m_vLastSeeEnemy,PRIORITY_WAYPOINT);
 		}
 		else if (m_bMoveToValid )
 		{			
-			if ( pNextWpt !is null )
-				setLookAt(pNextWpt.m_vOrigin,PRIORITY_WAYPOINT);
+			if ( m_pNextWpt !is null )
+				setLookAt(m_pNextWpt.m_vOrigin,PRIORITY_WAYPOINT);
 			else 
 				setLookAt(m_vMoveTo,PRIORITY_WAYPOINT);
 		}
