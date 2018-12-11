@@ -696,7 +696,10 @@ case 	CLASS_BARNACLE	:
 				Vector vface = wpt.m_vOrigin;
 
 				if ( pNextWpt !is null )
+				{
 					vface = pNextWpt.m_vOrigin;
+					//BotMessage("VFACE = NEXT WPT");
+				}
 			
 			m_pCurrentSchedule.addTaskFront(CBotTaskWait(1.75f,vface));
 		}
@@ -705,7 +708,13 @@ case 	CLASS_BARNACLE	:
 			if ( m_pCurrentSchedule is null )
 				m_pCurrentSchedule = RCBotSchedule();
 			
-			m_pCurrentSchedule.addTaskFront(CBotTaskUseTeleporter(wpt.m_vOrigin));			
+			if ( pNextWpt !is null )
+			{
+				Vector vNextWpt = pNextWpt.m_vOrigin;
+				m_pCurrentSchedule.addTaskFront(CBotTaskUseTeleporter(wpt.m_vOrigin,vNextWpt));			
+			}
+
+			
 		}
 
 		if ( wpt.hasFlags(W_FL_JUMP) )
@@ -1040,7 +1049,7 @@ case 	CLASS_BARNACLE	:
 			iSound = pCurrentSound.m_iNext;
 		}*/
 
-
+		m_iLookPriority = 0;
 		m_bMoveToValid = false;
 
 		CBaseEntity@ pLastEnemy = m_pLastEnemy.GetEntity();

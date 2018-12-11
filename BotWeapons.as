@@ -243,7 +243,15 @@ class CBotWeapon
 	{
         CBasePlayerWeapon@ weap  = cast<CBasePlayerWeapon@>(m_pWeaponEntity.GetEntity());
 
-		return weap !is null && weap.m_iClip == 0 && !outOfAmmo(bot.m_pPlayer);
+        bool ret = weap !is null && weap.m_iClip == 0 && !outOfAmmo(bot.m_pPlayer);
+
+        if (ret )
+        {
+            UTIL_DebugMsg(bot.m_pPlayer,"needToReload() == true, clip = " + weap.m_iClip,DEBUG_THINK);
+            return true;
+        }
+
+        return false;
 	}    
 
     string GetName ()

@@ -51,7 +51,7 @@ class CBotVisibles
 		// not visible now
 		if ( flags == 0 )
 		{
-			if ( m_pNearestAvoid == ent )
+			if ( m_pNearestAvoid.GetEntity() is ent )
 				m_pNearestAvoid = null;
 
 			// was visible before
@@ -155,8 +155,11 @@ class CBotVisibles
 					{
 						CBaseEntity@ pentOwner = g_EntityFuncs.Instance(m_pCurrentEntity.pev.owner);
 
-						if ( pentOwner is m_pBot.m_pPlayer || m_pBot.IsEnemy(pentOwner,false) )
-							m_pBot.TakeCover(UTIL_EntityOrigin(m_pCurrentEntity));
+						if ( pentOwner !is null )
+						{
+							if ( pentOwner is m_pBot.m_pPlayer || m_pBot.IsEnemy(pentOwner,false) )
+								m_pBot.TakeCover(UTIL_EntityOrigin(m_pCurrentEntity));
+						}
 					}
 				}
 			}

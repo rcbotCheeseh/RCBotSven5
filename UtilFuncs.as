@@ -171,7 +171,7 @@
 
     void UTIL_PrintVector ( string name, Vector v )
     {
-		if ( g_DebugLevel & DEBUG_THINK == DEBUG_THINK )
+		//if ( g_DebugLevel & DEBUG_THINK == DEBUG_THINK )
         	g_Game.AlertMessage( at_console, name + " = (" + v.x + "," + v.y + "," + v.z + ")\n" );	
     }
 

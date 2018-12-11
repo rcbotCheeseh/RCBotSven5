@@ -1677,6 +1677,7 @@ final class RCBotNavigator
 
 			if ( m_currentRoute.length() > 1 )
 			{
+				//BotMessage("m_currentRoute.length() > 1");
 				@pNextWpt = g_Waypoints.getWaypointAtIndex(m_currentRoute[1]);
 			}
 			if ( m_currentRoute.length() > 2 )

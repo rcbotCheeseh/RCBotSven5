@@ -266,7 +266,12 @@ namespace BotManager
 				m_vLookAtIsValid = true;
 				m_vLookAt = origin;
 
-				UTIL_DebugMsg(m_pPlayer,"LOOK AT priority is : " + priority,DEBUG_LOOK);
+				if ( priority > m_iCurrentPriority )
+					m_iLookPriority = priority;
+				else 
+					m_iLookPriority = m_iCurrentPriority;
+
+				UTIL_DebugMsg(m_pPlayer,"Vector beginning x = " + m_vLookAt.x + " LOOK AT priority is : " + priority,DEBUG_LOOK);
 			}
 		}
 
@@ -389,7 +394,7 @@ namespace BotManager
 					
 					vCross = UTIL_CrossProduct(vComp,Vector(0,0,1));
 
-					vComp = vComp * (vAvoidComp.Length()+32);
+					vComp = vComp * vAvoidComp.Length();
 
 					vMoveTo = m_pPlayer.pev.origin + vComp + (vCross*32);				
 				}

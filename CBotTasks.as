@@ -228,7 +228,8 @@ final class CBotTaskWait : RCBotTask
         else if ( m_fWaitTime < g_Engine.time )
             Complete();
 
-        bot.setLookAt(m_vFace);
+        //UTIL_PrintVector("m_vFace",m_vFace);
+        bot.setLookAt(m_vFace,PRIORITY_OVERRIDE+3);
 
         bot.StopMoving();
     }
@@ -1334,38 +1335,35 @@ class CBotHumanTowerTask : RCBotTask
 
 class CBotTaskUseTeleporter : RCBotTask
 {
-    float m_fPrevDistance = 0.0f;
-
     Vector m_vTeleport;
+    Vector m_vDestination;
 
     string DebugString ()
     {
         return "CBotTaskUseTeleporter";
     } 
 
-    CBotTaskUseTeleporter ( Vector vTeleport )
+    CBotTaskUseTeleporter ( Vector vTeleport, Vector vDestination )
     {
         m_vTeleport = vTeleport;
+        m_vDestination = vDestination;
         setTimeout(5.0f);
     }
 
     void execute ( RCBot@ bot )
     {
-        float dist = bot.distanceFrom(m_vTeleport);
+        float teleDist = bot.distanceFrom(m_vTeleport);
+        float destDist = bot.distanceFrom(m_vDestination);
 
-        if ( dist < 32 )
-            bot.StopMoving();
-        else if ( m_fPrevDistance > 0.0f )
+        if ( destDist < teleDist )
+            Complete();
+        else 
         {
-            bot.setMove(m_vTeleport);
-
-            if ( m_fPrevDistance < dist )
-            {
-                Complete();
-            }
+            if ( teleDist < 16 )
+                bot.StopMoving();
+            else
+                bot.setMove(m_vTeleport);
         }
-
-        m_fPrevDistance = dist;
     }
 
 }
