@@ -299,5 +299,6 @@ hplanet is the following:
  1. check vertical opening doors have been opened by checking previous and after z origin 
  2. check horizontally opened doors by checking previous and after x/y origin
  3. check buttons have been pressed by checking frame == 1
- 
+ 4. check func_breakables have been broken by using null,null,null for parameter, operator and value
+ 5. check func_wall_toggle is visible using visible parameter and 1 for value (visible) or 0 for invisible.
 
