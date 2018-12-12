@@ -309,5 +309,5 @@ hplanet is the following:
  4. check func_breakables have been broken by using null,null,null for parameter, operator and value
  5. check func_wall_toggle is visible using visible parameter and 1 for value (visible) or 0 for invisible.
  6. check trigger_hurt solid when active
- 7. let bots press the right buttons to make something set to correct angle using angle.x / angle.y
+ 7. check rotating doors are open by checkig against angle.x / angle.y
 
