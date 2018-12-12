@@ -267,6 +267,14 @@ Each line in the ini file indicates one objective (i.e. one important waypoint) 
    - distance     (distance from waypoint in units)
    - frame        (frame for used buttons is typically 1)
    - visible      (1 is visible, 0 is invisible [e.g. for func_wall_toggle])	
+   - solid        (solid state)
+     - 0 = not solid
+     - 1 = touch not blocking 
+     - 2 = touch, blocking
+     - 3 = touch not on ground
+     - 4 = BSP clip
+   - angle.x      (x angle)
+   - angle.y      (y angle)
 5. [operator] can be either
    - \>    (greater than)
    - <    (less than)
@@ -275,9 +283,8 @@ Each line in the ini file indicates one objective (i.e. one important waypoint) 
 	
 The objective is considered completed if the [important entity index parameter] [operator] [value] is true
 e.g.
-	....,frame, =, 1
 	
-	will be true if a button is typically pressed and entity index is a button
+frame = 1 will be true if a button is typically pressed and entity index is a button
 
 hplanet is the following:
 
@@ -301,4 +308,6 @@ hplanet is the following:
  3. check buttons have been pressed by checking frame == 1
  4. check func_breakables have been broken by using null,null,null for parameter, operator and value
  5. check func_wall_toggle is visible using visible parameter and 1 for value (visible) or 0 for invisible.
+ 6. check trigger_hurt solid when active
+ 7. let bots press the right buttons to make something set to correct angle using angle.x / angle.y
 
