@@ -93,7 +93,12 @@ class BotObjectiveScript
     {
         id = wptid;
         previous_id = prev_id;
-        entity_id = ent_id + g_ScriptEntityOffset;
+        // entity ID is the script value take away 8
+        // all entity IDs must be taken when maxplayers is 8 (default)
+        // then maxClients is added on (so if it is 8 there is no change)
+        // script Entity offset is used for dedicated servers
+        entity_id = ent_id + g_ScriptEntityOffset - 8 + g_Engine.maxClients;
+
         parameter = param;
         operator = op;
         value = val;
@@ -211,7 +216,7 @@ class BotWaypointScript
         if ( script.entity_id != -1 )
         {
             CBaseEntity@ pent = script.entity.GetEntity();
-
+     
             if ( pent is null )
             {
                 if ( script.parameter == "null" )
@@ -262,7 +267,22 @@ class BotWaypointScript
 
                 if ( CheckScriptOperator(pentOrigin.z,script.operator,script.value) )
                     return BotWaypointScriptResult_Complete;
-            }            
+            }      
+            else if ( script.parameter == "angle.x" )
+            {
+                if ( CheckScriptOperator(pent.pev.angles.x,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+            }  
+            else if ( script.parameter == "angle.y" )
+            {
+                if ( CheckScriptOperator(pent.pev.angles.y,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+            }    
+            else if ( script.parameter == "solid" )
+            {
+                if ( CheckScriptOperator(pent.pev.solid,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+            }                                           
             else if ( script.parameter == "visible" )
             {
                 float isVisible = 1;
