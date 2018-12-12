@@ -247,40 +247,31 @@ Also make sure
     developer 1
 
 # Objective Scripting
-a new addition to RCBOT AS edition is objective scripting for "important" waypoints. These are waypoints bots will use to complete objectives. an additional script for each map is optional which allows bots to understand which objectives to complete.
+a new addition to RCBOT AS edition is objective scripting for "important" waypoints.  These are waypoints bots will use to complete objectives. The point of using a script is to let bots know to no longer go to completed objectives, and know the order of objectives particularly for complex maps. An additional script for each map is optional which allows bots to understand which objectives to complete.
 
-Objective scripts are .ini files and exist in BotManager/scr
+Objective scripts are .ini files and exist in the waypoint folder. The store folder is checked first.
 
 the hplanet.ini has been done as an example
 
-Each line in the ini file indicates one objective or important waypoint (lines starting '#' are comments). 
+Each line in the ini file indicates one objective (i.e. one important waypoint) (lines starting '#' are comments). 
 
     [important waypoint ID],[previous important waypoint ID],[important entity index],[important entity index parameter],[operator], [value]
 	
-*[important waypoint ID] is the ID of the important (objective) waypoint. Use rcbot.waypoint_info to get the ID.
-	
-*[previous important waypoint ID] is the ID of the previous important waypoint that the bot needs to complete before this one. IF none, set this to -1. Usually the first objective will not have a previous objective.
-	
-*[important entity index] is the entity index of an entity to check against. use rcbot.search <distance> to list the entity index and parameters
-    
-*[important entity index parameter] can be any of the following
-    
-        x            (x origin)
-	y            (y origin)
-	z            (z origin)
-	distance     (distance from waypoint in units)
-	frame        (frame for used buttons is typically 1)
-	visible      (1 is visible, 0 is invisible [e.g. for func_wall_toggle])
-	
-use rcbot.search to get these values
-	
-*[operator] can be either
-
-	>            (greater than)
-	<            (less than)
-	=            (equal to)
-	      
-*[value] can be any number 
+1. [important waypoint ID] is the ID of the important (objective) waypoint. Use rcbot.waypoint_info to get the ID.	
+2. [previous important waypoint ID] is the ID of the previous important waypoint that the bot needs to complete before this one. IF none, set this to -1. Usually the first objective will not have a previous objective.	
+3. [important entity index] is the entity index of an entity to check against. use rcbot.search <distance> to list the entity index and parameters    
+4. [important entity index parameter] can be any of the following (use rcbot.search to get these values)
+   - x            (x origin)
+   - y            (y origin)
+   - z            (z origin)
+   - distance     (distance from waypoint in units)
+   - frame        (frame for used buttons is typically 1)
+   - visible      (1 is visible, 0 is invisible [e.g. for func_wall_toggle])	
+5. [operator] can be either
+   - \>    (greater than)
+   - <    (less than)
+   - =     (equal to)      
+6. [value] can be any number 
 	
 The objective is considered completed if the [important entity index parameter] [operator] [value] is true
 e.g.
@@ -301,14 +292,13 @@ hplanet is the following:
     193,   196,   423, distance, >, 180
     
  The first two objectives don't have pre-requisite objectives. The lines with "frame,=,1" are buttons that when pressed will be considered complete.
- The line "176,   164,   325, null, null, null" means that entity index 325 will be null if completed (its a func_breakable)
- 
- The point of using a script is to let bots know to no longer go to completed objectives, and know the order of objectives particularly for complex maps.
+ The line "176,   164,   325, null, null, null" means that entity index 325 will be null if completed (e.g. its a func_breakable and when its broken the entity is removed)
  
  Tips:
  
- check vertical opening doors have been opened by checking previous and after z origin 
- check horizontally opened doors by checking previous and after x/y origin
- check buttons have been pressed by checking frame == 1
- 
+ 1. check vertical opening doors have been opened by checking previous and after z origin 
+ 2. check horizontally opened doors by checking previous and after x/y origin
+ 3. check buttons have been pressed by checking frame == 1
+ 4. check func_breakables have been broken by using null,null,null for parameter, operator and value
+ 5. check func_wall_toggle is visible using visible parameter and 1 for value (visible) or 0 for invisible.
 
