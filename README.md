@@ -259,7 +259,7 @@ Each line in the ini file indicates one objective (i.e. one important waypoint) 
 	
 1. [important waypoint ID] is the ID of the important (objective) waypoint. Use rcbot.waypoint_info to get the ID.	
 2. [previous important waypoint ID] is the ID of the previous important waypoint that the bot needs to complete before this one. IF none, set this to -1. Usually the first objective will not have a previous objective.	
-3. [important entity index] is the entity index of an entity to check against. use rcbot.search <distance> to list the entity index and parameters    
+3. [important entity index] is the entity index of an entity to check against. use rcbot.search <distance> to list the entity index and parameters. TO GET THE CORRECT ENTITY INDEX, MAXPLAYERS MUST BE 8. 
 4. [important entity index parameter] can be any of the following (use rcbot.search to get these values)
    - x            (x origin)
    - y            (y origin)
