@@ -1,21 +1,14 @@
 # RCBot Angelscript for Svencoop 5
 
-Bots currently walk around provided waypoints exist and shoot using most weapons 
-
-Waypoints can be imported from RCBot1 using the converter here:
+Note: Waypoints can be imported from RCBot1 using the converter here:
 http://rcbot.bots-united.com/forums/index.php?act=Attach&type=post&id=561
 
-# Editor
+# Installation
 
-Visual Studio Code: https://code.visualstudio.com/
-
-# Usage
-
-save all files to svencoop/scripts/plugins/BotManager (overwrite current scripts)
-
-open default_plugins.txt
-
-add "BotManager" plugin
+1. Click "Clone or Download" button above and select "Download as ZIP". 
+2. Extract all files to svencoop/scripts/plugins/BotManager (overwrite current scripts)
+3. edit the file "default_plugins.txt" in "svencoop" folder using notepad
+4. add "BotManager" plugin to the list of plugins in the file:
 
 	"plugin"
 	{
@@ -24,15 +17,18 @@ add "BotManager" plugin
 		"concommandns" "rcbot"
 	}
 	
-when running type
+Now run svencoop. 
 
-	as_command rcbot.waypoint_load
-
-to load waypoints, and....
+Adding a bot:
 
 	as_command rcbot.addbot
 
-to add a bot 
+Setting a bot quota:
+
+set a bot quota to add bots automatically. Edit "config.ini" in the scripts/BotManager/config folder
+
+set quota=0 to another number (i.e. to the number of bots).
+
 
 # Say commands
 
@@ -210,12 +206,6 @@ sometimes you need cheats during debugging to make things easier, some are below
     as_command rcbot.explo [magnitude]             (creates an explosion to kill of bosses quickly)
     as_command rcbot.teleport_wpt [waypoint id]    (teleports player to waypoint ID)
     
-# automatically adding bots
-
-edit the config.ini file in BotManager/config
-
-change quota=0 to quota=[number of bots to add automatically]
-	
 # Bot cam
 
 There is a bot camera that the listen player can sit back and watch, which follows bots in third person. 
@@ -310,4 +300,9 @@ hplanet is the following:
  5. check func_wall_toggle is visible using visible parameter and 1 for value (visible) or 0 for invisible.
  6. check trigger_hurt solid when active
  7. check rotating doors are open by checkig against angle.x / angle.y
+
+# Source Code
+
+Editor:
+Visual Studio Code: https://code.visualstudio.com/
 
