@@ -24,11 +24,11 @@ Now run svencoop.
 
 Adding a bot:
 
+In the developer console (https://developer.valvesoftware.com/wiki/Developer_Console) type
+
 	as_command rcbot.addbot
 
-Setting a bot quota:
-
-set a bot quota to add bots automatically. Edit "config.ini" in the scripts/BotManager/config folder
+Alternatively you may set a bot quota to add bots automatically. To do this, edit "config.ini" in the scripts/BotManager/config folder
 
 set quota=0 to another number (i.e. to the number of bots).
 
