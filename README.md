@@ -10,12 +10,15 @@ http://rcbot.bots-united.com/forums/index.php?act=Attach&type=post&id=561
 3. edit the file "default_plugins.txt" in "svencoop" folder using notepad
 4. add "BotManager" plugin to the list of plugins in the file:
 
-	"plugin"
-	{
-		"name" "RCBot"
-		"script" "BotManager/BotManager"
-		"concommandns" "rcbot"
-	}
+
+```
+"plugin"
+{
+        "name" "RCBot"
+        "script" "BotManager/BotManager"
+        "concommandns" "rcbot"
+}
+```
 	
 Now run svencoop. 
 
