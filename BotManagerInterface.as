@@ -671,6 +671,7 @@ namespace BotManager
 		
 		HookReturnCode MapChange()
 		{
+			m_NextDebugMessageTime = 0;
 		    m_fAddBotTime = g_Engine.time + 5.0f;
 
 			m_Bots.resize( 0 );
@@ -819,6 +820,8 @@ namespace BotManager
 				RemoveBot( pBot, bDisconnect );
 			}
 		}
+
+		float m_NextDebugMessageTime = 0;
 		
 		void Think()
 		{
@@ -854,7 +857,45 @@ namespace BotManager
 				g_WaypointsLoaded = true;
 				g_MapInit = false;
 			}
-			
+
+			if ( m_NextDebugMessageTime < g_Engine.time )
+			{
+				if ( g_DebugBot.GetEntity() !is null )
+				{
+					RCBot@ bot = cast<RCBot@>(FindBot(g_DebugBot.GetEntity()));	
+
+					string message = bot.GetDebugMessage();
+
+					CBasePlayer@ player = ListenPlayer();
+
+					HUDTextParams params;
+
+					params.x = 0;
+					params.y = -1;
+					params.effect = 1; // credits
+					params.r1 = 200;
+					params.g1 = 200;
+					params.b1 = 255;
+					params.a1 = 200;
+
+					params.r2 = 200;
+					params.g2 = 200;
+					params.b2 = 255;
+					params.a2 = 200;
+
+					params.holdTime = 1.0;
+					params.channel = 4;
+
+					params.fadeinTime = 0;
+					params.fadeoutTime = 0;
+
+					params.fxTime = 0;
+					//HudMessage(CBasePlayer@ pTargetPlayer, const HUDTextParams& in textParams, const string& in szMessage)
+					g_PlayerFuncs.HudMessage(player,params,message);
+
+					m_NextDebugMessageTime = g_Engine.time + 1.0;
+				}
+			}
 		}
 
 		void WaypointDisplay ()

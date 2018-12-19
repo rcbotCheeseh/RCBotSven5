@@ -97,6 +97,16 @@ class RCBotSchedule
         }
 	}
 
+    string getCurrentTask ()
+    {
+        if ( m_pTasks.length() > 0)
+        {
+            return m_pTasks[0].DebugString();
+        }
+
+        return "null";
+    }
+
 	int execute (RCBot@ bot)
 	{        
         //UTIL_DebugMsg(bot.m_pPlayer,"execute()",DEBUG_TASK);
@@ -850,6 +860,7 @@ final class CFindPathTask : RCBotTask
     {
         m_pEntity = pEntity;
         m_iGoalWpt = wpt;
+        bot.m_iGoalWaypoint = m_iGoalWpt;
         @failCommand= onFail;
     }
 
@@ -1356,7 +1367,10 @@ class CBotTaskUseTeleporter : RCBotTask
         float destDist = bot.distanceFrom(m_vDestination);
 
         if ( destDist < teleDist )
+        {
+           // BotMessage("destDist is " + destDist + " teleDist is " + teleDist);
             Complete();
+        }
         else 
         {
             if ( teleDist < 16 )

@@ -64,6 +64,8 @@ final class RCBot : BotManager::BaseBot
 	int m_iLastWaypointTo = 0;	
 	bool m_bLastPathFailed = false;
 
+	int m_iGoalWaypoint = -1;
+
 	void setNearestTank ( CBaseEntity@ pTank )
 	{
 		//BotMessage("setNearestTank");
@@ -337,6 +339,27 @@ final class RCBot : BotManager::BaseBot
 			}
 		}
 
+	}
+
+	string GetDebugMessage ()
+	{
+		string task = "null";
+		
+		if ( m_pCurrentSchedule !is null )
+			task = m_pCurrentSchedule.getCurrentTask();
+
+		string message = "Debugging: " + m_pPlayer.pev.netname;
+
+		message = "\nTask: " + task;
+
+		message += "\nGoal: " + m_iGoalWaypoint;
+
+		if ( m_pNextWpt !is null )
+		{
+			message += "\nNext Wpt: " + m_pNextWpt.iIndex;
+		}
+
+		return message;
 	}
 
 	bool isEntityVisible ( CBaseEntity@ pent )
@@ -713,6 +736,7 @@ case 	CLASS_BARNACLE	:
 			{
 				Vector vNextWpt = pNextWpt.m_vOrigin;
 				m_pCurrentSchedule.addTaskFront(CBotTaskUseTeleporter(wpt.m_vOrigin,vNextWpt));			
+				//BotMessage("GOING TO USE TELEPORTER...");
 			}
 
 			
