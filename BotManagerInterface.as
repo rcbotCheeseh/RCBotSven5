@@ -349,6 +349,9 @@ namespace BotManager
 		  uint16 iButtons, uint8 iImpulse, uint8 iMsec)
 		*/
 
+		float m_fAvoidChangeTime = 0;
+		bool m_bAvoidingLeft = false;
+
 		void RunPlayerMove() final
 		{
 		 	float yaw = 0;
@@ -389,14 +392,28 @@ namespace BotManager
 					Vector vComp = vMoveTo - m_pPlayer.pev.origin;
 					Vector vAvoidComp = m_vAvoidVector - m_pPlayer.pev.origin;
 					Vector vCross;
+					Vector vCrossLeft = Vector(0,0,-1);
+					Vector vCrossRight = Vector(0,0,1);
+					Vector vCrossChosen;
 
 					vComp = vComp / vComp.Length();
+
+					if ( m_bAvoidingLeft )
+						vCrossChosen = vCrossLeft;
+					else
+						vCrossChosen = vCrossRight;
 					
-					vCross = UTIL_CrossProduct(vComp,Vector(0,0,1));
+					vCross = UTIL_CrossProduct(vComp,vCrossChosen);
 
 					vComp = vComp * vAvoidComp.Length();
 
 					vMoveTo = m_pPlayer.pev.origin + vComp + (vCross*32);				
+
+					if ( m_fAvoidChangeTime < g_Engine.time )
+					{
+						m_bAvoidingLeft = !m_bAvoidingLeft;
+						m_fAvoidChangeTime = g_Engine.time + Math.RandomFloat(3.0f,7.0f);
+					}
 				}
 
 				yaw = UTIL_yawAngleFromEdict(vMoveTo,m_pPlayer.pev.v_angle,m_pPlayer.pev.origin);

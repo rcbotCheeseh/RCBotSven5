@@ -480,9 +480,12 @@ final class CPickupItemTask : RCBotTask
     {
         CBaseEntity@ pItem = m_pItem.GetEntity();
 
-        if ( pItem !is null )
+        if ( pItem is null )
+        {
             Complete();
-
+            return;
+        }
+        
         UTIL_DebugMsg(bot.m_pPlayer,"CPickupItemTask",DEBUG_TASK);
 
         // can't pick this up!!!
