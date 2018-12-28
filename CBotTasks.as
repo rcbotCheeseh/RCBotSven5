@@ -485,7 +485,7 @@ final class CPickupItemTask : RCBotTask
             Complete();
             return;
         }
-        
+
         UTIL_DebugMsg(bot.m_pPlayer,"CPickupItemTask",DEBUG_TASK);
 
         // can't pick this up!!!
@@ -508,33 +508,6 @@ final class CPickupItemTask : RCBotTask
             Complete();
     }
 }
-/* T O D O
-class CUseGrappleTask : RCBotTask
-{
-    CWaypoint@ m_pWpt;
-
-    enum state
-    {
-        find_aiming,
-        change_weapon,
-    }
-
-    CUseGrappleTask ( CWaypoint@ pWpt, CWaypoint@ pNext )
-    {
-
-    }
-
-    string DebugString ()
-    {
-        return "CUseGrappleTask";
-    } 
-
-    void execute ( RCBot@ bot )
-    {
-        StopMoving();
-    }
-}
-*/
 
 final class CCheckObjectiveTask : RCBotTask
 {
@@ -1085,6 +1058,46 @@ class CBotTaskFollow : RCBotTask
      }
 }
 
+class CBotWaitPlatform : RCBotTask
+{ 
+    Vector m_vOrigin;
+
+    string DebugString ()
+    {
+        return "CBotWaitPlatform";
+    } 
+
+     CBotWaitPlatform ( Vector vOrigin )
+     {
+        m_vOrigin = vOrigin;   
+        setTimeout(Math.RandomFloat(9.0f,11.0f));    
+     }
+
+     void execute ( RCBot@ bot )
+     {
+         CBaseEntity@ pent = null;
+
+         float myDist = bot.distanceFrom(m_vOrigin);         
+         float mySpeed = bot.m_pPlayer.pev.maxspeed;
+         float myTime;
+         
+         myTime = myDist/mySpeed;
+
+         bot.StopMoving();
+
+         while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "func_train")) !is null )
+         {             
+            Vector vOrigin = UTIL_EntityOrigin(pent) + (pent.pev.velocity*myTime);
+
+            if ( (vOrigin - m_vOrigin).Length() < (pent.pev.size.Length2D()/2) )
+            {
+                    Complete();
+                    break;
+            }
+         }
+     }
+}
+
 class CBotTaskUseTank : RCBotTask
 {
 
@@ -1097,6 +1110,11 @@ class CBotTaskUseTank : RCBotTask
 
          m_pTank = pTank;
      }
+
+          string DebugString ()
+    {
+        return "CBotTaskUseTank";
+    } 
 
      void execute ( RCBot@ bot )
      {
@@ -1200,6 +1218,11 @@ class CBotTaskHealPlayer : RCBotTask
         setTimeout(15.0f);
     }
 
+     string DebugString ()
+    {
+        return "CBotTaskHealPlayer";
+    } 
+
      void execute ( RCBot@ bot )
      {
         CBaseEntity@ pent = m_pHeal.GetEntity();
@@ -1262,6 +1285,11 @@ class CBotHumanTowerTask : RCBotTask
     Vector m_vOrigin;
     float m_fTime;
     float m_fJumpTime;
+
+        string DebugString ()
+    {
+        return "CBotHumanTowerTask";
+    } 
 
     CBotHumanTowerTask ( Vector vOrigin )
     {

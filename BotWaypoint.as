@@ -14,7 +14,7 @@ const int W_FL_TEAM_UP = (1<<2); //	bot waits a while for allies to come by
 const int W_FL_CROUCH	= 	(1<<3);  /* must crouch to reach this waypoint */
 const int W_FL_LADDER	= 	(1<<4);  /* waypoint on a ladder */
 const int W_FL_LIFT		= 	(1<<5);  // lift button
-const int W_FL_DOOR		= 	(1<<6);  /* wait for door to open */
+const int W_FL_PLATFORM	= 	(1<<6);  /* wait for a platform to move to waypoint */
 const int W_FL_HEALTH	= 	(1<<7);  /* health kit (or wall mounted) location */
 const int W_FL_ARMOR	= 	(1<<8);  /* armor (or HEV) location */
 const int W_FL_AMMO		=	(1<<9);  /* ammo location */
@@ -220,8 +220,8 @@ class CWaypointTypes
 						case W_FL_LIFT :
 						name = "lift";
 						break;
-						case W_FL_DOOR :
-						name = "door";
+						case W_FL_PLATFORM :
+						name = "platform";
 						break;
 						case W_FL_HEALTH :
 						name = "health";

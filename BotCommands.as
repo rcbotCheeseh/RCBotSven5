@@ -355,8 +355,7 @@ void DebugMessages ( const CCommand@ args )
 }
 
 void DebugBot ( const CCommand@ args )
-{
-	
+{	
 	if ( args.ArgC() > 1 )
 	{
 		BotMessage("Finding player " + args[1]);

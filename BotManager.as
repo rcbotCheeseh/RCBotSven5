@@ -676,6 +676,14 @@ case 	CLASS_BARNACLE	:
 		return m_pPlayer.pev.origin;
 	}
 
+	void addToSchedule ( RCBotTask@ task )
+	{
+			if ( m_pCurrentSchedule is null )
+				m_pCurrentSchedule = RCBotSchedule();
+			
+			m_pCurrentSchedule.addTaskFront(task);		
+	}
+
 	/**
 	 * @return the number of times the route stack may be popped
 	*/
@@ -748,14 +756,24 @@ case 	CLASS_BARNACLE	:
 		{
 			Jump();
 		}
+		
 
 		if( wpt.hasFlags(W_FL_HUMAN_TOWER) )
 		{
-			if ( m_pCurrentSchedule is null )
-				m_pCurrentSchedule = RCBotSchedule();
-			
-			m_pCurrentSchedule.addTaskFront(CBotHumanTowerTask(wpt.m_vOrigin));
+			addToSchedule(CBotHumanTowerTask(wpt.m_vOrigin));
 		}
+
+
+		if ( pThirdWpt !is null )
+		{
+			if ( pThirdWpt.hasFlags(W_FL_PLATFORM) )
+			{
+				addToSchedule(CBotWaitPlatform(pThirdWpt.m_vOrigin));
+
+				return 1;
+			}
+		}
+
 
 		// pop only one waypoint
 		return 1;
@@ -1377,7 +1395,7 @@ case 	CLASS_BARNACLE	:
 		//	navigator.execute(this);
 		float fStuckSpeed = 0.1*m_fDesiredMoveSpeed;
 
-		if ( m_pPlayer.pev.groundentity !is null )
+		/*if ( m_pPlayer.pev.groundentity !is null )
 		{
 			CBaseEntity@ pGroundEnt = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);
 
@@ -1387,7 +1405,7 @@ case 	CLASS_BARNACLE	:
 				if ( pGroundEnt.pev.velocity.Length() > 0 )
 					StopMoving();
 			}
-		}
+		}*/
 
 		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
 			fStuckSpeed /= 2;
