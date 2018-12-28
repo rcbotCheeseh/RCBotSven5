@@ -42,6 +42,7 @@ Alternatively you may set a bot quota to add bots automatically. To do this, edi
 
 set quota=0 to another number (i.e. to the number of bots).
 
+If bots do not move ensure that rcw (Waypoints) exist for the map in the rcw folder!!!
 
 # Say commands
 
