@@ -12,13 +12,23 @@ http://rcbot.bots-united.com/forums/index.php?act=Attach&type=post&id=561
 
 
 ```
-"plugin"
+"plugins"
 {
+:
+:
+ "plugin"
+ {
         "name" "RCBot"
         "script" "BotManager/BotManager"
         "concommandns" "rcbot"
+ }
+:
+:
 }
 ```
+
+do not put comments (//) in front of these lines!!!
+
 	
 Now run svencoop. 
 
