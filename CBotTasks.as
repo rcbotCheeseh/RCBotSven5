@@ -707,10 +707,10 @@ final class CUseArmorCharger : RCBotTask
             Complete();
             UTIL_DebugMsg(bot.m_pPlayer," m_pCharger.pev.frame == 0",DEBUG_TASK);
         }
-        if ( bot.m_pPlayer.pev.armorvalue >= 100 )
+        if ( bot.m_pPlayer.pev.armorvalue >= bot.m_pPlayer.pev.armortype )
         {
             Complete();
-            UTIL_DebugMsg(bot.m_pPlayer," bot.m_pPlayer.pev.armorvalue >= 100",DEBUG_TASK);
+            UTIL_DebugMsg(bot.m_pPlayer," bot.m_pPlayer.pev.armorvalue >= armortype",DEBUG_TASK);
         }
 
         Vector vOrigin = UTIL_EntityOrigin(m_pCharger);
@@ -1713,7 +1713,7 @@ class CBotGetHealthUtil : CBotUtil
     }    
     float calculateUtility ( RCBot@ bot )
     {
-        float healthPercent = float(bot.m_pPlayer.pev.health) / 100;
+        float healthPercent = float(bot.m_pPlayer.pev.health) / bot.m_pPlayer.pev.max_health;
      
         return (1.0f - healthPercent);
     }
@@ -1899,7 +1899,7 @@ class CBotGetArmorUtil : CBotUtil
    
     float calculateUtility ( RCBot@ bot )
     {
-        float healthPercent = float(bot.m_pPlayer.pev.armorvalue) / 100;
+        float healthPercent = float(bot.m_pPlayer.pev.armorvalue) / bot.m_pPlayer.pev.armortype;
 
         return 0.75f*(1.0f - healthPercent);
     }
