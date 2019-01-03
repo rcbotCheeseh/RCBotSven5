@@ -108,19 +108,19 @@ then go to the second waypoint and use the command:
 # Waypoint Types
 
     Waypoint type	Usage										Implementation status
-    "team"												unimplemented
-    "teamspecific"											Unimplemented
+    "wait_noplayer"	bots wait for a player to pass before going through				OK
+    "scientist"		A scientist is needed to complete the important waypoint			OK
     "crouch"		Put where bot needs to crouch (auto)						OK
-    "ladder"		Bots look at waypoint								OK
+    "ladder"		Bots look at waypoint (at bottom and top of ladder)				OK
     "lift"		Coming soon									Unimplemented
-    "door"		Coming soon									Unimplemented
+    "platform"		A moving platform								OK
     "health"		Put at health pick up or health charger						Fully implemented
     "armor"		Put at battery pickup or HEV charger						Fully implemented
     "ammo"		Put at ammo pickup								OK (partially implemented)
     "checkground"	Bots don't progress until waypoint has a ground (e.g. drawbridge)		OK
     "important"		Put at objective point such as button 
 			or breakable needed to move to next stage					OK
-    "barney"		Coming soon									Unimplemented
+    "barney"		A barney is needed to complete the important waypoint				OK
     "defend"		Coming soon									Unimplemented
     "aiming"		Coming soon									Unimplemented
     "crouchjump"	Bots should do a longjump (TO CHANGE NAME)					Bots just do a normal jump atm
