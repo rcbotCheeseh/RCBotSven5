@@ -109,38 +109,38 @@ then go to the second waypoint and use the command:
 
     Waypoint type	Usage										Implementation status
     "wait_noplayer"	bots wait for a player to pass before going through				OK
-    "scientist"		A scientist is needed to complete the important waypoint			OK
-    "crouch"		Put where bot needs to crouch (auto)						OK
-    "ladder"		Bots look at waypoint (at bottom and top of ladder)				OK
+    "scientist"	A scientist is needed to complete the important waypoint			OK
+    "crouch"	Put where bot needs to crouch (auto)						OK
+    "ladder"	Bots look at waypoint (at bottom and top of ladder)				OK
     "lift"		Coming soon									Unimplemented
-    "platform"		A moving platform								OK
-    "health"		Put at health pick up or health charger						Fully implemented
+    "platform"	A moving platform								OK
+    "health"	Put at health pick up or health charger						Fully implemented
     "armor"		Put at battery pickup or HEV charger						Fully implemented
     "ammo"		Put at ammo pickup								OK (partially implemented)
     "checkground"	Bots don't progress until waypoint has a ground (e.g. drawbridge)		OK
-    "important"		Put at objective point such as button 
+    "important"	Put at objective point such as button 
 			or breakable needed to move to next stage					OK
-    "barney"		A barney is needed to complete the important waypoint				OK
-    "defend"		Coming soon									Unimplemented
-    "aiming"		Coming soon									Unimplemented
+    "barney"	A barney is needed to complete the important waypoint				OK
+    "defend"	Coming soon									Unimplemented
+    "aiming"	Coming soon									Unimplemented
     "crouchjump"	Bots should do a longjump (TO CHANGE NAME)					Bots just do a normal jump atm
     "wait"		Bots wait 1 sec before moving to next waypoint					OK (waitlift unimplemented)
     "pain"		Put at a place where bots will be killed 
 			until a trigger_hurt stops working						OK
     "jump"		Put where a bot needs to jump							OK
-    "weapon"		Put at a weapon pickup								OK (partially implemented)
-    "teleport"		Put at a teleport								OK
+    "weapon"	Put at a weapon pickup								OK (partially implemented)
+    "teleport"	Put at a teleport								OK
     "tank"		Put at a useable turret								Unimplemented
-    "grapple"		Bots aim a grapple gun at the waypoint to progress				OK
-    "staynear"		Bots tay closer and slow down at waypoint					OK
+    "grapple"	Bots aim a grapple gun at the waypoint to progress				OK
+    "staynear"	Bots tay closer and slow down at waypoint					OK
     "end"		Put at the end of level (main objective)					OK
     "openslater"	Put behind an area that opens later and 
 					has path between a wall/door					OK
     "humantower"	Bots crouch and wait for players to jump on them then stand. 
     			Otherwise will jump on crouching players.					OK
     "unreachable"	Used for visibility only							OK
-    "pushable"		Coming soon									Unimplemented
-    "grenthrow"		Coming soon									Unimplemented
+    "pushable"	Coming soon									Unimplemented
+    "grenthrow"	Coming soon									Unimplemented
 
 # Giving a waypoint a type
 
