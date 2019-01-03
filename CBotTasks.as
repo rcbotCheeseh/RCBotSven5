@@ -528,6 +528,7 @@ final class CCheckObjectiveTask : RCBotTask
         {
             case BotWaypointScriptResult_Error:
             case BotWaypointScriptResult_Incomplete:
+          
                 m_pContainingSchedule.addTask(CFindButtonTask());
             break;
             default:
@@ -1056,6 +1057,59 @@ class CBotTaskFollow : RCBotTask
         if ( bot.distanceFrom(vFollow) > 128 )
             bot.setMove(vFollow);
      }
+}
+
+class CBotTaskUseNPC : RCBotTask
+{
+    EHandle m_pNPC;
+
+    CBotTaskUseNPC ( CBaseEntity@ NPC )
+    {
+        m_pNPC = NPC;
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        CBaseEntity@ NPC = m_pNPC.GetEntity();
+        Vector vNPC;
+
+        if ( NPC is null )
+        {
+            Failed();
+
+            return;
+
+        }
+
+        CBaseMonster@ NPCm = cast<CBaseMonster@>(NPC);
+
+        if ( !NPCm.CanPlayerFollow() )
+        {
+            Failed();
+            return;
+        }
+
+        if ( NPCm.IsPlayerFollowing() )
+        {
+            Complete();
+            bot.setFollowingNPC(NPC);
+            return;
+        }
+
+        vNPC = UTIL_EntityOrigin(NPC);
+
+        bot.setLookAt(vNPC);
+
+        if ( bot.distanceFrom(vNPC) > 80 )
+        {
+            bot.setMove(vNPC);            
+        }
+        else
+        {
+            if ( Math.RandomFloat(0,100) > 50 )
+                bot.PressButton(IN_USE);
+        }
+    }
 }
 
 class CBotWaitPlatform : RCBotTask
@@ -1957,16 +2011,75 @@ class CBotGotoObjectiveUtil : CBotUtil
 
         if ( iRandomGoal != -1 )
         {
-            // If path cannot be found, waypoint will be added to 'failed waypoints'
-            RCBotSchedule@ sched = CFindPathSchedule(bot,iRandomGoal,CObjectivePathFail(this));
-  // similarly, If goal is reached, waypoint will be added to 'failed waypoints' so bot doesn't keep going back
-            sched.addTask(CObjectiveReachedTask(this));
-           
-            sched.addTask(CCheckObjectiveTask(iRandomGoal));            
-
             CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(iRandomGoal);
 
-          //  sched.addTask(CBotTaskWait(1.0f,pWpt.m_vOrigin));
+            RCBotSchedule@ sched = RCBotSchedule();
+
+            if ( pWpt.hasFlags(W_FL_SCIENTIST) )
+            {
+                if ( !bot.IsScientistFollowing () )
+                {
+                    if ( bot.IsScientistNearby () )
+                    {
+                        CBaseEntity@ pScientist = bot.getNearestScientist();
+                        //(bot.m_vLastSeeEnemy,null,-1,400.0,true,false);
+                        int iWpt = g_Waypoints.getNearestWaypointIndex(UTIL_EntityOrigin(pScientist),null,-1,400.0,true,false);
+
+                        if ( iWpt == -1 )
+                        {
+                            // no waypoint near scientist! :(
+                            return null;
+                        }
+                        
+                        //CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null, OnPathFail@ onFail = null )
+                        
+                        sched.addTask(CFindPathTask(bot,iWpt,pScientist));
+                        sched.addTask(CBotTaskUseNPC(pScientist));                        
+                    }
+                    else
+                    {
+                        // can't do this!!! maybe later...
+                        return null;
+                    }
+                }                
+            }
+            else if ( pWpt.hasFlags(W_FL_BARNEY) )
+            {
+                if ( !bot.IsBarneyFollowing () )
+                {
+                    if ( bot.IsBarneyNearby () )
+                    {
+                        CBaseEntity@ pBarney = bot.getNearestBarney();
+
+                        //(bot.m_vLastSeeEnemy,null,-1,400.0,true,false);
+                        int iWpt = g_Waypoints.getNearestWaypointIndex(UTIL_EntityOrigin(pBarney),null,-1,400.0,true,false);
+
+                        if ( iWpt == -1 )
+                        {
+                            // no waypoint near scientist! :(
+                            return null;
+                        }
+                        
+                        //CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null, OnPathFail@ onFail = null )
+                        
+                        sched.addTask(CFindPathTask(bot,iWpt,pBarney));
+                        sched.addTask(CBotTaskUseNPC(pBarney));     
+                    }
+                    else
+                    {
+                        // can't do this!!! maybe later...
+                        return null;
+                    }                    
+                }           
+            }
+
+            // If path cannot be found, waypoint will be added to 'failed waypoints'
+            sched.addTask(CFindPathTask(bot,iRandomGoal,null, CObjectivePathFail(this)));
+
+            // similarly, If goal is reached, waypoint will be added to 'failed waypoints' so bot doesn't keep going back
+            sched.addTask(CObjectiveReachedTask(this));
+                    
+            sched.addTask(CCheckObjectiveTask(iRandomGoal));
 
             bot.setObjectiveOrigin(pWpt.m_vOrigin);
           

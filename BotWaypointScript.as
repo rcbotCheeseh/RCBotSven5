@@ -6,7 +6,8 @@ enum ScriptOperator
 {
     Equals,
     LessThan,
-    GreaterThan    
+    GreaterThan,
+    NotEqual 
 }
 
 bool CheckScriptOperator ( float check, ScriptOperator op, float value )
@@ -19,21 +20,24 @@ bool CheckScriptOperator ( float check, ScriptOperator op, float value )
     {
         case Equals:
         ret = (check == value);
-       // BotMessage("CheckScriptOperator " + check + "==" + value);
+        //BotMessage("CheckScriptOperator " + check + "==" + value);
         break;
         case LessThan:
         ret = (check < value);
-       // BotMessage("CheckScriptOperator " + check + "<" + value);
+        //BotMessage("CheckScriptOperator " + check + "<" + value);
         break;
         case GreaterThan:
         ret = (check > value);
-       // BotMessage("CheckScriptOperator " + check + ">" + value);
+        //BotMessage("CheckScriptOperator " + check + ">" + value);
         break;
+        case NotEqual:
+        ret = (check != value);
+        //BotMessage("CheckScriptOperator " + check "!=" + value);
         default:
         break;
     }
 
-   // BotMessage("CheckScriptOperator result is " + (ret ? "TRUE" : "FALSE") );
+    //BotMessage("CheckScriptOperator result is " + (ret ? "TRUE" : "FALSE") );
 
     return ret;
 }
@@ -69,8 +73,12 @@ BotObjectiveScript@ ObjectiveScriptRead ( string line )
         sop = GreaterThan;
     else if ( op == "<" )
         sop = LessThan;
-    else
+    else if ( op == "=" )
         sop = Equals;
+    else if ( op == "!=" )
+        sop = NotEqual;
+    else
+        return null;
 
     float value = atof(args[5]);
 

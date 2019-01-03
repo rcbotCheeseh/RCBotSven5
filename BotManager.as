@@ -30,8 +30,6 @@ final class RCBot : BotManager::BaseBot
 {	
 	private float m_fNextThink = 0;
 
-	//RCBotNavigator@ navigator;
-
 	RCBotSchedule@ m_pCurrentSchedule;
 
 	float m_fNextShoutMedic;
@@ -66,6 +64,99 @@ final class RCBot : BotManager::BaseBot
 
 	int m_iGoalWaypoint = -1;
 
+	Vector m_vObjectiveOrigin;
+	bool m_bObjectiveOriginValid;
+
+	Vector m_vNoiseOrigin;
+	EHandle m_pListenPlayer;
+	Vector m_vListenOrigin;
+	float m_flHearNoiseTime = 0;
+
+	float m_fNextTakeCover = 0;
+	int m_iLastFailedWaypoint = -1;
+	EHandle m_pHeal;
+	EHandle m_pRevive;
+	
+	EHandle m_pLastSeenBarney;
+	EHandle m_pLastSeenScientist;
+
+	EHandle m_pFollowingNPC;
+
+	void setFollowingNPC ( CBaseEntity@ NPC )
+	{
+		m_pFollowingNPC = NPC;
+	}
+
+	CBaseEntity@ getNearestScientist ()
+	{
+		return m_pLastSeenScientist;
+	}
+
+	CBaseEntity@ getNearestBarney ()
+	{
+		return m_pLastSeenBarney;
+	}
+
+	bool IsScientistNearby ( )
+	{
+		return m_pLastSeenScientist.GetEntity() !is null;
+	}
+
+	bool IsBarneyNearby ( )
+	{
+		return m_pLastSeenBarney.GetEntity() !is null;
+	}	
+
+	bool IsBarneyFollowing ( )
+	{
+		if ( IsNPCFollowing () )
+		{
+			CBaseEntity@ NPC = m_pFollowingNPC.GetEntity();
+
+			return NPC.GetClassname() == "monster_barney";
+		}
+
+		return false;		
+	}
+
+	bool IsScientistFollowing ()
+	{
+		if ( IsNPCFollowing () )
+		{
+			CBaseEntity@ NPC = m_pFollowingNPC.GetEntity();
+
+			return NPC.GetClassname() == "monster_scientist";
+		}
+
+		return false;
+	}
+
+	bool IsNPCFollowing ()
+	{
+		if ( m_pFollowingNPC.GetEntity() !is null )
+		{
+			CBaseEntity@ NPC = m_pFollowingNPC.GetEntity();
+
+			if ( NPC.pev.deadflag == DEAD_NO )
+			{
+        		CBaseMonster@ NPCm = cast<CBaseMonster@>(NPC);
+
+				if ( NPCm.CanPlayerFollow() )
+				{					
+					if ( NPCm.IsPlayerFollowing() )
+					{
+						return true;
+					}
+				}
+			}
+		}
+
+		// reset
+		m_pFollowingNPC = null;
+
+		return false;
+	}
+	
 	void setNearestTank ( CBaseEntity@ pTank )
 	{
 		//BotMessage("setNearestTank");
@@ -99,9 +190,6 @@ final class RCBot : BotManager::BaseBot
 	 	m_bLastSeeEnemyValid = false;
 		m_pLastEnemy = null;
 	}
-
-	Vector m_vObjectiveOrigin;
-	bool m_bObjectiveOriginValid;
 
 	Vector getObjectiveOrigin ()
 	{
@@ -385,12 +473,12 @@ final class RCBot : BotManager::BaseBot
 
 	float HealthPercent ()
 	{
-		return (float(m_pPlayer.pev.health))/100;
+		return (float(m_pPlayer.pev.health))/m_pPlayer.pev.max_health;
 	}
 
 	float totalHealth ()
 	{
-		return (float(m_pPlayer.pev.health + m_pPlayer.pev.armorvalue))/(100 + m_pPlayer.pev.armortype);
+		return (float(m_pPlayer.pev.health + m_pPlayer.pev.armorvalue))/(m_pPlayer.pev.max_health + m_pPlayer.pev.armortype);
 	}
 
 	bool BreakableIsEnemy ( CBaseEntity@ pBreakable )
@@ -766,14 +854,19 @@ case 	CLASS_BARNACLE	:
 
 		if ( pThirdWpt !is null )
 		{
-			if ( pThirdWpt.hasFlags(W_FL_PLATFORM) )
+			if ( pNextWpt !is null )
 			{
-				addToSchedule(CBotWaitPlatform(pThirdWpt.m_vOrigin));
+				if ( !pNextWpt.hasFlags(W_FL_PLATFORM) )
+				{
+					if ( pThirdWpt.hasFlags(W_FL_PLATFORM) )
+					{
+						addToSchedule(CBotWaitPlatform(pThirdWpt.m_vOrigin));
 
-				return 1;
+						return 1;
+					}
+				}
 			}
 		}
-
 
 		// pop only one waypoint
 		return 1;
@@ -932,16 +1025,6 @@ case 	CLASS_BARNACLE	:
 		return (m_flHearNoiseTime > g_Engine.time);
 	}
 
-	Vector m_vNoiseOrigin;
-	EHandle m_pListenPlayer;
-	Vector m_vListenOrigin;
-	float m_flHearNoiseTime = 0;
-
-	float m_fNextTakeCover = 0;
-	int m_iLastFailedWaypoint = -1;
-	EHandle m_pHeal;
-	EHandle m_pRevive;
-
 	bool isCurrentWeapon ( CBotWeapon@ weap )
 	{
 		return m_pWeapons.m_pCurrentWeapon is weap;
@@ -950,7 +1033,7 @@ case 	CLASS_BARNACLE	:
 	CBotWeapon@ getMedikit ()
 	{
 		return m_pWeapons.findBotWeapon("weapon_medkit");
-	}
+	}	
 
 	CBotWeapon@ getGrapple ()
 	{
@@ -972,11 +1055,30 @@ case 	CLASS_BARNACLE	:
 		if ( medikit.getPrimaryAmmo(this) < 50 )
 			return false;
 
-		if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )	
-			return false;
-
+	
+		if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+		{
+			if ( m_pReviveNPC.GetBool() )
+			{				
+				if ( !entity.IsPlayerAlly() )	
+				{
+					return false;
+				}
+			}
+		}	
+		else
+		{
+			if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )	
+				return false;
+		}
 		if ( entity.pev.deadflag != DEAD_RESPAWNABLE )
 			return false;
+
+// probably a spectator
+		if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )
+		{
+			return false;
+		}			
 
 		return true;
 	}
@@ -992,12 +1094,29 @@ case 	CLASS_BARNACLE	:
             return false;
 		}
 
-		// only heal clients for now
-		if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )
-			return false;
+		if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+		{
+			if ( m_pHealNPC.GetBool() )
+			{				
+				if ( !entity.IsPlayerAlly() )	
+				{
+					return false;
+				}
+			}
+		}	
+		else
+		{
+			if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )	
+				return false;
+		}
 
 		if ( entity.pev.flags & FL_GODMODE == FL_GODMODE )
 			return false;
+// probably a spectator
+		if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )
+		{
+			return false;
+		}
 
 		// can't heal the dead -- revive will be done separately
 		if ( entity.pev.deadflag != DEAD_NO )
@@ -1278,6 +1397,32 @@ case 	CLASS_BARNACLE	:
 				setNearestTank(ent);
 			}
 		}
+
+		if ( ent.GetClassname() == "monster_scientist" )
+		{
+			CBaseEntity@ pScientist = m_pLastSeenScientist.GetEntity();
+
+			if ( ent.IsPlayerAlly() )
+			{
+				if ( (pScientist is null) || (distanceFrom(ent) < distanceFrom(pScientist)) )
+				{
+					m_pLastSeenScientist = ent;
+				}
+			}
+		}
+
+		if ( ent.GetClassname() == "monster_barney" || ent.GetClassname() == "monster_otis" )
+		{
+			CBaseEntity@ pBarney = m_pLastSeenBarney.GetEntity();
+
+			if ( ent.IsPlayerAlly() )
+			{
+				if ( (pBarney is null) || (distanceFrom(ent) < distanceFrom(pBarney)) )
+				{
+					m_pLastSeenBarney = ent;
+				}
+			}
+		}	
 	}
 
 	void lostVisible ( CBaseEntity@ ent )

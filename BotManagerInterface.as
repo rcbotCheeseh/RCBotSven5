@@ -875,6 +875,16 @@ namespace BotManager
 				g_MapInit = false;
 			}
 
+			if ( g_NoTouch )
+			{
+				CBasePlayer@ pPlayer = ListenPlayer();
+
+				if ( pPlayer !is null )
+				{
+					pPlayer.m_flRespawnDelayTime = Math.FLOAT_MAX;
+				}
+			}
+
 			if ( m_NextDebugMessageTime < g_Engine.time )
 			{
 				if ( g_DebugBot.GetEntity() !is null )

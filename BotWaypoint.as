@@ -9,7 +9,7 @@ CWaypointTypes g_WaypointTypes;
 
 const int W_FL_UNDEFINED_0 = (1<<0);//	= ((1<<0) + (1<<1));  /* allow for 4 teams (0-3) */
 const int W_FL_WAIT_NO_PLAYER = (1<<1); // bots wait until space is clear to avoid over crowding
-const int W_FL_TEAM_UP = (1<<2); //	bot waits a while for allies to come by
+const int W_FL_SCIENTIST = (1<<2); //	bot waits a while for allies to come by
 //const int W_FL_TEAM_SPECIFIC = (1<<2);  /* waypoint only for specified team */
 const int W_FL_CROUCH	= 	(1<<3);  /* must crouch to reach this waypoint */
 const int W_FL_LADDER	= 	(1<<4);  /* waypoint on a ladder */
@@ -20,7 +20,7 @@ const int W_FL_ARMOR	= 	(1<<8);  /* armor (or HEV) location */
 const int W_FL_AMMO		=	(1<<9);  /* ammo location */
 const int W_FL_CHECK_GROUND	= (1<<10); /* checks for platform at this point */
 const int W_FL_IMPORTANT	= (1<<11);/* flag position (or hostage or president) */
-const int W_FL_BARNEY_POINT  = (1<<12);
+const int W_FL_BARNEY  = (1<<12);
 const int W_FL_DEFEND_ZONE  =  (1<<13);
 const int W_FL_AIMING	= (1<<14); /* aiming waypoint */
 const int W_FL_CROUCHJUMP = 	(1<<16); // }	
@@ -208,8 +208,8 @@ class CWaypointTypes
 						case W_FL_WAIT_NO_PLAYER :
 							name = "wait_noplayer";
 							break;
-						case W_FL_TEAM_UP :
-							name = "teamup";
+						case W_FL_SCIENTIST :
+							name = "scientist";
 							break;
 						case W_FL_CROUCH :
 							name = "crouch";
@@ -238,7 +238,7 @@ class CWaypointTypes
 						case W_FL_IMPORTANT :
 						name = "important";
 						break;
-						case W_FL_BARNEY_POINT :
+						case W_FL_BARNEY :
 						name = "barney";
 						break;
 						case W_FL_DEFEND_ZONE :

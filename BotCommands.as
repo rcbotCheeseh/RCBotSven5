@@ -43,6 +43,8 @@ CConCommand@ m_pBotQuota;
 CConCommand@ m_pScriptEntOffset;
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
+CCVar@ m_pHealNPC;
+CCVar@ m_pReviveNPC;
 
 //CCVar@ m_pAutoConfig;
 int g_ScriptEntityOffset = 0;
@@ -136,6 +138,10 @@ void PluginInit()
 
 	@m_pVisRevs = CCVar("visrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
+
+	@m_pHealNPC = CCVar("heal_npc", 1, "if > 0 , bots may heal NPCs", ConCommandFlag::AdminOnly);
+	@m_pReviveNPC = CCVar("revive_npc", 1, "if > 0, bots may revive NPCs", ConCommandFlag::AdminOnly);
+
 g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }

@@ -5,6 +5,11 @@ const int VIS_FL_HEAD = 2;
 
 class CBotVisibles
 {
+
+	EHandle m_pNearestAvoid = null;
+	float m_fNearestAvoidDist = 0;
+
+
 	CBotVisibles ( RCBot@ bot )
 	{
 		m_pCurrentEntityHandle = null;
@@ -12,9 +17,6 @@ class CBotVisibles
 		@bits_head = CBits(g_Engine.maxEntities+1);
 		@m_pBot = bot;
 	}
-
-	EHandle m_pNearestAvoid = null;
-	float m_fNearestAvoidDist = 0;
 
 	int getFlags ( bool bBodyVisible, bool bHeadVisible )
 	{
