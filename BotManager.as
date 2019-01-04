@@ -219,7 +219,7 @@ final class RCBot : BotManager::BaseBot
 			if ( args[1] == "come")
 			{
 				RCBotSchedule@ sched = SCHED_CREATE_NEW();
-				RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+				RCBotTask@ task = SCHED_CREATE_PATH(vTalker,talker);
 
 				bBotHeard = true;
 
@@ -233,7 +233,7 @@ final class RCBot : BotManager::BaseBot
 			else if ( args[1] == "wait")
 			{
 				RCBotSchedule@ sched = SCHED_CREATE_NEW();
-				RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+				RCBotTask@ task = SCHED_CREATE_PATH(vTalker,talker);
 
 				bBotHeard = true;
 
@@ -312,7 +312,7 @@ final class RCBot : BotManager::BaseBot
 					if ( pPlayerToFollow !is null && pPlayerToFollow !is m_pPlayer )
 					{
 						RCBotSchedule@ sched = SCHED_CREATE_NEW();
-						RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+						RCBotTask@ task = SCHED_CREATE_PATH(vTalker,talker);
 
 						sched.addTask(task);
 						sched.addTask(CBotTaskFollow(pPlayerToFollow));
@@ -340,7 +340,7 @@ final class RCBot : BotManager::BaseBot
 					if ( pPlayerToHeal !is null && pPlayerToHeal !is m_pPlayer )
 					{
 						RCBotSchedule@ sched = SCHED_CREATE_NEW();
-						RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+						RCBotTask@ task = SCHED_CREATE_PATH(vTalker,talker);
 
 						sched.addTask(task);
 						sched.addTask(CBotTaskHealPlayer(pPlayerToHeal));
@@ -370,7 +370,7 @@ final class RCBot : BotManager::BaseBot
 						if ( pPlayerToRevive.pev.deadflag >= DEAD_RESPAWNABLE )
 						{
 							RCBotSchedule@ sched = SCHED_CREATE_NEW();
-							RCBotTask@ task = SCHED_CREATE_PATH(vTalker);
+							RCBotTask@ task = SCHED_CREATE_PATH(vTalker,talker);
 
 							sched.addTask(task);
 							sched.addTask(CBotTaskRevivePlayer(pPlayerToRevive));
@@ -979,14 +979,14 @@ case 	CLASS_BARNACLE	:
 	}
 
 
-	RCBotTask@ SCHED_CREATE_PATH ( Vector vOrigin )
+	RCBotTask@ SCHED_CREATE_PATH ( Vector vOrigin, CBaseEntity@ pentTarget = null )
 	{
 		int iWpt = g_Waypoints.getNearestWaypointIndex(vOrigin);
 		
 		if ( iWpt == -1 )
 			return null;
 		
-		return CFindPathTask(this,iWpt,null);
+		return CFindPathTask(this,iWpt,pentTarget);
 	}
 
 	// press button and go back to original waypoint
