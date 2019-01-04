@@ -77,7 +77,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_handgrenade",50.0,512.0,WEAP_FL_GRENADE|WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,15)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.6,"weapon_sniperrifle",512.0,8000.0,WEAP_FL_SNIPE,10)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_m249",60.0,2400.0,WEAP_FL_NONE,11)); 
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_minigun",0.0,3000.0,WEAP_FL_NONE,15)); 
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_minigun",0.0,3000.0,WEAP_FL_NONE,16)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_sporelauncher",64.0,1024.0,WEAP_FL_GRENADE|WEAP_FL_NONE,12)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_displacer",64.0,3000.0,WEAP_FL_UNDERWATER,15)); 
     }    
@@ -146,6 +146,11 @@ class CBotWeapon
     bool HasWeapon ()
     {
         return m_pWeaponEntity.GetEntity() !is null;
+    }
+
+    bool IsMinigun ()
+    {
+        return m_pWeaponInfo.m_szName == "weapon_minigun";
     }
 
     bool CanUseUnderwater ()
@@ -481,11 +486,18 @@ class CBotWeapons
         
             if ( desiredWeapon !is null )
             {                
+
 	            //BotMessage("ENEMY = " + pEnemy.GetClassname() + " BEST WEAPON = " + desiredWeapon.GetName() );
 
                 if ( desiredWeapon !is m_pCurrentWeapon )
                 {
-                    selectWeapon(bot,desiredWeapon);
+                    if ( m_pCurrentWeapon.IsMinigun() && !desiredWeapon.IsMinigun() )
+                    {
+                        // drop the weapon 
+                        bot.m_pPlayer.DropItem("weapon_minigun");
+                    }
+                    else                     
+                        selectWeapon(bot,desiredWeapon);
                 }
             }
         }

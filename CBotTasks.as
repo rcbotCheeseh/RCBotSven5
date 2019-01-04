@@ -498,14 +498,22 @@ final class CPickupItemTask : RCBotTask
             Complete();
         }
 
+        bot.setLookAt(UTIL_EntityOrigin(pItem));
+
         if ( bot.distanceFrom(pItem) > 56 )
         {
             bot.setMove(pItem.pev.origin);
 
-             UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(m_pItem.pev.origin);",DEBUG_TASK);
+            UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(m_pItem.pev.origin);",DEBUG_TASK);
         }
         else
+        {
+            // if it's a minigun -- need to press USE to pick up
+            if ( pItem.GetClassname() == "weapon_minigun" )
+                bot.PressButton(IN_USE);
+
             Complete();
+        }
     }
 }
 

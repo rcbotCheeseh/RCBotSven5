@@ -440,14 +440,35 @@ final class RCBot : BotManager::BaseBot
 
 		string message = "Debugging: " + m_pPlayer.pev.netname;
 
-		message = "\nTask: " + task;
+		message += "\nTask: " + task;
 
-		message += "\nGoal: " + m_iGoalWaypoint;
+		message += "\nGoal: " + m_iGoalWaypoint;		
 
 		if ( m_pNextWpt !is null )
 		{
 			message += "\nNext Wpt: " + m_pNextWpt.iIndex;
 		}
+
+		message += "\nEnemy: ";
+
+		if ( m_pEnemy.GetEntity() !is null )
+		{
+			CBaseEntity@ pEnemy = m_pEnemy.GetEntity();
+
+			message += pEnemy.GetClassname();
+		}
+		else 
+			message += "none";
+
+		message += "\nHealth: " + (HealthPercent()*100) + "%";		
+		message += "\nArmor: " + (ArmorPercent()*100) + "%";		
+
+		message += "\nSpeed: ";
+
+		if ( m_fDesiredMoveSpeed == 0 )
+			message += "100%";
+		else 
+			message += "" + ((m_pPlayer.pev.velocity.Length()/m_fDesiredMoveSpeed)*100) + "%";
 
 		return message;
 	}
@@ -477,6 +498,11 @@ final class RCBot : BotManager::BaseBot
 	{
 		return (float(m_pPlayer.pev.health))/m_pPlayer.pev.max_health;
 	}
+
+	float ArmorPercent ()
+	{
+		return (float(m_pPlayer.pev.armorvalue))/m_pPlayer.pev.armortype;
+	}	
 
 	float totalHealth ()
 	{
@@ -1596,8 +1622,20 @@ case 	CLASS_BARNACLE	:
 
 	void Jump ()
 	{
+		CBotWeapon@ weap = m_pWeapons.getCurrentWeapon();
+
+		if ( weap !is null )
+		{
+			if ( weap.IsMinigun() )
+			{
+				// can't jump while holding minigun
+				m_pPlayer.DropItem("weapon_minigun");
+			}
+		}
+
 		m_flJumpTime = g_Engine.time;
 		PressButton(IN_JUMP);
+
 	}
 
 	CWaypoint@ m_pNextWpt = null;
