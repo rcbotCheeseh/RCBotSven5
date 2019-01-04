@@ -1108,6 +1108,9 @@ case 	CLASS_BARNACLE	:
 				{
 					return false;
 				}
+
+				if ( !UTIL_MonsterIsHealable(entity) )			
+					return false;							
 			}
 		}	
 		else
@@ -1141,11 +1144,14 @@ case 	CLASS_BARNACLE	:
 		if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
 		{
 			if ( m_pHealNPC.GetBool() )
-			{				
+			{						
 				if ( !entity.IsPlayerAlly() )	
 				{
 					return false;
 				}
+
+				if ( !UTIL_MonsterIsHealable(entity) )			
+					return false;
 			}
 		}	
 		else

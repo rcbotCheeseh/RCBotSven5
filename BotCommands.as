@@ -142,7 +142,7 @@ void PluginInit()
 	@m_pHealNPC = CCVar("heal_npc", 1, "if > 0 , bots may heal NPCs", ConCommandFlag::AdminOnly);
 	@m_pReviveNPC = CCVar("revive_npc", 1, "if > 0, bots may revive NPCs", ConCommandFlag::AdminOnly);
 
-g_BotCam.Clear(false);
+	g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
 
@@ -561,7 +561,7 @@ void RCBotSearch ( const CCommand@ args )
 
 			Vector vOrigin = UTIL_EntityOrigin(pent);
 
-			BotMessage("" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (vOrigin-v).Length() + " (x=" + vOrigin.x + ",y=" + vOrigin.y + ",z=" + vOrigin.z + ")" + " visible=" + ((pent.pev.effects & EF_NODRAW == EF_NODRAW)?"0":"1") + ",solid=" + pent.pev.solid + ",angle.x = " + pent.pev.angles.x + ", angle.y = " + pent.pev.angles.y  );
+			BotMessage("" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (vOrigin-v).Length() + " (x=" + vOrigin.x + ",y=" + vOrigin.y + ",z=" + vOrigin.z + ")" + " visible=" + ((pent.pev.effects & EF_NODRAW == EF_NODRAW)?"0":"1") + ",solid=" + pent.pev.solid + ",angle.x = " + pent.pev.angles.x + ", angle.y = " + pent.pev.angles.y + " class = " + pent.Classify() );
 		}
 	}
 }

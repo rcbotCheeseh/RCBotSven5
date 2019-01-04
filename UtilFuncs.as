@@ -51,6 +51,26 @@
 
 	}
 
+	bool UTIL_MonsterIsHealable ( CBaseEntity@ entity )
+	{
+		string classname = entity.GetClassname();
+
+		if ( classname == "monster_human_grunt_ally" )
+			return true;
+		if ( classname == "monster_human_medic_ally" )
+			return true;
+		if ( classname == "monster_human_torch_ally" )
+			return true;
+		if ( classname == "monster_barney" )
+			return true;
+		if ( classname == "monster_otis" )
+			return true;
+		if ( classname == "monster_scientist" )
+			return true;
+		
+		return false;
+	}
+
 	Vector UTIL_EntityHitBoxRandom ( CBaseEntity@ entity )
 	{
 		return entity.pev.absmin + 
