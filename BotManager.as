@@ -82,6 +82,8 @@ final class RCBot : BotManager::BaseBot
 
 	EHandle m_pFollowingNPC;
 
+	Vector m_vLadderVector;
+
 	void setFollowingNPC ( CBaseEntity@ NPC )
 	{
 		m_pFollowingNPC = NPC;
@@ -782,13 +784,29 @@ case 	CLASS_BARNACLE	:
 		if ( pThirdWpt !is null )
 			@m_pNextWpt = pThirdWpt;
 		else
-			@m_pNextWpt = null;
+			@m_pNextWpt = null;		
 
 		if ( pNextWpt !is null )
 		{					
 			m_iLastWaypointFrom = wpt.iIndex;
 			m_iLastWaypointTo = pNextWpt.iIndex;
 
+			if ( pNextWpt.hasFlags(W_FL_LADDER) ) 
+			{
+				// Make a ladder component vector for bots to look at
+				// while climbing 
+				// the angle will be 45 degrees up/down
+				Vector vLadderComp = (pNextWpt.m_vOrigin - wpt.m_vOrigin);
+				float fLadderHeight = abs(vLadderComp.z);
+				// nullify height
+				vLadderComp.z = 0;
+				// normalize
+				vLadderComp = vLadderComp/vLadderComp.Length();
+				// add component
+				// bots will look at this vector when climbing
+				m_vLadderVector = pNextWpt.m_vOrigin + (vLadderComp*fLadderHeight);
+
+			}
 			if ( pNextWpt.hasFlags(W_FL_GRAPPLE) )
 			{
 				if ( pThirdWpt !is null )
@@ -1604,7 +1622,7 @@ case 	CLASS_BARNACLE	:
 		}
 		else if ( IsOnLadder() )		
 		{
-			setLookAt(m_vMoveTo,PRIORITY_LADDER);
+			setLookAt(m_vLadderVector,PRIORITY_LADDER);
 		}		
 		else if ( m_fLastHurt > g_Engine.time )
 		{
