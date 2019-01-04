@@ -722,7 +722,34 @@ class CWaypoints
 		g_WaypointsOn = on;
 
 		if ( on )
+		{
+			// Kill beams (w00tguy123)
+			array<CBaseEntity@> toRemove;
+
+			CBaseEntity@ ent = null;
+			do {
+				@ent = g_EntityFuncs.FindEntityByClassname(ent, "*"); 
+				if (ent !is null)
+				{
+					string cname = ent.pev.classname;
+					if (cname == "env_beam" or cname == "env_laser" or cname == "cbeam")
+					{
+						toRemove.insertLast(ent);						
+					}
+				}
+			} while (ent !is null);
+
+			for ( uint i = 0; i < toRemove.length(); i ++ )
+			{
+				@ent = toRemove[i];
+
+				g_EntityFuncs.Remove(ent);
+			}
+
+			BotMessage("removed " + toRemove.length() + " beams");
+
 			BotMessage("Waypoints On");
+		}
 		else 
 			BotMessage("Waypoints OFf");
 	}
