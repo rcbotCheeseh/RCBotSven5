@@ -281,8 +281,9 @@ Each line in the ini file indicates one objective (i.e. one important waypoint) 
    - angle.y      (y angle)
 5. [operator] can be either
    - \>    (greater than)
-   - <    (less than)
-   - =     (equal to)      
+   - <     (less than)
+   - =     (equal to)
+   - !=    (not equal to)
 6. [value] can be any number 
 	
 The objective is considered completed if the [important entity index parameter] [operator] [value] is true
