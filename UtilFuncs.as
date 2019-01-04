@@ -261,53 +261,6 @@
 				 v.x < pent.pev.absmax.x && v.y < pent.pev.absmax.y && v.z < pent.pev.absmax.z );
 	}
 
-	bool UTIL_BreakableIsEnemy ( CBaseEntity@ pBreakable )
-	{
-	//	BotMessage("BreakableIsEnemy()");
-	// i. explosives required to blow breakable
-	// ii. OR is not a world brush (non breakable) and can be broken by shooting
-		if ( ((pBreakable.pev.flags & FL_WORLDBRUSH) != FL_WORLDBRUSH) && ((pBreakable.pev.spawnflags & 1)!=1) )
-		{
-			int iClass;
-			
-			if ( pBreakable.pev.effects & EF_NODRAW == EF_NODRAW )
-				return false;
-
-			iClass = pBreakable.Classify();
-
-			switch ( iClass )
-			{
-				case -1:
-				case 1:
-				case 2:
-				case 3:
-				case 10:
-				case 11:
-				BotMessage("pBreakable.Classify() false");
-				return false;
-				default:
-				break;
-			}
-
-			// forget it!!!
-			if ( pBreakable.pev.health > 9999 )
-			{
-				BotMessage("pBreakable.pev.health > 9999");
-				return false;
-			}
-
-			if ( pBreakable.pev.target != "" )
-			{
-				BotMessage("pBreakable.pev.target != ''");
-				return true;
-			}
-				
-			return true;
-		}
-
-		return false;
-	}	
-
     bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
     {
         TraceResult tr;

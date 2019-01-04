@@ -521,6 +521,15 @@ final class RCBot : BotManager::BaseBot
 			if ( pBreakable.pev.effects & EF_NODRAW == EF_NODRAW )
 				return false;
 
+			// this means explosives only
+			if ( pBreakable.pev.spawnflags & 512 == 512 )
+			{
+				if ( !m_pWeapons.HasExplosives(this) )
+				{
+					return false;
+				}
+			}
+
 			iClass = pBreakable.Classify();
 
 			switch ( iClass )

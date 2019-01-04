@@ -549,7 +549,7 @@ void RCBotSearch ( const CCommand@ args )
 				else 
 					BotMessage("func_door LOCKED!!");
 			}
-			if ( pent.GetClassname() == "func_breakable" )
+			/*if ( pent.GetClassname() == "func_breakable" )
 			{
 				if ( UTIL_BreakableIsEnemy(pent) )
 				{
@@ -557,7 +557,7 @@ void RCBotSearch ( const CCommand@ args )
 				}
 				else
 					BotMessage("Breakable IS NOT AN ENEMY");
-			}
+			}*/
 
 			Vector vOrigin = UTIL_EntityOrigin(pent);
 

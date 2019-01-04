@@ -286,6 +286,23 @@ class CBotWeapons
         @m_pCurrentWeapon = null;
     }
 
+    bool HasExplosives ( RCBot@ bot )
+    {
+        for ( uint i = 0; i < m_pWeapons.length(); i ++ )
+        {
+            CBotWeapon@ weapon = m_pWeapons[i];
+            float distance;
+
+            if ( weapon.HasWeapon() == true )
+            {                
+                if ( weapon.isExplosive(bot) )
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     CBotWeapon@ findBotWeapon ( CBasePlayerWeapon@ weapon )
     {
         for ( uint i = 0; i < m_pWeapons.length(); i ++ )
@@ -414,8 +431,12 @@ class CBotWeapons
 
         if ( target !is null )
         {
-            if ( target.GetClassname() == "monster_gargantua" )
+            string classname = target.GetClassname();
+
+            if ( classname == "monster_gargantua" )
                 bExplosivesOnly = true;
+            if ( classname == "func_breakable" )
+                bExplosivesOnly = (target.pev.spawnflags & 512) == 512;
         }
 
         for ( uint i = 0; i < m_pWeapons.length(); i ++ )
