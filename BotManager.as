@@ -143,7 +143,7 @@ final class RCBot : BotManager::BaseBot
 			{
         		CBaseMonster@ NPCm = cast<CBaseMonster@>(NPC);
 
-				if ( NPCm.CanPlayerFollow() )
+				//if ( NPCm.CanPlayerFollow() )
 				{					
 					if ( NPCm.IsPlayerFollowing() )
 					{

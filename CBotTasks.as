@@ -231,6 +231,11 @@ final class CBotTaskWait : RCBotTask
          m_vFace = vface;
      }
 
+    string DebugString ()
+    {
+        return "CBotTaskWait";
+    }
+
     void execute ( RCBot@ bot )
     {
         if ( m_fWaitTime == 0.0f )
@@ -922,6 +927,10 @@ class CGrappleTask : RCBotTask
         m_vTo = vTo;
         setTimeout(15.0f);
     }
+    string DebugString ()
+    {
+        return "CGrappleTask";
+    }
 
     void execute ( RCBot@ bot )
     {
@@ -963,7 +972,10 @@ class CBotTaskRevivePlayer : RCBotTask
         // Allow 15 sec max for task
         setTimeout(15.0f);
     }
-
+    string DebugString ()
+    {
+        return "CBotTaskRevivePlayer";
+    }
      void execute ( RCBot@ bot )
      {
         CBaseEntity@ pent = m_pHeal.GetEntity();
@@ -1028,7 +1040,10 @@ class CBotTaskFollow : RCBotTask
 {
     EHandle m_pFollow;
     float m_fLastVisibleTime;
-
+    string DebugString ()
+    {
+        return "CBotTaskRevivePlayer";
+    }
      CBotTaskFollow ( CBaseEntity@ pFollow )
      {
          m_pFollow = pFollow;
@@ -1070,7 +1085,10 @@ class CBotTaskFollow : RCBotTask
 class CBotTaskUseNPC : RCBotTask
 {
     EHandle m_pNPC;
-
+    string DebugString ()
+    {
+        return "CBotTaskUseNPC";
+    }
     CBotTaskUseNPC ( CBaseEntity@ NPC )
     {
         m_pNPC = NPC;
@@ -1083,6 +1101,9 @@ class CBotTaskUseNPC : RCBotTask
 
         if ( NPC is null )
         {
+            //UTIL_DebugMsg ( CBaseEntity@ debugBot, string message, int level = 0 )
+            UTIL_DebugMsg ( bot.m_pPlayer, "NPC is null", DEBUG_TASK );
+
             Failed();
 
             return;
@@ -1091,16 +1112,20 @@ class CBotTaskUseNPC : RCBotTask
 
         CBaseMonster@ NPCm = cast<CBaseMonster@>(NPC);
 
-        if ( !NPCm.CanPlayerFollow() )
+        /*if ( !NPCm.CanPlayerFollow() )
         {
             Failed();
+
+            UTIL_DebugMsg ( bot.m_pPlayer, "!NPCm.CanPlayerFollow()", DEBUG_TASK );
             return;
-        }
+        }*/
 
         if ( NPCm.IsPlayerFollowing() )
         {
             Complete();
             bot.setFollowingNPC(NPC);
+
+            UTIL_DebugMsg ( bot.m_pPlayer, "NPCm.IsPlayerFollowing()  Complete()", DEBUG_TASK );
             return;
         }
 
@@ -1118,6 +1143,43 @@ class CBotTaskUseNPC : RCBotTask
                 bot.PressButton(IN_USE);
         }
     }
+
+}
+
+class CBotWaitForEntity : RCBotTask 
+{
+    EHandle m_pEntity;
+    float m_fDist;
+
+    string DebugString ()
+    {
+        return "CBotWaitForEntity";
+    } 
+
+     CBotWaitForEntity ( CBaseEntity@ pEntity, float fDist )
+     {   
+        m_fDist = fDist;
+        m_pEntity = pEntity;
+        setTimeout(Math.RandomFloat(9.0f,11.0f));    
+     }
+
+     void execute ( RCBot@ bot )
+     {
+         CBaseEntity@ pent = m_pEntity.GetEntity();
+
+         if ( pent !is null )
+         {
+            if ( pent.pev.velocity.Length() < 1 )
+            {
+                Complete();
+            }
+
+            bot.StopMoving();
+            bot.setLookAt(UTIL_EntityOrigin(pent));
+         }
+         else
+            Failed();
+     }
 }
 
 class CBotWaitPlatform : RCBotTask
@@ -1746,7 +1808,10 @@ class CBotGetHealthUtil : CBotUtil
 class CWeaponGoalReached : RCBotTask
 {
     CBotGetWeapon@ m_util;
-
+    string DebugString ()
+    {
+        return "CWeaponGoalReached";
+    }
     CWeaponGoalReached ( CBotGetWeapon@ util )
     {
         @m_util = util;
@@ -1880,7 +1945,10 @@ class CBotGetAmmo : CBotUtil
 class CBotMoveToOrigin : RCBotTask
 {
     Vector m_vOrigin;
-
+    string DebugString ()
+    {
+        return "CBotMoveToOrigin";
+    }
     CBotMoveToOrigin ( Vector vOrigin )
     {
         m_fTimeout = 3.0f;
@@ -1932,7 +2000,10 @@ class CBotGetArmorUtil : CBotUtil
 class CObjectiveReachedTask : RCBotTask
 {
     CBotGotoObjectiveUtil@ m_util;
-
+    string DebugString ()
+    {
+        return "CObjectiveReachedTask";
+    }
     CObjectiveReachedTask ( CBotGotoObjectiveUtil@ util )
     {
         @m_util = util;
@@ -2023,6 +2094,8 @@ class CBotGotoObjectiveUtil : CBotUtil
 
             RCBotSchedule@ sched = RCBotSchedule();
 
+            CBaseEntity@ pSciBarn = null;
+
             if ( pWpt.hasFlags(W_FL_SCIENTIST) )
             {
                 if ( !bot.IsScientistFollowing () )
@@ -2038,6 +2111,8 @@ class CBotGotoObjectiveUtil : CBotUtil
                             // no waypoint near scientist! :(
                             return null;
                         }
+
+                        @pSciBarn = pScientist;
                         
                         //CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null, OnPathFail@ onFail = null )
                         
@@ -2067,6 +2142,8 @@ class CBotGotoObjectiveUtil : CBotUtil
                             // no waypoint near scientist! :(
                             return null;
                         }
+
+                        @pSciBarn = pBarney;
                         
                         //CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null, OnPathFail@ onFail = null )
                         
@@ -2090,6 +2167,12 @@ class CBotGotoObjectiveUtil : CBotUtil
             sched.addTask(CCheckObjectiveTask(iRandomGoal));
 
             bot.setObjectiveOrigin(pWpt.m_vOrigin);
+
+            if ( pSciBarn !is null )
+            {
+//  CBotWaitForEntity ( Vector vOrigin, CBaseEntity@ pEntity, float fDist )
+                sched.addTask(CBotWaitForEntity(pSciBarn,100.0f));
+            }
           
             return sched;
         }
