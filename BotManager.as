@@ -1778,6 +1778,11 @@ case 	CLASS_BARNACLE	:
 				if ( pCurrentWeapon.IsSniperRifle() && pCurrentWeapon.IsZoomed() )
 					PressButton(IN_ATTACK2);					
 			}
+			else if ( pCurrentWeapon !is null )
+			{
+				if ( pCurrentWeapon.IsRPG() && !pCurrentWeapon.IsZoomed() )
+					PressButton(IN_ATTACK2);
+			}
 		}
 	}
 

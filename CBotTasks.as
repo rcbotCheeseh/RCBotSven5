@@ -1219,6 +1219,19 @@ class CBotWaitPlatform : RCBotTask
                     break;
             }
          }
+
+         while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "func_plat")) !is null )
+         {             
+            Vector vTop = UTIL_EntityOrigin(pent);
+
+            vTop.z = pent.pev.absmax.z;
+
+            if ( abs(vTop.z - m_vOrigin.z) < 64 )
+            {
+                    Complete();
+                    break;
+            }
+         }         
      }
 }
 
