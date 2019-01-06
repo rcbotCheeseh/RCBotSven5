@@ -215,6 +215,9 @@ final class CFindHealthTask : RCBotTask
         // nothing to pick up -- maybe a resupply?
         @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
+        if ( pent is null )
+            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
         if ( pent !is null )
         {
             UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
@@ -370,7 +373,8 @@ final class CFindAmmoTask : RCBotTask
         {
             // nothing to pick up -- maybe a resupply?
             @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
-
+        if ( pent is null )
+            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
             if ( pent !is null )
             {
                 UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
@@ -489,7 +493,8 @@ final class CFindArmorTask : RCBotTask
 
         // nothing to pick up -- maybe a resupply?
         @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
-
+        if ( pent is null )
+            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
         if ( pent !is null )
         {
             UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
@@ -577,7 +582,7 @@ final class CCheckObjectiveTask : RCBotTask
     }
     void execute ( RCBot@ bot )
     {
-        switch ( g_WaypointScripts.canDoObjective(m_iWpt) )				
+        switch ( g_WaypointScripts.canDoObjective(bot.m_pPlayer,m_iWpt) )				
         {
             case BotWaypointScriptResult_Error:
             case BotWaypointScriptResult_Incomplete:
@@ -1231,9 +1236,9 @@ class CBotWaitPlatform : RCBotTask
         return "CBotWaitPlatform";
     } 
 
-     CBotWaitPlatform ( Vector vOrigin )
+     CBotWaitPlatform ( Vector vPlatform )
      {
-        m_vOrigin = vOrigin;   
+        m_vOrigin = vPlatform;       
         setTimeout(Math.RandomFloat(9.0f,11.0f));    
      }
 
@@ -2135,7 +2140,7 @@ class CBotGotoObjectiveUtil : CBotUtil
 
         // use script if exists
         if ( g_WaypointScripts.ScriptExists() )
-            iRandomGoal = g_Waypoints.getIncompleteObjective();
+            iRandomGoal = g_Waypoints.getIncompleteObjective(bot.m_pPlayer);
         else
             iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT,failed);
 

@@ -191,7 +191,7 @@ class BotWaypointScript
         }
     }
 
-    BotWaypointScriptResult canDoObjective ( int wptid )
+    BotWaypointScriptResult canDoObjective ( CBaseEntity@ pBot, int wptid )
     {
         BotObjectiveScript@ script = getScript(wptid);
         CWaypoint@ pWpt;
@@ -204,7 +204,7 @@ class BotWaypointScript
 
         if ( script.previous_id >= 0 )
         {
-            if ( canDoObjective(script.previous_id) != BotWaypointScriptResult_Complete )
+            if ( canDoObjective(pBot,script.previous_id) != BotWaypointScriptResult_Complete )
             {
                // BotMessage("SCRIPT isObjectiveComplete(script.previous_id) != BotWaypointScriptResult_Complete" );
                 return BotWaypointScriptResult_Previous_Incomplete;
@@ -239,7 +239,16 @@ class BotWaypointScript
 
             //BotMessage("ID: " + wptid + " " + script.parameter);
 
-            if ( script.parameter == "distance" )
+            if ( script.parameter == "active" )
+            {
+                float isActive = UTIL_ToggleIsActive(pent,pBot) ? 1.0 : 0.0;
+
+                BotMessage("isActive == " + isActive);
+                
+                if ( CheckScriptOperator(isActive,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+            }
+            else if ( script.parameter == "distance" )
             {
                 float distance = (UTIL_EntityOrigin(pent) - vOrigin).Length();
 

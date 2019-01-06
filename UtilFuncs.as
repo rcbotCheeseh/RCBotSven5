@@ -457,6 +457,38 @@ CBaseEntity@ UTIL_FindButton ( CBaseToggle@ door, CBaseEntity@ pPlayer )
 	return null;
 }
 
+
+bool UTIL_ToggleIsActive ( CBaseEntity@ pent , CBaseEntity@ pActivator )
+{
+
+	CBaseToggle@ toggle = cast<CBaseToggle@>(pent);
+
+	if ( toggle is null )
+	{
+		//BotMessage("toggle is null");
+		return pent.IsTriggered(pActivator);
+	}
+
+	string masterName = toggle.m_sMaster;
+	//BotMessage("Looking for master "+masterName);
+
+    CBaseEntity@ pMaster = FIND_ENTITY_BY_TARGETNAME(null,masterName);
+	CBaseEntity@ pButton;
+
+    if ( pMaster !is null )
+    {
+		//BotMessage("pMaster !is null");
+        return pMaster.IsTriggered(pActivator);
+    }
+	//else 
+		//BotMessage("pMaster is null");
+
+	if ( toggle.pev.targetname == "" )
+		return true;
+
+	return false;
+}
+
 bool UTIL_DoorIsOpen ( CBaseDoor@ door, CBaseEntity@ pActivator )
 {
     string masterName = door.m_sMaster;

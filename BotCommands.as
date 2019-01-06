@@ -527,7 +527,8 @@ void NoClipModeFunc ( const CCommand@ args )
 void RCBotSearch ( const CCommand@ args )
 {
 	float distance = 200.0f;
-	Vector v = ListenPlayer().pev.origin;
+	CBaseEntity@ lp = ListenPlayer();
+	Vector v = lp.pev.origin;
 	CBaseEntity@ pent = null;
 
 	if ( args.ArgC() > 1 )
@@ -538,30 +539,10 @@ void RCBotSearch ( const CCommand@ args )
 		if ( (UTIL_EntityOrigin(pent) - v).Length() < distance )
 		{
 			int index = g_EntityFuncs.EntIndex(pent.edict());
-
-			if ( pent.GetClassname() == "func_door" )
-			{
-				CBaseDoor@ door = cast<CBaseDoor@>( pent );
-				bool open = UTIL_DoorIsOpen(door,ListenPlayer());
-
-				if ( open )
-					BotMessage("func_door UNLOCKED");
-				else 
-					BotMessage("func_door LOCKED!!");
-			}
-			/*if ( pent.GetClassname() == "func_breakable" )
-			{
-				if ( UTIL_BreakableIsEnemy(pent) )
-				{
-					BotMessage("Breakable IS AN ENEMY");
-				}
-				else
-					BotMessage("Breakable IS NOT AN ENEMY");
-			}*/
-
+			
 			Vector vOrigin = UTIL_EntityOrigin(pent);
 
-			BotMessage("" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (vOrigin-v).Length() + " (x=" + vOrigin.x + ",y=" + vOrigin.y + ",z=" + vOrigin.z + ")" + " visible=" + ((pent.pev.effects & EF_NODRAW == EF_NODRAW)?"0":"1") + ",solid=" + pent.pev.solid + ",angle.x = " + pent.pev.angles.x + ", angle.y = " + pent.pev.angles.y + " class = " + pent.Classify() );
+			BotMessage("" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (vOrigin-v).Length() + " (x=" + vOrigin.x + ",y=" + vOrigin.y + ",z=" + vOrigin.z + ")" + " visible=" + ((pent.pev.effects & EF_NODRAW == EF_NODRAW)?"0":"1") + ",solid=" + pent.pev.solid + ",angle.x = " + pent.pev.angles.x + ", angle.y = " + pent.pev.angles.y + " active = " + (UTIL_ToggleIsActive(pent,lp) ? "1" : "0") );
 		}
 	}
 }

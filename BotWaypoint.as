@@ -946,15 +946,19 @@ class CWaypoints
 							continue;
 
 						if ( pent.pev.owner is null )
-						{					
-							if ( classname.SubString(0,7) == "weapon_")
-								flags |= W_FL_WEAPON;
-							else if ( classname.SubString(0,5) == "ammo_")
-								flags |= W_FL_AMMO;
-							else if ( classname.SubString(0,11) == "item_health")
-								flags |= W_FL_HEALTH;
-							else if ( classname.SubString(0,12) == "item_battery")
-								flags |= W_FL_ARMOR;
+						{				
+							// must be a respawnable item
+							if ( pent.pev.spawnflags & SF_NORESPAWN == 0 )
+							{
+								if ( classname.SubString(0,7) == "weapon_")
+									flags |= W_FL_WEAPON;
+								else if ( classname.SubString(0,5) == "ammo_")
+									flags |= W_FL_AMMO;
+								else if ( classname.SubString(0,11) == "item_health")
+									flags |= W_FL_HEALTH;
+								else if ( classname.SubString(0,12) == "item_battery")
+									flags |= W_FL_ARMOR;
+							}
 						}
 
 						if ( classname.SubString(0,11) == "func_button")
@@ -981,7 +985,7 @@ class CWaypoints
 		return false;
 	}
 
-	int getIncompleteObjective ()
+	int getIncompleteObjective (CBaseEntity@ pBot)
 	{
 		array<int> objectives = {};
 
@@ -993,7 +997,7 @@ class CWaypoints
 			if ( (m_Waypoints[i].m_iFlags & W_FL_IMPORTANT) == W_FL_IMPORTANT )
 			{
 
-				switch ( g_WaypointScripts.canDoObjective(i) )				
+				switch ( g_WaypointScripts.canDoObjective(pBot,i) )				
 				{
 					case BotWaypointScriptResult_Incomplete:
 					objectives.insertLast(i);
