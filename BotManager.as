@@ -278,6 +278,9 @@ final class RCBot : BotManager::BaseBot
 				
 				CBaseEntity@ pButton = UTIL_FindNearestEntity ( "func_button", talker.EyePosition(), 128.0f, true, false );
 
+				if ( pButton is null )
+					@pButton = UTIL_FindNearestEntity ( "momentary_rot_button", talker.EyePosition(), 128.0f, true, false );
+
 				bBotHeard = true;
 
 				if ( pButton !is null )

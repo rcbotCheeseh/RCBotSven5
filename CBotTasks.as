@@ -212,8 +212,20 @@ final class CFindHealthTask : RCBotTask
 
         }
 
+        // nothing to pick up -- maybe a resupply?
+        @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
+        if ( pent !is null )
+        {
+            UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
+
+            m_pContainingSchedule.addTask(CUseButtonTask(pent));
+
+            Complete();          
+            return;
+        }        
         
-            UTIL_DebugMsg(bot.m_pPlayer,"nothing FOUND",DEBUG_TASK);
+        UTIL_DebugMsg(bot.m_pPlayer,"nothing FOUND",DEBUG_TASK);
 
         Failed();
     }
@@ -329,7 +341,7 @@ final class CFindAmmoTask : RCBotTask
 
         array<CBaseEntity@> pickup;
         
-        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 512,"ammo_*", "classname" )) !is null )
+        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 128,"ammo_*", "classname" )) !is null )
         {
             if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW && pent.pev.owner is null )
             {      
@@ -353,6 +365,21 @@ final class CFindAmmoTask : RCBotTask
 
             Complete();            
             return;
+        }
+        else
+        {
+            // nothing to pick up -- maybe a resupply?
+            @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
+            if ( pent !is null )
+            {
+                UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
+
+                m_pContainingSchedule.addTask(CUseButtonTask(pent));
+
+                Complete();          
+                return;
+            }
         }
 
         Failed();
@@ -459,6 +486,19 @@ final class CFindArmorTask : RCBotTask
             }
             
         }
+
+        // nothing to pick up -- maybe a resupply?
+        @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
+        if ( pent !is null )
+        {
+            UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
+
+            m_pContainingSchedule.addTask(CUseButtonTask(pent));
+
+            Complete();          
+            return;
+        }        
 
         UTIL_DebugMsg(bot.m_pPlayer,"nothing FOUND",DEBUG_TASK);
 
