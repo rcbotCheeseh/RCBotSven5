@@ -395,7 +395,7 @@ CBasePlayer@ UTIL_FindPlayer ( string szName, CBaseEntity@ pIgnore = null, bool 
 
 		if( pPlayer is null )
 			continue;
-			BotMessage("UTIL_FindPlayer " + pPlayer.pev.netname);
+		//	BotMessage("UTIL_FindPlayer " + pPlayer.pev.netname);
 		if ( pPlayer is pIgnore )
 			continue;
 		if ( bBotsOnly )
@@ -410,7 +410,7 @@ CBasePlayer@ UTIL_FindPlayer ( string szName, CBaseEntity@ pIgnore = null, bool 
 		{			
 			@pBestMatch = pPlayer;
 			iBestMatch = iMatch;
-			BotMessage("iBestMatch == " + iMatch);
+			//BotMessage("iBestMatch == " + iMatch);
 		}
 	}
 

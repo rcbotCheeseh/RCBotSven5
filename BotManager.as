@@ -933,6 +933,31 @@ case 	CLASS_BARNACLE	:
 
 	void followingWpt ( Vector vOrigin, int flags )
 	{
+		if ( flags & W_FL_PLATFORM == W_FL_PLATFORM )
+		{
+			if ( m_pPlayer.pev.groundentity !is null )
+			{
+				CBaseEntity@ pGroundEnt = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);
+
+				if ( pGroundEnt !is null )
+				{
+					// on a lift / platform - don't move
+					if ( pGroundEnt.pev.velocity.Length() > 0 )
+					{
+						float fWptDist = (vOrigin-m_pPlayer.pev.origin).Length();
+						// Waypoint is off the edge of the platform -- wait
+						if ( fWptDist > (pGroundEnt.pev.size.Length2D()/2) )
+						{
+							StopMoving();
+							//BotMessage("WptDist >>>>");
+							return;
+						}
+						//else
+						//	BotMessage("WptDist <<<");
+					}
+				}
+			}			
+		}
 
 		if ( flags & W_FL_CROUCH == W_FL_CROUCH )
 			PressButton(IN_DUCK);
@@ -1602,17 +1627,6 @@ case 	CLASS_BARNACLE	:
 		//	navigator.execute(this);
 		float fStuckSpeed = 0.1*m_fDesiredMoveSpeed;
 
-		/*if ( m_pPlayer.pev.groundentity !is null )
-		{
-			CBaseEntity@ pGroundEnt = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);
-
-			if ( pGroundEnt !is null )
-			{
-				// on a lift / platform - don't move
-				if ( pGroundEnt.pev.velocity.Length() > 0 )
-					StopMoving();
-			}
-		}*/
 
 		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
 			fStuckSpeed /= 2;

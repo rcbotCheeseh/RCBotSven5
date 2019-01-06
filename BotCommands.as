@@ -365,7 +365,7 @@ void DebugBot ( const CCommand@ args )
 	if ( args.ArgC() > 1 )
 	{
 		BotMessage("Finding player " + args[1]);
-		g_DebugBot = UTIL_FindPlayer(args[1]);
+		g_DebugBot = UTIL_FindPlayer(args[1],null,true);
 	}
 	if ( g_DebugBot.GetEntity() !is null )
 		SayMessageAll(ListenPlayer(),"Debug '"+g_DebugBot.GetEntity().pev.netname+"' (if bot)");

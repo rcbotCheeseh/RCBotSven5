@@ -1258,7 +1258,7 @@ class CBotWaitPlatform : RCBotTask
          {             
             Vector vOrigin = UTIL_EntityOrigin(pent) + (pent.pev.velocity*myTime);
 
-            if ( (vOrigin - m_vOrigin).Length() < (pent.pev.size.Length2D()/2) )
+            if ( (vOrigin - m_vOrigin).Length() < (pent.pev.size.Length2D()/2.1) )
             {
                     Complete();
                     break;
