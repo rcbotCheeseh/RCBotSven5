@@ -286,6 +286,7 @@ Each line in the ini file indicates one objective (i.e. one important waypoint) 
      - 4 = BSP clip
    - angle.x      (x angle)
    - angle.y      (y angle)
+   - active       (if it is triggered/unlocked)
 5. [operator] can be either
    - \>    (greater than)
    - <     (less than)
