@@ -1246,37 +1246,16 @@ class CBotWaitPlatform : RCBotTask
      {
          CBaseEntity@ pent = null;
 
-         float myDist = bot.distanceFrom(m_vOrigin);         
-         float mySpeed = bot.m_pPlayer.pev.maxspeed;
-         float myTime;
-         
-         myTime = myDist/mySpeed;
-
          bot.StopMoving();
 
-         while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "func_train")) !is null )
-         {             
-            Vector vOrigin = UTIL_EntityOrigin(pent) + (pent.pev.velocity*myTime);
+        TraceResult tr;
 
-            if ( (vOrigin - m_vOrigin).Length() < (pent.pev.size.Length2D()/2.1) )
-            {
-                    Complete();
-                    break;
-            }
-         }
+        g_Utility.TraceLine( m_vOrigin, m_vOrigin-Vector(0,0,64), ignore_monsters,dont_ignore_glass, bot.m_pPlayer.edict(), tr );
 
-         while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "func_plat")) !is null )
-         {             
-            Vector vTop = UTIL_EntityOrigin(pent);
+        bot.setLookAt(m_vOrigin);
 
-            vTop.z = pent.pev.absmax.z;
-
-            if ( abs(vTop.z - m_vOrigin.z) < 64 )
-            {
-                    Complete();
-                    break;
-            }
-         }         
+        if ( tr.flFraction < 1.0 )
+            Complete();
      }
 }
 

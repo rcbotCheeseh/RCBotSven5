@@ -912,13 +912,20 @@ case 	CLASS_BARNACLE	:
 		{
 			if ( pNextWpt !is null )
 			{
-				if ( !pNextWpt.hasFlags(W_FL_PLATFORM) )
+				if ( !wpt.hasFlags(W_FL_PLATFORM) )
 				{
-					if ( pThirdWpt.hasFlags(W_FL_PLATFORM) )
+					// If need to wait for platform or jump to platform, wait
+					if (!wpt.hasFlags(W_FL_JUMP) && pNextWpt.hasFlags(W_FL_PLATFORM) )
+					{
+						addToSchedule(CBotWaitPlatform(pNextWpt.m_vOrigin));
+
+						return 1;
+					}
+					else if ( pThirdWpt.hasFlags(W_FL_PLATFORM) && pNextWpt.hasFlags(W_FL_JUMP) )
 					{
 						addToSchedule(CBotWaitPlatform(pThirdWpt.m_vOrigin));
 
-						return 1;
+						return 1;					
 					}
 				}
 			}
@@ -944,14 +951,24 @@ case 	CLASS_BARNACLE	:
 					// on a lift / platform - don't move
 					if ( pGroundEnt.pev.velocity.Length() > 0 )
 					{
-						float fWptDist = (vOrigin-m_pPlayer.pev.origin).Length();
-						// Waypoint is off the edge of the platform -- wait
-						if ( fWptDist > (pGroundEnt.pev.size.Length2D()/2) )
+						TraceResult tr;
+
+						g_Utility.TraceLine( vOrigin, vOrigin-Vector(0,0,64), ignore_monsters,dont_ignore_glass, m_pPlayer.edict(), tr );
+
+						if ( tr.pHit !is pGroundEnt.edict() )
 						{
-							StopMoving();
+							// move to centre of platform and stop moving
+							Vector vCentre = UTIL_EntityOrigin(pGroundEnt);
+							vCentre.z = m_pPlayer.pev.origin.z;
+
+							if ( (m_pPlayer.pev.origin - vCentre).Length() > 64 )
+								setMove(vCentre);
+							else 
+								StopMoving();
 							//BotMessage("WptDist >>>>");
 							return;
 						}
+
 						//else
 						//	BotMessage("WptDist <<<");
 					}
