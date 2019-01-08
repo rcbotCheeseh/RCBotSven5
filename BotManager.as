@@ -961,7 +961,7 @@ case 	CLASS_BARNACLE	:
 							Vector vCentre = UTIL_EntityOrigin(pGroundEnt);
 							vCentre.z = m_pPlayer.pev.origin.z;
 
-							if ( (m_pPlayer.pev.origin - vCentre).Length() > 64 )
+							if ( (m_pPlayer.pev.origin - vCentre).Length() > 48 )
 								setMove(vCentre);
 							else 
 								StopMoving();
@@ -1648,7 +1648,7 @@ case 	CLASS_BARNACLE	:
 		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
 			fStuckSpeed /= 2;
 		// for courch jump
-		if ( m_flJumpTime + 1.0f > g_Engine.time )
+		if ( m_flJumpTime + 0.5f > g_Engine.time )
 		{
 			if ( !IsOnLadder() )
 				PressButton(IN_DUCK);
