@@ -77,8 +77,10 @@ BotObjectiveScript@ ObjectiveScriptRead ( string line )
         sop = Equals;
     else if ( op == "!=" )
         sop = NotEqual;
+    else if ( op == "null" )
+        sop = Equals;
     else
-        return null;
+        return null; // Invalid operation
 
     float value = atof(args[5]);
 
@@ -184,6 +186,10 @@ class BotWaypointScript
                 if ( script !is null )
                 {                    
                     m_scripts.insertLast(script);
+                }
+                else
+                {
+                    BotMessage("ERROR Reading waypoint script line '"+fileLine+"'");
                 }
             }
 
