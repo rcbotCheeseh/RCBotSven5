@@ -829,22 +829,35 @@ case 	CLASS_BARNACLE	:
 			m_iLastWaypointFrom = wpt.iIndex;
 			m_iLastWaypointTo = pNextWpt.iIndex;
 
-			if ( pNextWpt.hasFlags(W_FL_LADDER) ) 
+			if ( pThirdWpt !is null )
 			{
-				// Make a ladder component vector for bots to look at
-				// while climbing 
-				// the angle will be 45 degrees up/down
-				Vector vLadderComp = (pNextWpt.m_vOrigin - wpt.m_vOrigin);
-				float fLadderHeight = abs(vLadderComp.z);
-				// nullify height
-				vLadderComp.z = 0;
-				// normalize
-				vLadderComp = vLadderComp/vLadderComp.Length();
-				// add component
-				// bots will look at this vector when climbing
-				m_vLadderVector = pNextWpt.m_vOrigin + (vLadderComp*fLadderHeight);
+				if ( pNextWpt.hasFlags(W_FL_LADDER) && !wpt.hasFlags(W_FL_LADDER) && pThirdWpt.hasFlags(W_FL_LADDER) ) 
+				{					
+					// Make a ladder component vector for bots to look at
+					// while climbing 
+					// the angle will be 45 degrees up/down
+					
+					Vector vLadderComp = (pNextWpt.m_vOrigin - wpt.m_vOrigin);
+					float fLadderHeight = abs(pThirdWpt.m_vOrigin.z - pNextWpt.m_vOrigin.z);
+					fLadderHeight/=8;
+					bool bIsUp = pThirdWpt.m_vOrigin.z > pNextWpt.m_vOrigin.z;
+					// nullify height
+					vLadderComp.z = 0;
+					// normalize
+					vLadderComp = vLadderComp/vLadderComp.Length();
+					// add component
+					// bots will look at this vector when climbing
 
+					if ( bIsUp )
+						m_vLadderVector = pThirdWpt.m_vOrigin + (vLadderComp*fLadderHeight);
+					else 
+						m_vLadderVector = pThirdWpt.m_vOrigin - (vLadderComp*fLadderHeight);
+
+					//drawBeam (ListenPlayer(), m_pPlayer.pev.origin, m_vLadderVector, WptColor(255,255,255,255), 50 );
+
+				}
 			}
+
 			if ( pNextWpt.hasFlags(W_FL_GRAPPLE) )
 			{
 				if ( pThirdWpt !is null )

@@ -620,9 +620,15 @@ final class CWaypointVisibility
 	int run ( )
 	{
 
-		if ( state == W_VIS_RUNNING )
+		if ( state == W_VIS_RUNNING  )
 		{
 			int iLoops = 0;
+
+			if ( m_iNumWaypoints == 0  )
+			{
+				state = W_VIS_COMPLETE;
+				return state;
+			}
 
 			int Percent = (100 * ((iWptFrom * m_iNumWaypoints) + iWptTo)) / (m_iNumWaypoints * m_iNumWaypoints);
 
