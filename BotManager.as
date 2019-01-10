@@ -831,7 +831,15 @@ case 	CLASS_BARNACLE	:
 
 			if ( pThirdWpt !is null )
 			{
-				if ( pNextWpt.hasFlags(W_FL_LADDER) && !wpt.hasFlags(W_FL_LADDER) && pThirdWpt.hasFlags(W_FL_LADDER) ) 
+				bool bIsUp = pThirdWpt.m_vOrigin.z > wpt.m_vOrigin.z;
+
+				// goind down - look at thrid waypoint if not ladder
+				if ( bIsUp == false )
+				{
+					if ( !pThirdWpt.hasFlags(W_FL_LADDER) )
+						m_vLadderVector = pThirdWpt.m_vOrigin;
+				}
+				else if ( pNextWpt.hasFlags(W_FL_LADDER) && !wpt.hasFlags(W_FL_LADDER) && pThirdWpt.hasFlags(W_FL_LADDER) ) 
 				{					
 					// Make a ladder component vector for bots to look at
 					// while climbing 
@@ -840,7 +848,7 @@ case 	CLASS_BARNACLE	:
 					Vector vLadderComp = (pNextWpt.m_vOrigin - wpt.m_vOrigin);
 					float fLadderHeight = abs(pThirdWpt.m_vOrigin.z - pNextWpt.m_vOrigin.z);
 					fLadderHeight/=8;
-					bool bIsUp = pThirdWpt.m_vOrigin.z > pNextWpt.m_vOrigin.z;
+										
 					// nullify height
 					vLadderComp.z = 0;
 					// normalize
@@ -848,14 +856,16 @@ case 	CLASS_BARNACLE	:
 					// add component
 					// bots will look at this vector when climbing
 
-					if ( bIsUp )
-						m_vLadderVector = pThirdWpt.m_vOrigin + (vLadderComp*fLadderHeight);
-					else 
-						m_vLadderVector = pThirdWpt.m_vOrigin - (vLadderComp*fLadderHeight);
+					m_vLadderVector = pThirdWpt.m_vOrigin + (vLadderComp*fLadderHeight);
 
 					//drawBeam (ListenPlayer(), m_pPlayer.pev.origin, m_vLadderVector, WptColor(255,255,255,255), 50 );
 
 				}
+			}
+			else
+			{
+				if ( !pNextWpt.hasFlags(W_FL_LADDER) )
+					m_vLadderVector = pNextWpt.m_vOrigin;
 			}
 
 			if ( pNextWpt.hasFlags(W_FL_GRAPPLE) )
