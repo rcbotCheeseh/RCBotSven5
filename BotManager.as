@@ -737,6 +737,35 @@ case 	CLASS_BARNACLE	:
 				else
 					return false;
 			}		
+			else
+			{
+				CBaseEntity@ pent = null;
+				bool bFound = false;
+				Vector vSucc = succWpt.m_vOrigin;		
+
+				while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "trigger_push")) !is null )
+				//while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, succWpt.m_vOrigin , 128,"trigger_hurt", "classname"  )) !is null )
+				{										
+						if ( ((pent.pev.spawnflags & 8)!=8) && (pent.pev.solid == SOLID_TRIGGER) )
+						{
+							if ( UTIL_VectorInsideEntity(pent,vSucc) || ((UTIL_EntityOrigin(pent)-vSucc).Length() < 128) )
+							{
+								//BotMessage("TRIGGET PUSH DETECTED!!!");
+								bFound = true;
+								break;	
+							}
+
+							//BotMessage("TRIGGET PUSH DETECTED!!! 1");
+						}
+
+						//BotMessage("TRIGGET PUSH DETECTED!!! 2");
+				}
+
+
+				if ( bFound )
+					return false;
+									
+			}
 		}
 		if ( succWpt.hasFlags(W_FL_PAIN) )
 		{

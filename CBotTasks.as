@@ -218,6 +218,9 @@ final class CFindHealthTask : RCBotTask
         if ( pent is null )
             @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
 
+        if ( pent is null )
+            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
         if ( pent !is null )
         {
             UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
@@ -375,6 +378,9 @@ final class CFindAmmoTask : RCBotTask
             @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
         if ( pent is null )
             @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+           if ( pent is null )
+            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
             if ( pent !is null )
             {
                 UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
@@ -495,6 +501,9 @@ final class CFindArmorTask : RCBotTask
         @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
         if ( pent is null )
             @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+         if ( pent is null )
+            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+
         if ( pent !is null )
         {
             UTIL_DebugMsg(bot.m_pPlayer,"nothing to pick up -- maybe a resupply?",DEBUG_TASK);	
