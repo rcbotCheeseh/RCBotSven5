@@ -865,8 +865,7 @@ final class CBotButtonTask : RCBotTask
         else if ( m_fStartTime < g_Engine.time )
             Complete();
 
-        if ( Math.RandomLong(0,100) > 50 )
-            bot.PressButton(m_iButton);
+        bot.PressButton(m_iButton);
     }
 }
 
