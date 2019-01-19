@@ -301,7 +301,7 @@ final class RCBot : BotManager::BaseBot
 			{
 				bBotHeard = true;
 
-				if ( args.length > 2 )
+				if ( args.length() > 2 )
 				{
 					CBaseEntity@ pPlayerToFollow = null;
 
@@ -329,7 +329,7 @@ final class RCBot : BotManager::BaseBot
 			{
 				bBotHeard = true;
 
-				if ( args.length > 2 )
+				if ( args.length() > 2 )
 				{
 					CBaseEntity@ pPlayerToHeal = null;
 
@@ -357,7 +357,7 @@ final class RCBot : BotManager::BaseBot
 			{
 				bBotHeard = true;
 
-				if ( args.length > 2 )
+				if ( args.length() > 2 )
 				{
 					CBaseEntity@ pPlayerToRevive = null;
 
@@ -388,7 +388,7 @@ final class RCBot : BotManager::BaseBot
 			{
 				bBotHeard = true;
 
-				if ( args.length > 3 )
+				if ( args.length() > 3 )
 				{
 					RCBotSchedule@ sched = SCHED_CREATE_NEW();
 					RCBotTask@ task = SCHED_CREATE_PATH(vTalker);

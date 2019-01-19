@@ -1359,10 +1359,10 @@ class RCBotWaypointSorter
 {
 	void add ( int index, Vector vHideFrom )
 	{
-		int iInsertInto = m_pWaypoints.length;
+		int iInsertInto = m_pWaypoints.length();
 		CWaypoint@ other = g_Waypoints.getWaypointAtIndex(index);
 
-		for ( uint i = 0; i < m_pWaypoints.length; i ++ )
+		for ( uint i = 0; i < m_pWaypoints.length(); i ++ )
 		{
 			CWaypoint@ inList = m_pWaypoints[i];
 
