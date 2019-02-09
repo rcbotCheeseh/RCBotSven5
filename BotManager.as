@@ -1190,6 +1190,16 @@ case 	CLASS_BARNACLE	:
 		return m_pWeapons.findBotWeapon("weapon_grapple");
 	}	
 
+	CBotWeapon@ getExplosives ()
+	{
+		return m_pWeapons.findBotWeapon("weapon_explosive");
+	}			
+
+	CBotWeapon@ getTripmines ()
+	{
+		return m_pWeapons.findBotWeapon("weapon_tripmine");
+	}	
+
 	void selectWeapon ( CBotWeapon@ weapon )
 	{
 		m_pWeapons.selectWeapon(this,weapon);

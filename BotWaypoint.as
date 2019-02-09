@@ -705,11 +705,72 @@ class CWaypoints
 	int m_iNumWaypoints = 0;
 	int m_PathFrom;
 
+	int m_iPasteWaypointFlags = 0;
+	uint m_iMoveWaypointIndex = 0;
+	bool m_bMoveWaypointValid = false;
+
 	CWaypointVisibility@ m_VisibilityTable = null;
 
 	CWaypoint@ getWaypointAtIndex ( uint idx )
 	{
 		return m_Waypoints[idx];
+	}
+
+	void copyWaypoint ( CBaseEntity@ player )
+	{
+		int wpt = getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
+
+		if ( wpt != -1 )
+		{
+			m_iPasteWaypointFlags = m_Waypoints[wpt].m_iFlags;		
+		}
+
+		playsound(player,wpt != -1);
+	}
+
+	void cutWaypoint ( CBaseEntity@ player )
+	{
+		int wpt = getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
+
+		if ( wpt != -1 )
+		{
+			m_iPasteWaypointFlags = m_Waypoints[wpt].m_iFlags;	
+			deleteWaypoint(wpt);
+		}
+
+		playsound(player,wpt != -1);
+
+	}
+
+	void pasteWaypoint ( CBaseEntity@ player )
+	{
+		addWaypoint ( player.pev.origin, m_iPasteWaypointFlags, player );
+		
+	}
+
+	void moveWaypoint1 ( CBaseEntity@ player )
+	{
+		int wpt = getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
+
+		if ( wpt != -1 )
+		{
+			m_bMoveWaypointValid = true;
+			m_iMoveWaypointIndex = wpt;
+		}
+		playsound(player,wpt != -1);
+
+	}
+
+	void moveWaypoint2 ( CBaseEntity@ player )
+	{
+		
+		if ( m_bMoveWaypointValid )
+		{
+			m_Waypoints[m_iMoveWaypointIndex].m_vOrigin = player.pev.origin;
+			
+		}
+
+		playsound(player,m_bMoveWaypointValid);
 	}
 
 	void runVisibility ()
@@ -893,8 +954,6 @@ class CWaypoints
 				BotMessage("Num waypoints = "+m_iNumWaypoints);
 
 				CWaypoint@ added = getWaypointAtIndex(index);
-				
-				TraceResult tr;
 
 				if ( flags & W_FL_UNREACHABLE  != W_FL_UNREACHABLE )
 				{
@@ -915,26 +974,17 @@ class CWaypoints
 						if ( added.distanceFrom(other.m_vOrigin) > 512 )
 							continue;
 
-						if ( (flags & W_FL_CROUCH != W_FL_CROUCH) && ( !other.hasFlags(W_FL_CROUCH)) )
+						if ( UTIL_IsReachable ( added.m_vOrigin, other.m_vOrigin, ignore ) )
 						{
-							g_Utility.TraceHull(added.m_vOrigin, other.m_vOrigin, ignore_monsters,human_hull,  ignore is null ? null : ignore.edict(), tr);
-							
-							if ( tr.flFraction < 1.0 ) // !UTIL_IsVisible(other.m_vOrigin,added.m_vOrigin) )
-							{
-								continue;
-							}
-
-						}
-						else
-						{
-							if ( !UTIL_IsVisible(other.m_vOrigin,added.m_vOrigin) )
-								continue;
+							added.addPath(i);
 						}
 
-						//BotMessage("ADDED PATH\n");
+						if ( UTIL_IsReachable ( other.m_vOrigin, added.m_vOrigin, ignore ) )
+						{
+							other.addPath(index);
+						}						
 
-						other.addPath(index);
-						added.addPath(i);
+						
 					}
 
 					CBaseEntity@ pent = null;

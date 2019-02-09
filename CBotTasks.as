@@ -1014,6 +1014,39 @@ class CGrappleTask : RCBotTask
 
 }
 
+class CBotPlaceTripmine : RCBotTask 
+{
+    CBotPlaceTripmine ( Vector vPlane, Vector vNormal )
+    {
+
+    }
+    string DebugString ()
+    {
+        return "CBotPlaceTripmine";
+    }
+
+    void execute ( RCBot@ bot )
+    {
+
+    }
+}
+
+class CBotPlaceExplosive : RCBotTask 
+{
+    CBotPlaceExplosive ( Vector vTarget )
+    {
+
+    }
+    string DebugString ()
+    {
+        return "CBotPlaceExplosive";
+    }
+    void execute ( RCBot@ bot )
+    {
+        
+    }    
+}
+
 class CBotTaskRevivePlayer : RCBotTask 
 {
     float m_fLastVisibleTime = 0.0f;

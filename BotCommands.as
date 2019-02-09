@@ -41,6 +41,12 @@ CConCommand@ m_pTeleportWpt;
 CConCommand@ m_pBotCam;
 CConCommand@ m_pBotQuota;
 CConCommand@ m_pScriptEntOffset;
+CConCommand@ m_pRCBotWaypointCopy;
+CConCommand@ m_pRCBotWaypointCut;
+CConCommand@ m_pRCBotWaypointPaste;
+CConCommand@ m_pRCBotWaypointMove1;
+CConCommand@ m_pRCBotWaypointMove2;
+
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
 CCVar@ m_pHealNPC;
@@ -120,6 +126,11 @@ void PluginInit()
 	@m_pRCBotWaypointGiveType = @CConCommand ( "waypoint_givetype", "give waypoint type(s)",@WaypointGiveType);
 	@m_pRCBotWaypointRemoveType = @CConCommand ( "waypoint_removetype", "remove waypoint type(s)",@WaypointRemoveType);
 	@m_pRCBotWaypointToggleType = @CConCommand ( "waypoint_toggletype", "toggle waypoint type(s)",@WaypointToggleType);
+	@m_pRCBotWaypointCopy = @CConCommand ( "waypoint_copy", "copy waypoint types for pasting",@WaypointCopy);
+	@m_pRCBotWaypointCut = @CConCommand ( "waypoint_cut", "delete and remember paths for pasting",@WaypointCut);
+	@m_pRCBotWaypointPaste = @CConCommand ( "waypoint_paste", "paste cut waypoint",@WaypointPaste);
+	@m_pRCBotWaypointMove1 = @CConCommand ( "waypoint_move1", "start to move a waypoint",@WaypointMove1);
+	@m_pRCBotWaypointMove2 = @CConCommand ( "waypoint_move2", "place the moved waypoint to new location",@WaypointMove2);
 	@m_pDebugMessages = @CConCommand ( "debug" , "debug messages toggle" , @DebugMessages );
 	@m_pDebugBot = @CConCommand ( "debug_bot" , "debug bot <name>" , @DebugBot );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
@@ -401,6 +412,39 @@ void WaypointToggleType ( const CCommand@ args )
 		}
 	}
 }
+
+void WaypointCut ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+
+	g_Waypoints.cutWaypoint(player);
+}
+void WaypointCopy ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+
+	g_Waypoints.copyWaypoint(player);
+}
+void WaypointPaste ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+
+	g_Waypoints.pasteWaypoint(player);
+}
+void WaypointMove1 ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+
+	g_Waypoints.moveWaypoint1(player);
+}
+void WaypointMove2 ( const CCommand@ args )
+{
+	CBasePlayer@ player = ListenPlayer();
+
+	g_Waypoints.moveWaypoint2(player);
+}
+
+
 //ConvertFlagsToOther WaypointConvertType
 void WaypointConvertType ( const CCommand@ args )
 {

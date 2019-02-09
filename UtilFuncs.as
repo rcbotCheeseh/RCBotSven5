@@ -532,6 +532,34 @@ bool UTIL_CanUseTank ( CBaseEntity@ pBot, CBaseEntity@ pTankEnt )
 
 	return ( pTank.GetController() is null );
 }
+
+/**
+ * UTIL_IsReachable
+ * 
+ * Take 8 positions between vFrom and vTo and check for ground
+ */
+bool UTIL_IsReachable ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
+{
+	Vector vComp = vTo - vFrom;
+
+	vComp = vComp / 8;
+
+	Vector vCurrent = vFrom;
+
+	for ( int i = 0; i < 8; i ++ )
+	{
+        TraceResult tr;
+
+        g_Utility.TraceLine( vCurrent, vCurrent - Vector(0,0,64.0), ignore_monsters,ignore_glass, ignore is null ? null : ignore.edict(), tr );
+
+		vCurrent = vCurrent + vComp;
+
+        if ( tr.flFraction >= 1.0f )
+			return false;
+	}
+
+	return true;
+}
 /**
  * UTIL_FindNearestEntity
  * 
