@@ -727,7 +727,7 @@ class CWaypoints
 
 		playsound(player,wpt != -1);
 	}
-
+	
 	void cutWaypoint ( CBaseEntity@ player )
 	{
 		int wpt = getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
