@@ -598,7 +598,12 @@ final class RCBot : BotManager::BaseBot
 
 	bool IsEnemy ( CBaseEntity@ entity, bool bCheckWeapons = true )
 	{
-		string szClassname = entity.GetClassname();
+		string szClassname;
+		
+		if ( m_pDontShoot.GetBool() )
+			return false;
+
+		szClassname = entity.GetClassname();
 
 		if ( bCheckWeapons )
 		{
