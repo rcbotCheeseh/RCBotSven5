@@ -61,6 +61,16 @@ say any of the following messages for bots to follow commands
 
 Waypointing currently only works on listen server
 
+# Displaying waypoints
+
+show waypoints with 
+
+    as_command rcbot.waypoint_on
+    
+similarly, put them back off with
+  
+    as_command rcbot.waypoint_off
+
 # Adding a waypoint
 
 Use the command
@@ -240,6 +250,10 @@ switch off botcam
     as_command rcbot.botcam off
     
 # Debugging
+
+All bots will refrain from shooting with the command
+
+   as_command rcbot.dont_shoot 1
 
 To debug a bot use the command
 
