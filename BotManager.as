@@ -62,7 +62,6 @@ final class RCBot : BotManager::BaseBot
 	int m_iLastWaypointTo = 0;	
 	bool m_bLastPathFailed = false;
 
-	int m_iGoalWaypoint = -1;
 
 	Vector m_vObjectiveOrigin;
 	bool m_bObjectiveOriginValid;
@@ -445,11 +444,17 @@ final class RCBot : BotManager::BaseBot
 
 		message += "\nTask: " + task;
 
-		message += "\nGoal: " + m_iGoalWaypoint;		
+		message += "\nGoal: " + m_iGoalWaypoint;
+		
+		if ( m_pUseBelief.GetBool() )
+		 message += "[" + m_fBelief.getBeliefPercent(m_iGoalWaypoint) + "% danger]";		
 
 		if ( m_pNextWpt !is null )
 		{
 			message += "\nNext Wpt: " + m_pNextWpt.iIndex;
+			
+			if ( m_pUseBelief.GetBool() )
+			 	message += "[" +m_fBelief.getBeliefPercent(m_pNextWpt.iIndex) + "% danger]";	
 		}
 
 		message += "\nEnemy: ";
@@ -1311,6 +1316,8 @@ case 	CLASS_BARNACLE	:
 
 	void reachedGoal()
 	{
+		m_fBelief.safety(m_iCurrentWaypoint,50.0f);
+
 		m_fNextTakeCover = g_Engine.time;
 	}
 	
@@ -1344,6 +1351,8 @@ case 	CLASS_BARNACLE	:
 			{
 				TakeCover(vAttacker);
 				m_fLastHurt = 0.0f;
+				
+				m_fBelief.danger(m_iCurrentWaypoint);
 				//BotMessage("Take Cover!!!");
 			}
 			else
@@ -1391,6 +1400,9 @@ case 	CLASS_BARNACLE	:
 		{
 			if ( !IsEnemy(pLastEnemy) )
 			{
+				// enemy probably dead now
+				m_fBelief.safety(m_iCurrentWaypoint,20.0f);
+
 				RemoveLastEnemy();
 			}
 		}
@@ -1705,6 +1717,8 @@ case 	CLASS_BARNACLE	:
 		m_bMoveToValid = false;
 	}
 
+	float m_fStuckJumpTime = 3.0f;
+
 	void DoMove ()
 	{
 		//if ( navigator !is null )
@@ -1723,13 +1737,19 @@ case 	CLASS_BARNACLE	:
 
 		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > fStuckSpeed) )
 		{
+
+			if ( m_flStuckTime == 0 )
+				m_fStuckJumpTime = Math.RandomFloat(1.0f,4.0f);
+
 			m_flStuckTime = g_Engine.time;
+
 		}
 		// stuck for more than 3 sec
-		else if ( (m_flStuckTime > 0) && (g_Engine.time - m_flStuckTime) > 3.0 )
+		else if ( (m_flStuckTime > 0) && (g_Engine.time - m_flStuckTime) > m_fStuckJumpTime )
 		{
 			Jump();
 			m_flStuckTime = 0;
+			
 			// reset last enemy could cause lok issues
 			m_pLastEnemy = null;
 			m_bLastSeeEnemyValid = false;

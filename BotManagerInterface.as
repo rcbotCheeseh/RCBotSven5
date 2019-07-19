@@ -213,6 +213,8 @@ namespace BotManager
 		/** if false , bot will stay still */
 		bool m_bMoveToValid;
 
+		CBeliefWaypointsList m_fBelief;
+
 		Vector m_vLookAt;
 
 		bool m_vLookAtIsValid;
@@ -225,6 +227,11 @@ namespace BotManager
 
 		bool m_bIsAvoiding = false;
 		Vector m_vAvoidVector;
+
+		// for reference only!!!
+		int m_iGoalWaypoint = -1;
+		// for reference only!!!
+		int m_iCurrentWaypoint = -1;		
 
 		// nothing
 		void hurt ( DamageInfo@ damageInfo )
@@ -487,6 +494,7 @@ namespace BotManager
 				g_Hooks.RemoveHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
 				g_Hooks.RemoveHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay ) );
 				g_Hooks.RemoveHook( Hooks::Player::PlayerTakeDamage, PlayerTakeDamageHook( this.PlayerTakeDamage) );
+				g_Hooks.RemoveHook( Hooks::Player::PlayerKilled, PlayerKilledHook( this.PlayerKilled) );
 			}
 		}
 		
@@ -639,6 +647,8 @@ namespace BotManager
 			g_Hooks.RegisterHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay) );
 			g_Hooks.RegisterHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientDisconnect, ClientDisconnectHook( this.ClientDisconnect ) );
+			g_Hooks.RegisterHook( Hooks::Player::PlayerKilled, PlayerKilledHook ( this.PlayerKilled) );
+
 			//g_Hooks.RegisterHook( Hooks::CEntityFuncs, DispatchKeyValueHook(this.DispatchKeyValue) );
 			@m_pScheduledFunction = g_Scheduler.SetInterval( @this, "Think", 0.1 );
 			@m_pWaypointDisplay = g_Scheduler.SetInterval(@this, "WaypointDisplay", 1);
@@ -685,6 +695,23 @@ namespace BotManager
 			
 			return HOOK_CONTINUE;
 		}
+
+		HookReturnCode PlayerKilled ( CBasePlayer@ pPlayer, CBaseEntity@ pAttacker, int iGib )
+		{
+			if( ( pPlayer.pev.flags & FL_FAKECLIENT ) != 0 )		
+			{
+				BaseBot@ pBot = FindBot( pPlayer );
+
+				if( pBot !is null )
+				{
+					pBot.m_fBelief.danger(pBot.m_iCurrentWaypoint,iGib>0?25:10);
+					pBot.m_fBelief.danger(pBot.m_iGoalWaypoint,iGib>0?25:10);
+				}
+			}
+
+			return HOOK_CONTINUE;
+	
+		} 
 		
 		HookReturnCode MapChange()
 		{

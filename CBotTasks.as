@@ -1868,7 +1868,7 @@ class CBotGetHealthUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_HEALTH);				
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_HEALTH,null,bot.m_fBelief);				
 
         if ( iWpt != -1 )
         {
@@ -1968,7 +1968,7 @@ class CBotGetWeapon : CBotUtil
     {
         Vector vOrigin = bot.m_pPlayer.pev.origin;
 
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(vOrigin,W_FL_WEAPON,failed);				
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(vOrigin,W_FL_WEAPON,failed,bot.m_fBelief);				
         
         m_iLastGoal = iWpt;
 
@@ -2007,7 +2007,7 @@ class CBotGetAmmo : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_AMMO);				
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_AMMO,null,bot.m_fBelief);				
 
         if ( iWpt != -1 )
         {
@@ -2060,7 +2060,7 @@ class CBotGetArmorUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_ARMOR);				
+        int iWpt = g_Waypoints.getNearestFlaggedWaypoint(bot.m_pPlayer.pev.origin,W_FL_ARMOR,null,bot.m_fBelief);				
 
         if ( iWpt != -1 )
         {
@@ -2162,7 +2162,7 @@ class CBotGotoObjectiveUtil : CBotUtil
         if ( g_WaypointScripts.ScriptExists() )
             iRandomGoal = g_Waypoints.getIncompleteObjective(bot.m_pPlayer);
         else
-            iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT,failed);
+            iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_IMPORTANT,failed,bot.m_fBelief);
 
         m_iLastGoal = iRandomGoal;
 
@@ -2305,12 +2305,14 @@ class CBotUseTankUtil : CBotUtil
     string DebugMessage ()
     {
         return "CBotUseTankUtil";
-    }      
+    }     
+
     float calculateUtility( RCBot@ bot )
     {
         // same as weapon
         return 1.0 - bot.m_pWeapons.getNumWeaponsPercent(bot);
     }
+
     bool canDo (RCBot@ bot)
     {
         if ( bot.m_pNearestTank.GetEntity() !is null )
@@ -2318,9 +2320,10 @@ class CBotUseTankUtil : CBotUtil
 
         return false;
     }  
+
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iRandomGoal = g_Waypoints.getNearestFlaggedWaypoint(UTIL_EntityOrigin(bot.m_pNearestTank.GetEntity()),W_FL_TANK);
+        int iRandomGoal = g_Waypoints.getNearestFlaggedWaypoint(UTIL_EntityOrigin(bot.m_pNearestTank.GetEntity()),W_FL_TANK,null,bot.m_fBelief);
 
         if ( iRandomGoal != -1 )
         {
@@ -2355,7 +2358,7 @@ class CBotGotoEndLevelUtil : CBotUtil
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_ENDLEVEL,failed);    
+        int iRandomGoal = g_Waypoints.getRandomFlaggedWaypoint(W_FL_ENDLEVEL,failed,bot.m_fBelief);    
 
         if ( iRandomGoal != -1 )
         {

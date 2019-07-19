@@ -52,6 +52,7 @@ CCVar@ m_pNavRevs;
 CCVar@ m_pHealNPC;
 CCVar@ m_pReviveNPC;
 CCVar@ m_pDontShoot;
+CCVar@ m_pUseBelief;
 
 //CCVar@ m_pAutoConfig;
 int g_ScriptEntityOffset = 0;
@@ -150,7 +151,7 @@ void PluginInit()
 
 	@m_pVisRevs = CCVar("visrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
 	@m_pNavRevs = CCVar("navrevs", 100, "Reduce for better CPU performance, increase for better bot performance", ConCommandFlag::AdminOnly);
-
+	@m_pUseBelief = CCVar("use_belief", 1, "Enable to allow bots to take alternate paths based on enemy/danger", ConCommandFlag::AdminOnly);
 	@m_pHealNPC = CCVar("heal_npc", 1, "if > 0 , bots may heal NPCs", ConCommandFlag::AdminOnly);
 	@m_pReviveNPC = CCVar("revive_npc", 1, "if > 0, bots may revive NPCs", ConCommandFlag::AdminOnly);
 	@m_pDontShoot = CCVar("dont_shoot",0,"if 1, bots wont shoot", ConCommandFlag::AdminOnly);

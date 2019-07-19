@@ -1108,7 +1108,7 @@ class CWaypoints
 		}
 	}
 
-	int getNearestFlaggedWaypoint ( Vector vOrigin, int iFlags, CFailedWaypointsList@ failed = null )
+	int getNearestFlaggedWaypoint ( Vector vOrigin, int iFlags, CFailedWaypointsList@ failed = null, CBeliefWaypointsList@ belief = null )
 	{
 		int iIndex = -1;
 		float min_distance = 0;
@@ -1124,6 +1124,11 @@ class CWaypoints
 					continue;
 
 				float distance = m_Waypoints[i].distanceFrom(vOrigin);
+
+				if ( belief !is null )
+				{
+					distance += belief.getBelief(i);
+				}
 
 				if ( iIndex == -1 || distance < min_distance )
 				{
@@ -1160,28 +1165,33 @@ class CWaypoints
 		return wpts[Math.RandomLong( 0, wpts.length()-1 )];
 	}	
 	*/
-	int getRandomFlaggedWaypoint ( int iFlags, CFailedWaypointsList@ failed = null )
+	int getRandomFlaggedWaypoint ( int iFlags, CFailedWaypointsList@ failed = null, CBeliefWaypointsList@ fBelief = null )
 	{
-		array<int> wpts;
+		RCBotWaypointBeliefSorter@ wpts = RCBotWaypointBeliefSorter();
+		//array<int> wpts;
 		
 		for( int i = 0; i < m_iNumWaypoints; i ++ )
 		{
-			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
+			CWaypoint@ pWpt = m_Waypoints[i];
+
+			if ( pWpt.m_iFlags & W_FL_DELETED == W_FL_DELETED )
 				continue;	
 
-			if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
+			if ( pWpt.m_iFlags & iFlags == iFlags )
 			{
 				if ( failed !is null && failed.contains(i) )
 					continue;
 
-				wpts.insertLast(i);
+				wpts.add(i,fBelief.getBelief(i));
+				//wpts.insertLast(i);
 			}
 		}
 		
-		if ( wpts.length() == 0 )
-			return -1;
+//		if ( wpts.m_pWaypoints.length() == 0 )
+///			return -1;
 
-		return wpts[Math.RandomLong( 0, wpts.length()-1 )];
+		return wpts.getRandomWptIndex();
+	///	return wpts[Math.RandomLong( 0, wpts.length()-1 )];
 	}
 
 	void PathWaypoint_RemovePathsFrom ( int wpt )
@@ -1405,6 +1415,78 @@ class CWaypoints
 	}
 }
 
+class RCBotWaypointBeliefSorter
+{
+	void add ( int index, float fBelief )
+	{
+		int iInsertInto = m_pWaypoints.length();
+		CWaypoint@ other = g_Waypoints.getWaypointAtIndex(index);
+
+		for ( uint i = 0; i < m_pWaypoints.length(); i ++ )
+		{
+			if ( fBelief < m_fBelief[i] )
+			{
+				iInsertInto = i;
+				break;
+			}
+		}
+
+		m_pWaypoints.insertAt(iInsertInto,other);
+		m_fBelief.insertAt(iInsertInto,fBelief);
+	}
+
+	int length ()
+	{
+		return m_pWaypoints.length();
+	}
+
+	CWaypoint@ getRandomWpt ()
+	{
+		int index = getRandomWptIndex();
+		CWaypoint@ ret = null;
+
+		if ( index >= 0 )
+		{
+			@ret = m_pWaypoints[index];
+		}
+
+		return ret;
+	}
+
+	int ceil(float &in x)  
+	{ 
+		int y = int(x); 
+		return (y==x?y:y+1); 
+	}
+
+	int getRandomWptIndex ()
+	{
+		int index = -1;
+
+		if ( m_pWaypoints.length() > 0 )
+		{
+			float rnd = Math.RandomFloat(0.0f,1.0f);
+
+			if ( m_pUseBelief.GetBool() )
+			{
+				// get random between 0 and 1 and square
+				// more likliness to choose a lower number
+				// multiply again to choose even lower			
+				rnd *= rnd;
+			}
+			
+			index = ceil((m_pWaypoints.length()-1)*rnd);		
+
+			index = m_pWaypoints[index].iIndex;				
+		}
+
+		return index;		
+	}
+
+	array<CWaypoint@> m_pWaypoints;
+	array<float> m_fBelief;
+}
+
 class RCBotWaypointSorter
 {
 	void add ( int index, Vector vHideFrom )
@@ -1542,6 +1624,45 @@ final class RCBotCoverWaypointFinder
 
 }
 
+class CBeliefWaypointsList
+{
+	void danger (int index, uint8 amount = 10 )
+	{
+		if ( index >= 0 && index < MAX_WAYPOINTS )
+		{
+			if ( m_fBelief[index] < (255 - amount) )
+				m_fBelief[index] += amount;
+			else
+				m_fBelief[index] = 255; // cap at 255
+		}
+	}
+
+	void safety( int index, uint8 amount = 10 )
+	{
+		if ( index >= 0 && index < MAX_WAYPOINTS )
+		{
+			if ( m_fBelief[index] > amount )
+				m_fBelief[index] -= amount;
+			else // cap to zero
+				m_fBelief[index]  = 0;
+		}
+	}
+
+	float getBeliefPercent (int index )
+	{
+		return int(100*(getBelief(index)/255));
+	}
+
+	float getBelief ( int index )
+	{
+		return float(m_fBelief[index]);
+	}
+
+	array<uint8> m_fBelief = array<uint8>(MAX_WAYPOINTS);
+
+	
+}
+
 class CFailedWaypointsList
 {
     void add ( int iwpt )
@@ -1633,7 +1754,7 @@ final class RCBotNavigator
 	RCBotNavigator ( RCBot@ bot , int iGoalWpt, CBaseEntity@ pTarget = null )
 	{
 		m_pTarget = pTarget;
-		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer,bot.m_iLastFailedWaypoint,512.0f,true,false);
+		bot.m_iCurrentWaypoint = m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer,bot.m_iLastFailedWaypoint,512.0f,true,false);
 
 		UTIL_DebugMsg(bot.m_pPlayer,"m_iCurrentWaypoint == " + m_iCurrentWaypoint,DEBUG_NAV);
 		m_fNextTimeout = 0;
@@ -1657,30 +1778,6 @@ final class RCBotNavigator
 			iLastNode = iStart;
 		}
 	}	
-/*
-	RCBotNavigator ( RCBot@ bot , Vector vTo )
-	{
-		m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer);
-		iGoal = g_Waypoints.getNearestWaypointIndex(vTo);
-		m_fNextTimeout = 0;
-
-		if ( iStart == -1 || iGoal == -1 )
-		{
-			state = NavigatorState_Fail;
-		}
-		else
-		{
-			state = NavigatorState_InProgress;
-			@curr = paths[iStart];
-			curr.setWaypoint(iStart);
-			pStartWpt = g_Waypoints.getWaypointAtIndex(iStart);
-			pGoalWpt = g_Waypoints.getWaypointAtIndex(iGoal);
-
-			curr.setHeuristic(0);
-			open(curr);
-			iLastNode = iStart;
-		}
-	}*/
 
 	float m_fExecutionTime = 0.0f;
 
@@ -1709,7 +1806,7 @@ final class RCBotNavigator
 			return;
 		}
 
-		m_iCurrentWaypoint = m_currentRoute[0];
+		bot.m_iCurrentWaypoint = m_iCurrentWaypoint = m_currentRoute[0];
 
 		CWaypoint@ wpt = g_Waypoints.getWaypointAtIndex(m_iCurrentWaypoint);
 
@@ -1761,6 +1858,12 @@ final class RCBotNavigator
 			CWaypoint@ pThirdWpt = null;
 
 			int iTimesToPop = 0;
+
+			// touched waypoint
+			if ( bot.m_pEnemy.GetEntity() !is null ) // enemy, slow increase belief			
+				bot.m_fBelief.danger(m_iCurrentWaypoint,1.0f);			
+			else // no enemy, slow decrease belief
+				bot.m_fBelief.safety(m_iCurrentWaypoint,1.0f);
 
 			if ( m_currentRoute.length() > 1 )
 			{
@@ -1963,6 +2066,9 @@ final class RCBotNavigator
 
 								float fCost = curr.getCost();
 
+								if ( m_pUseBelief.GetBool() )
+									fCost += bot.m_fBelief.getBelief(iCurrentNode);								
+
 								if ( !currWpt.hasFlags(W_FL_TELEPORT) && !succWpt.hasFlags(W_FL_TELEPORT) )								
 									fCost += (succWpt.distanceFrom(currWpt.m_vOrigin));
 								// add extra cost to human tower waypoints
@@ -2039,7 +2145,7 @@ final class RCBotNavigator
 
 						if ( m_currentRoute.length () > 0 )
 						{
-							m_iCurrentWaypoint = m_currentRoute[0];
+							bot.m_iCurrentWaypoint = m_iCurrentWaypoint = m_currentRoute[0];
 
 							state = NavigatorState_Following;
 
