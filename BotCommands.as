@@ -53,6 +53,7 @@ CCVar@ m_pHealNPC;
 CCVar@ m_pReviveNPC;
 CCVar@ m_pDontShoot;
 CCVar@ m_pUseBelief;
+CCVar@ m_pBeliefMultiplier;
 
 //CCVar@ m_pAutoConfig;
 int g_ScriptEntityOffset = 0;
@@ -155,6 +156,7 @@ void PluginInit()
 	@m_pHealNPC = CCVar("heal_npc", 1, "if > 0 , bots may heal NPCs", ConCommandFlag::AdminOnly);
 	@m_pReviveNPC = CCVar("revive_npc", 1, "if > 0, bots may revive NPCs", ConCommandFlag::AdminOnly);
 	@m_pDontShoot = CCVar("dont_shoot",0,"if 1, bots wont shoot", ConCommandFlag::AdminOnly);
+	@m_pBeliefMultiplier = CCVar("belief_mult",400,"belief cost multiplier", ConCommandFlag::AdminOnly);
 	g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
@@ -326,12 +328,14 @@ void NoTouchFunc ( const CCommand@ args )
 	else 	
 		SayMessageAll(pPlayer,"No touch mode enabled");			
 }
-	const int DEBUG_NAV = 1;
-	const int DEBUG_TASK = 2;
-	const int DEBUG_UTIL = 4;
-	const int DEBUG_THINK = 8;
-	const int DEBUG_VISIBLES = 16;
-	const int DEBUG_LOOK = 32;
+
+const int DEBUG_NAV = 1;
+const int DEBUG_TASK = 2;
+const int DEBUG_UTIL = 4;
+const int DEBUG_THINK = 8;
+const int DEBUG_VISIBLES = 16;
+const int DEBUG_LOOK = 32;
+
 void DebugMessages ( const CCommand@ args )
 {
 	CBasePlayer@ player = ListenPlayer();

@@ -1,4 +1,5 @@
 
+const float REACHABLE_PICKUP_RANGE = 200.0f;
 // ------------------------------------
 // TASKS / SCHEDULES - 	START
 // ------------------------------------
@@ -179,7 +180,7 @@ final class CFindHealthTask : RCBotTask
 
         UTIL_DebugMsg(bot.m_pPlayer,"CFindHealthTask",DEBUG_TASK);
 
-        @pent = UTIL_FindNearestEntity("func_healthcharger",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+        @pent = UTIL_FindNearestEntity("func_healthcharger",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {
@@ -195,7 +196,7 @@ final class CFindHealthTask : RCBotTask
         while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "item_healthkit")) !is null )
         {
             // within reaching distance
-            if ( bot.distanceFrom(pent) < 400 )
+            if ( bot.distanceFrom(pent) < REACHABLE_PICKUP_RANGE )
             {
                 if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
                 {
@@ -213,13 +214,13 @@ final class CFindHealthTask : RCBotTask
         }
 
         // nothing to pick up -- maybe a resupply?
-        @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+        @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent is null )
-            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent is null )
-            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {
@@ -375,11 +376,11 @@ final class CFindAmmoTask : RCBotTask
         else
         {
             // nothing to pick up -- maybe a resupply?
-            @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+            @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
         if ( pent is null )
-            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
            if ( pent is null )
-            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
             if ( pent !is null )
             {
@@ -417,7 +418,7 @@ final class CFindWeaponTask : RCBotTask
 
         UTIL_DebugMsg(bot.m_pPlayer,"CFindWeaponTask",DEBUG_TASK);        
         
-        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, 512,"weapon_*", "classname" )) !is null )
+        while ( (@pent = g_EntityFuncs.FindEntityInSphere(pent, bot.m_pPlayer.pev.origin, REACHABLE_PICKUP_RANGE,"weapon_*", "classname" )) !is null )
         {
             if ( (pent.pev.effects & EF_NODRAW) != EF_NODRAW && pent.pev.owner is null )
             {      
@@ -465,7 +466,7 @@ final class CFindArmorTask : RCBotTask
 
         UTIL_DebugMsg(bot.m_pPlayer,"CFindArmorTask",DEBUG_TASK);
 
-        @pent = UTIL_FindNearestEntity("func_recharge",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+        @pent = UTIL_FindNearestEntity("func_recharge",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {
@@ -480,7 +481,7 @@ final class CFindArmorTask : RCBotTask
         while ( (@pent = g_EntityFuncs.FindEntityByClassname(pent, "item_battery")) !is null )
         {            
             // within reaching distance
-            if ( bot.distanceFrom(pent) < 400 )
+            if ( bot.distanceFrom(pent) < REACHABLE_PICKUP_RANGE )
             {
                 if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, pent, bot.m_pPlayer ))
                 {
@@ -498,11 +499,11 @@ final class CFindArmorTask : RCBotTask
         }
 
         // nothing to pick up -- maybe a resupply?
-        @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+        @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
         if ( pent is null )
-            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
          if ( pent is null )
-            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {
@@ -619,7 +620,7 @@ final class CFindButtonTask : RCBotTask
     void execute ( RCBot@ bot )
     {
         //string classname, Vector vOrigin, float fMinDist, bool checkFrame, bool bVisible )
-        CBaseEntity@ pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+        CBaseEntity@ pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {
@@ -630,7 +631,7 @@ final class CFindButtonTask : RCBotTask
                         return;                                    
         }
 
-        @pent = UTIL_FindNearestEntity("button_target",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+        @pent = UTIL_FindNearestEntity("button_target",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {
@@ -641,7 +642,7 @@ final class CFindButtonTask : RCBotTask
                         return;                                    
         }        
 
-        @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+        @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {
@@ -652,7 +653,7 @@ final class CFindButtonTask : RCBotTask
                         return;                                    
         }
 
-         @pent = UTIL_FindNearestEntity("momentary_rot_button",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+         @pent = UTIL_FindNearestEntity("momentary_rot_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {
@@ -663,7 +664,7 @@ final class CFindButtonTask : RCBotTask
                         return;                                    
         }     
         
-         @pent = UTIL_FindNearestEntity("trigger_once",bot.m_pPlayer.EyePosition(),200.0f,true,false);
+         @pent = UTIL_FindNearestEntity("trigger_once",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
         if ( pent !is null )
         {

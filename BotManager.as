@@ -646,6 +646,18 @@ case 	CLASS_ALIEN_PASSIVE	:
 case 	CLASS_INSECT	:
 case 	CLASS_PLAYER_BIOWEAPON	:
 case 	CLASS_ALIEN_BIOWEAPON	:
+
+ 		if ( szClassname == "monster_leech" )
+		{
+			if ( entity.pev.waterlevel > 0 && m_pPlayer.pev.waterlevel > 0 )
+			{
+				if ( distanceFrom(entity) < 64 )
+				{
+					// may be blocking the way, smack it!
+					return true;
+				}
+			}
+		}
 		return false;
 case 	CLASS_MACHINE	:
 case 	CLASS_HUMAN_MILITARY	:
@@ -1730,6 +1742,10 @@ case 	CLASS_BARNACLE	:
 
 		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
 			fStuckSpeed /= 2;
+
+		if ( m_pPlayer.pev.waterlevel > 1 )
+			fStuckSpeed /= 2;
+
 		// for courch jump
 		if ( m_flJumpTime + 0.5f > g_Engine.time )
 		{
@@ -1796,7 +1812,7 @@ case 	CLASS_BARNACLE	:
 
 			//BotMessage("LOOKING AT ENEMY!!!\n");
 		}
-		else if ( IsOnLadder() )		
+		else if ( IsOnLadder() || (m_pPlayer.pev.waterlevel > 1) )		
 		{
 			setLookAt(m_vLadderVector,PRIORITY_LADDER);
 		}		

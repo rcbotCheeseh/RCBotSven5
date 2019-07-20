@@ -225,7 +225,7 @@
 
 	void UTIL_DebugMsg ( CBaseEntity@ debugBot, string message, int level = 0 )
 	{
-		if ( g_DebugBot == debugBot )
+		if ( debugBot is null || (g_DebugBot == debugBot) )
 		{
 			if ( level == 0 || g_DebugLevel & level == level )
 			{

@@ -1127,7 +1127,7 @@ class CWaypoints
 
 				if ( belief !is null )
 				{
-					distance += belief.getBelief(i);
+					distance += belief.getBeliefCost(i);
 				}
 
 				if ( iIndex == -1 || distance < min_distance )
@@ -1417,14 +1417,14 @@ class CWaypoints
 
 class RCBotWaypointBeliefSorter
 {
-	void add ( int index, float fBelief )
+	void add ( int index, uint8 belief )
 	{
 		int iInsertInto = m_pWaypoints.length();
 		CWaypoint@ other = g_Waypoints.getWaypointAtIndex(index);
 
 		for ( uint i = 0; i < m_pWaypoints.length(); i ++ )
 		{
-			if ( fBelief < m_fBelief[i] )
+			if ( belief < m_belief[i] )
 			{
 				iInsertInto = i;
 				break;
@@ -1432,7 +1432,7 @@ class RCBotWaypointBeliefSorter
 		}
 
 		m_pWaypoints.insertAt(iInsertInto,other);
-		m_fBelief.insertAt(iInsertInto,fBelief);
+		m_belief.insertAt(iInsertInto,belief);
 	}
 
 	int length ()
@@ -1464,27 +1464,47 @@ class RCBotWaypointBeliefSorter
 		int index = -1;
 
 		if ( m_pWaypoints.length() > 0 )
-		{
-			float rnd = Math.RandomFloat(0.0f,1.0f);
-
+		{		
 			if ( m_pUseBelief.GetBool() )
 			{
-				// get random between 0 and 1 and square
-				// more likliness to choose a lower number
-				// multiply again to choose even lower			
-				rnd *= rnd;
-			}
-			
-			index = ceil((m_pWaypoints.length()-1)*rnd);		
+				// roulette method
+				uint sum = 0;
+				uint rnd = 0;
+				
+				for ( uint i = 0; i < m_belief.length(); i ++ )
+				{
+					sum += m_belief[i];
+				}
 
-			index = m_pWaypoints[index].iIndex;				
+				rnd = Math.RandomLong(0,sum);
+
+				sum = 0;
+
+				for ( uint i = 0; i < m_belief.length(); i ++ )
+				{					
+					sum += m_belief[i];
+
+					if ( rnd <= sum )
+					{
+						index = m_pWaypoints[i].iIndex;
+
+						UTIL_DebugMsg(null,"RCBotWaypointBeliefSorter Chose Waypoint " + index + " ("+i+")",DEBUG_NAV);
+
+						break;
+					}
+				}
+			}
+			else
+			{
+				index = m_pWaypoints[Math.RandomLong(0,m_pWaypoints.length()-1)].iIndex;
+			}			
 		}
 
 		return index;		
 	}
 
 	array<CWaypoint@> m_pWaypoints;
-	array<float> m_fBelief;
+	array<uint8> m_belief;
 }
 
 class RCBotWaypointSorter
@@ -1653,9 +1673,14 @@ class CBeliefWaypointsList
 		return int(100*(getBelief(index)/255));
 	}
 
-	float getBelief ( int index )
+	uint8 getBelief ( int index )
 	{
-		return float(m_fBelief[index]);
+		return m_fBelief[index];
+	}
+
+	float getBeliefCost ( int index )
+	{
+		return getBeliefPercent(index) * m_pBeliefMultiplier.GetFloat();
 	}
 
 	array<uint8> m_fBelief = array<uint8>(MAX_WAYPOINTS);
@@ -2067,7 +2092,7 @@ final class RCBotNavigator
 								float fCost = curr.getCost();
 
 								if ( m_pUseBelief.GetBool() )
-									fCost += bot.m_fBelief.getBelief(iCurrentNode);								
+									fCost += bot.m_fBelief.getBeliefCost(iCurrentNode);								
 
 								if ( !currWpt.hasFlags(W_FL_TELEPORT) && !succWpt.hasFlags(W_FL_TELEPORT) )								
 									fCost += (succWpt.distanceFrom(currWpt.m_vOrigin));
