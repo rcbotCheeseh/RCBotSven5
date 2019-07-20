@@ -336,8 +336,11 @@ namespace BotManager
 
 		void Disconnected ()
 		{
-			// free stuff
-			m_pProfile.m_bUsed = false;
+			if ( m_pProfile !is null )
+			{
+				// free stuff
+				m_pProfile.m_bUsed = false;
+			}
 			// Solokiller -- clear the handles out to avoid problems.
 			@m_pPlayer = null;
 		}
@@ -716,7 +719,8 @@ namespace BotManager
 		HookReturnCode MapChange()
 		{
 			m_NextDebugMessageTime = 0;
-		    m_fAddBotTime = g_Engine.time + 5.0f;
+		    
+			m_fAddBotTime = 5.0f;
 
 			m_Bots.resize( 0 );
 			

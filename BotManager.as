@@ -1528,6 +1528,8 @@ case 	CLASS_BARNACLE	:
 			fFactor *= 2;
 		else if ( entity.GetClassname() == "monster_male_assassin" )
 			fFactor /= 2;
+		// focus on nearly dead enemies
+		fFactor += entity.pev.health;
 
 		return fFactor;
 	}
