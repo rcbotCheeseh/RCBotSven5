@@ -447,14 +447,14 @@ final class RCBot : BotManager::BaseBot
 		message += "\nGoal: " + m_iGoalWaypoint;
 		
 		if ( m_pUseBelief.GetBool() )
-		 message += "[" + m_fBelief.getBeliefPercent(m_iGoalWaypoint) + "% danger]";		
+		 message += "[" + m_fBelief.getBeliefPercent(m_iGoalWaypoint) + " danger]";		
 
 		if ( m_pNextWpt !is null )
 		{
 			message += "\nNext Wpt: " + m_pNextWpt.iIndex;
 			
 			if ( m_pUseBelief.GetBool() )
-			 	message += "[" +m_fBelief.getBeliefPercent(m_pNextWpt.iIndex) + "% danger]";	
+			 	message += "[" +m_fBelief.getBeliefPercent(m_pNextWpt.iIndex) + " danger]";	
 		}
 
 		message += "\nEnemy: ";
@@ -1325,10 +1325,10 @@ case 	CLASS_BARNACLE	:
 		return distanceFrom(player) * (1.0 - (float(player.pev.health) / player.pev.max_health));
 	}
 
-
 	void reachedGoal()
 	{
 		m_fBelief.safety(m_iCurrentWaypoint,50.0f);
+		UTIL_DebugMsg(m_pPlayer,"Safety added to goal/current waypoint",DEBUG_BELIEF);
 
 		m_fNextTakeCover = g_Engine.time;
 	}
@@ -1363,8 +1363,7 @@ case 	CLASS_BARNACLE	:
 			{
 				TakeCover(vAttacker);
 				m_fLastHurt = 0.0f;
-				
-				m_fBelief.danger(m_iCurrentWaypoint);
+			
 				//BotMessage("Take Cover!!!");
 			}
 			else
@@ -1373,6 +1372,9 @@ case 	CLASS_BARNACLE	:
 				m_fLastHurt = g_Engine.time + 3.0f;
 				//BotMessage("Look!!!");
 			}
+
+			m_fBelief.danger(m_iCurrentWaypoint);
+			//UTIL_DebugMsg(m_pPlayer,"Danger added to current waypoint",DEBUG_BELIEF);			
 		}
 	}
 
@@ -1414,7 +1416,7 @@ case 	CLASS_BARNACLE	:
 			{
 				// enemy probably dead now
 				m_fBelief.safety(m_iCurrentWaypoint,20.0f);
-
+				UTIL_DebugMsg(m_pPlayer,"Safety added to current waypoint",DEBUG_BELIEF);
 				RemoveLastEnemy();
 			}
 		}

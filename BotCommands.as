@@ -46,6 +46,7 @@ CConCommand@ m_pRCBotWaypointCut;
 CConCommand@ m_pRCBotWaypointPaste;
 CConCommand@ m_pRCBotWaypointMove1;
 CConCommand@ m_pRCBotWaypointMove2;
+CConCommand@ m_pBeliefDebug;
 
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
@@ -147,6 +148,7 @@ void PluginInit()
 	@m_pBotQuota = @CConCommand ( "quota", "number of bots to add", @RCBot_Quota );
 	@m_pScriptEntOffset = @CConCommand ( "script_entity_offset", "offset for script entity index", @RCBot_ScriptEntityOffset );
 	@m_pBotCam = @CConCommand( "botcam", "Bot camera", @RCBot_BotCam );
+	@m_pBeliefDebug = @CConCommand( "belief", "show belief of debug bot at current waypoint", @RCBot_Belief );
 
 	@m_pRCBotSearch = @CConCommand( "search", "test search func", @RCBotSearch );
 
@@ -157,8 +159,31 @@ void PluginInit()
 	@m_pReviveNPC = CCVar("revive_npc", 1, "if > 0, bots may revive NPCs", ConCommandFlag::AdminOnly);
 	@m_pDontShoot = CCVar("dont_shoot",0,"if 1, bots wont shoot", ConCommandFlag::AdminOnly);
 	@m_pBeliefMultiplier = CCVar("belief_mult",400,"belief cost multiplier", ConCommandFlag::AdminOnly);
+	
 	g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
+}
+
+void RCBot_Belief ( const CCommand@ args )
+{
+	if ( args.ArgC() > 1 )
+	{
+		string arg = args[1];
+		CBasePlayer@ pPlayer;
+		@pPlayer = UTIL_FindPlayer(args[1]);
+
+		BotManager::BaseBot@ pBot = g_BotManager.FindBot( pPlayer );
+
+		if ( pBot !is null )
+		{
+			CBasePlayer@ player = ListenPlayer();
+
+			int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
+		
+			if ( wpt != -1 )
+				SayMessageAll(player,"wpt " + wpt + " = " + pBot.m_fBelief.getBeliefPercent(wpt) + " danger" );
+		}
+	}
 }
 
 void RCBot_ScriptEntityOffset ( const CCommand@ args )
@@ -335,6 +360,7 @@ const int DEBUG_UTIL = 4;
 const int DEBUG_THINK = 8;
 const int DEBUG_VISIBLES = 16;
 const int DEBUG_LOOK = 32;
+const int DEBUG_BELIEF = 64;
 
 void DebugMessages ( const CCommand@ args )
 {
@@ -356,6 +382,8 @@ void DebugMessages ( const CCommand@ args )
 			iLevel = DEBUG_VISIBLES;	
 		else if ( args[1] == "look" )
 			iLevel = DEBUG_LOOK;
+		else if ( args[1] == "belief" )
+			iLevel = DEBUG_BELIEF;
 
 		if ( g_DebugLevel & iLevel == iLevel )
 		{

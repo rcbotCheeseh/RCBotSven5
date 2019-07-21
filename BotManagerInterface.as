@@ -231,7 +231,7 @@ namespace BotManager
 		// for reference only!!!
 		int m_iGoalWaypoint = -1;
 		// for reference only!!!
-		int m_iCurrentWaypoint = -1;		
+		int m_iCurrentWaypoint = -1;
 
 		// nothing
 		void hurt ( DamageInfo@ damageInfo )
@@ -709,6 +709,8 @@ namespace BotManager
 				{
 					pBot.m_fBelief.danger(pBot.m_iCurrentWaypoint,iGib>0?25:10);
 					pBot.m_fBelief.danger(pBot.m_iGoalWaypoint,iGib>0?25:10);
+
+					UTIL_DebugMsg(pPlayer,"Danger added to goal and current waypoint",DEBUG_BELIEF);
 				}
 			}
 

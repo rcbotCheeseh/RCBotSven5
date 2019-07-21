@@ -730,6 +730,13 @@ final class CUseButtonTask : RCBotTask
         {           
             bot.StopMoving();
 
+            if ( vOrigin.z > (bot.m_pPlayer.EyePosition().z+72) )
+            {
+                //fail too high
+                Failed();
+                return;
+            }
+
             if ( vOrigin.z > (bot.m_pPlayer.EyePosition().z+8) )
             {
                 if ( Math.RandomLong(0,100) > 50 )

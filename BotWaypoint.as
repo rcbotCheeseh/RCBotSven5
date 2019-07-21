@@ -1648,6 +1648,8 @@ class CBeliefWaypointsList
 {
 	void danger (int index, uint8 amount = 10 )
 	{
+		BotMessage("danger index = " + index + " , amount = " + amount);
+
 		if ( index >= 0 && index < MAX_WAYPOINTS )
 		{
 			if ( m_fBelief[index] < (255 - amount) )
@@ -1670,7 +1672,7 @@ class CBeliefWaypointsList
 
 	float getBeliefPercent (int index )
 	{
-		return int(100*(getBelief(index)/255));
+		return float(getBelief(index))/255;
 	}
 
 	uint8 getBelief ( int index )
@@ -1885,10 +1887,16 @@ final class RCBotNavigator
 			int iTimesToPop = 0;
 
 			// touched waypoint
-			if ( bot.m_pEnemy.GetEntity() !is null ) // enemy, slow increase belief			
-				bot.m_fBelief.danger(m_iCurrentWaypoint,1.0f);			
+			if ( bot.m_pEnemy.GetEntity() !is null ) // enemy, slow increase belief	
+			{		
+				bot.m_fBelief.danger(m_iCurrentWaypoint,3.0f);			
+				//UTIL_DebugMsg(bot.m_pPlayer,"Danger added to current waypoint",DEBUG_BELIEF);
+			}
 			else // no enemy, slow decrease belief
+			{
 				bot.m_fBelief.safety(m_iCurrentWaypoint,1.0f);
+				//UTIL_DebugMsg(bot.m_pPlayer,"Safety added to current waypoint",DEBUG_BELIEF);
+			}
 
 			if ( m_currentRoute.length() > 1 )
 			{
