@@ -1648,7 +1648,7 @@ class CBeliefWaypointsList
 {
 	void danger (int index, uint8 amount = 10 )
 	{
-		BotMessage("danger index = " + index + " , amount = " + amount);
+		//BotMessage("danger index = " + index + " , amount = " + amount);
 
 		if ( index >= 0 && index < MAX_WAYPOINTS )
 		{

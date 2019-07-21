@@ -710,7 +710,7 @@ namespace BotManager
 					pBot.m_fBelief.danger(pBot.m_iCurrentWaypoint,iGib>0?25:10);
 					pBot.m_fBelief.danger(pBot.m_iGoalWaypoint,iGib>0?25:10);
 
-					UTIL_DebugMsg(pPlayer,"Danger added to goal and current waypoint",DEBUG_BELIEF);
+					//UTIL_DebugMsg(pPlayer,"Danger added to goal and current waypoint",DEBUG_BELIEF);
 				}
 			}
 
