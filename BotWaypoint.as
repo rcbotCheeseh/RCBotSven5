@@ -1652,8 +1652,11 @@ class CBeliefWaypointsList
 
 		if ( isValid(index) )
 		{
-			if ( amount > m_fBelief[index] ) // update danger location
-				m_vDangerVector[index] = location;
+			if ( location != Vector(0,0,0) )
+			{
+				if ( amount > m_fBelief[index] ) // update danger location
+					m_vDangerVector[index] = location;
+			}
 
 			if ( m_fBelief[index] < (255 - amount) )
 				m_fBelief[index] += amount;
