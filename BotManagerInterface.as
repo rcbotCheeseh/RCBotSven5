@@ -707,10 +707,13 @@ namespace BotManager
 
 				if( pBot !is null )
 				{
-					pBot.m_fBelief.danger(pBot.m_iCurrentWaypoint,iGib>0?25:10);
-					pBot.m_fBelief.danger(pBot.m_iGoalWaypoint,iGib>0?25:10);
+					Vector vEnemyOrigin = Vector(0,0,0);
+					
+					if ( pAttacker !is null )
+						vEnemyOrigin = UTIL_EntityOrigin(pAttacker);
 
-					//UTIL_DebugMsg(pPlayer,"Danger added to goal and current waypoint",DEBUG_BELIEF);
+					pBot.m_fBelief.danger(pBot.m_iCurrentWaypoint,vEnemyOrigin,iGib>0?25:15);
+					pBot.m_fBelief.danger(pBot.m_iGoalWaypoint,Vector(0,0,0), iGib>0?25:15 );
 				}
 			}
 

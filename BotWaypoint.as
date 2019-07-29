@@ -1646,22 +1646,45 @@ final class RCBotCoverWaypointFinder
 
 class CBeliefWaypointsList
 {
-	void danger (int index, uint8 amount = 10 )
+	void danger (int index, Vector location, uint8 amount = 10 )
 	{
 		//BotMessage("danger index = " + index + " , amount = " + amount);
 
-		if ( index >= 0 && index < MAX_WAYPOINTS )
+		if ( isValid(index) )
 		{
+			if ( amount > m_fBelief[index] ) // update danger location
+				m_vDangerVector[index] = location;
+
 			if ( m_fBelief[index] < (255 - amount) )
 				m_fBelief[index] += amount;
 			else
 				m_fBelief[index] = 255; // cap at 255
-		}
+		}		
+	}
+
+	bool isValid ( int index )
+	{
+		return  ( index >= 0 && index < MAX_WAYPOINTS );
+	}
+
+	bool isDangerLocationValid (int index)
+	{
+			return m_vDangerVector[index] != Vector(0,0,0);
+	}
+
+	bool isDangerous ( int index )
+	{
+		return m_fBelief[index] > 5;
+	}
+
+	Vector DangerLocation ( int index )
+	{
+		return m_vDangerVector[index];
 	}
 
 	void safety( int index, uint8 amount = 10 )
 	{
-		if ( index >= 0 && index < MAX_WAYPOINTS )
+		if ( isValid(index) )
 		{
 			if ( m_fBelief[index] > amount )
 				m_fBelief[index] -= amount;
@@ -1686,7 +1709,7 @@ class CBeliefWaypointsList
 	}
 
 	array<uint8> m_fBelief = array<uint8>(MAX_WAYPOINTS);
-
+	array<Vector> m_vDangerVector = array<Vector>(MAX_WAYPOINTS);
 	
 }
 
@@ -1889,7 +1912,9 @@ final class RCBotNavigator
 			// touched waypoint
 			if ( bot.m_pEnemy.GetEntity() !is null ) // enemy, slow increase belief	
 			{		
-				bot.m_fBelief.danger(m_iCurrentWaypoint,3.0f);			
+				Vector enemyOrigin = UTIL_EntityOrigin(bot.m_pEnemy.GetEntity());
+
+				bot.m_fBelief.danger(m_iCurrentWaypoint,enemyOrigin,3.0f);			
 				//UTIL_DebugMsg(bot.m_pPlayer,"Danger added to current waypoint",DEBUG_BELIEF);
 			}
 			else // no enemy, slow decrease belief

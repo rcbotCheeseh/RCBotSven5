@@ -488,16 +488,14 @@ final class RCBot : BotManager::BaseBot
 		return m_pVisibles.isVisible(index)>0;
 	}
 
-
     // anggara_nothing  
 	void ClientCommand ( string command )
 	{
-		/*CBasePlayer@ pPlayer = m_pPlayer;
+		CBasePlayer@ pPlayer = m_pPlayer;
 
 		NetworkMessage m(MSG_ONE, NetworkMessages::NetworkMessageType(9), pPlayer.edict());
 			m.WriteString( command );
-		m.End();*/
-
+		m.End();
 
 		//g_PlayerFuncs.ClientPrint( pPlayer, HUD_PRINTCENTER, command );		
 	}
@@ -1373,7 +1371,7 @@ case 	CLASS_BARNACLE	:
 				//BotMessage("Look!!!");
 			}
 
-			m_fBelief.danger(m_iCurrentWaypoint);
+			m_fBelief.danger(m_iCurrentWaypoint,vAttacker,10);
 			//UTIL_DebugMsg(m_pPlayer,"Danger added to current waypoint",DEBUG_BELIEF);			
 		}
 	}
@@ -1833,9 +1831,28 @@ case 	CLASS_BARNACLE	:
 		else if (m_bMoveToValid )
 		{			
 			if ( m_pNextWpt !is null )
-				setLookAt(m_pNextWpt.m_vOrigin,PRIORITY_WAYPOINT);
+			{
+				int index = m_pNextWpt.iIndex;
+
+				Vector vLookat = m_pNextWpt.m_vOrigin;
+
+				if ( m_fBelief.isValid(index) )
+				{
+					if ( m_fBelief.isDangerous(index) )
+					{
+						if ( m_fBelief.isDangerLocationValid(index) )
+						{
+							vLookat = m_fBelief.DangerLocation(index);
+						}
+					}
+				}
+
+				setLookAt(vLookat,PRIORITY_WAYPOINT);
+			}
 			else 
+			{
 				setLookAt(m_vMoveTo,PRIORITY_WAYPOINT);
+			}
 		}
 	}
 

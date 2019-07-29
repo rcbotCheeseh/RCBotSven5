@@ -513,7 +513,6 @@ class CBotWeapons
         
             if ( desiredWeapon !is null )
             {                
-
 	            //BotMessage("ENEMY = " + pEnemy.GetClassname() + " BEST WEAPON = " + desiredWeapon.GetName() );
 
                 if ( desiredWeapon !is m_pCurrentWeapon )
