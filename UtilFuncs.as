@@ -557,22 +557,6 @@ bool UTIL_IsReachable ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
         if ( tr.flFraction >= 1.0f )
 			return false;
 	}
-	
-	TraceResult tr2;
-	
-	g_Utility.TraceLine( vCurrent, vTo, ignore_monsters,dont_ignore_glass, null, tr2 );
-	
-	if ( tr2.flFraction < 1.0f )
-	{
-		if ( tr2.pHit is null )
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
 
 	return true;
 }

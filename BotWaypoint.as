@@ -971,7 +971,7 @@ class CWaypoints
 						if ( i == index )
 							continue;					
 
-						if ( added.distanceFrom(other.m_vOrigin) > 512 )
+						if ( added.distanceFrom(other.m_vOrigin) > m_pWPAutoPathDist.GetInt() )
 							continue;
 
 						if ( UTIL_IsReachable ( added.m_vOrigin, other.m_vOrigin, ignore ) )
