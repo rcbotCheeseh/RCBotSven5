@@ -55,6 +55,7 @@ CCVar@ m_pReviveNPC;
 CCVar@ m_pDontShoot;
 CCVar@ m_pUseBelief;
 CCVar@ m_pBeliefMultiplier;
+CCVar@ m_pWPAutoPathDist;
 
 //CCVar@ m_pAutoConfig;
 int g_ScriptEntityOffset = 0;
@@ -159,6 +160,7 @@ void PluginInit()
 	@m_pReviveNPC = CCVar("revive_npc", 1, "if > 0, bots may revive NPCs", ConCommandFlag::AdminOnly);
 	@m_pDontShoot = CCVar("dont_shoot",0,"if 1, bots wont shoot", ConCommandFlag::AdminOnly);
 	@m_pBeliefMultiplier = CCVar("belief_mult",400,"belief cost multiplier", ConCommandFlag::AdminOnly);
+	@m_pWPAutoPathDist = CCVar("autopath_dist",512,"Distance to auto add paths to waypoints", ConCommandFlag::AdminOnly);
 	
 	g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
