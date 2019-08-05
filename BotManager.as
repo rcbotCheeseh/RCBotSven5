@@ -1742,9 +1742,11 @@ case 	CLASS_BARNACLE	:
 
 		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
 			fStuckSpeed /= 2;
-
-		if ( m_pPlayer.pev.waterlevel > 1 )
-			fStuckSpeed /= 2;
+		else if ( m_pPlayer.pev.waterlevel > 1 )
+			fStuckSpeed /= 2;		
+		// Can go even slower with minigun
+		else if ( IsHoldingMinigun() )
+			fStuckSpeed /= 3;
 
 		// for courch jump
 		if ( m_flJumpTime + 0.5f > g_Engine.time )
@@ -1774,7 +1776,7 @@ case 	CLASS_BARNACLE	:
 		}		
 	}
 
-	void Jump ()
+	bool IsHoldingMinigun ()
 	{
 		CBotWeapon@ weap = m_pWeapons.getCurrentWeapon();
 
@@ -1782,9 +1784,19 @@ case 	CLASS_BARNACLE	:
 		{
 			if ( weap.IsMinigun() )
 			{
-				// can't jump while holding minigun
-				m_pPlayer.DropItem("weapon_minigun");
+				return true;
 			}
+		}		
+
+		return false;
+	}
+
+	void Jump ()
+	{
+		if ( IsHoldingMinigun() )
+		{
+			// can't jump while holding minigun
+			m_pPlayer.DropItem("weapon_minigun");		
 		}
 
 		m_flJumpTime = g_Engine.time;

@@ -861,6 +861,7 @@ final class CBotButtonTask : RCBotTask
     {
         return "CBotButtonTask";
     }
+    
     CBotButtonTask ( int button )
     {
         m_iButton = button;
@@ -868,6 +869,16 @@ final class CBotButtonTask : RCBotTask
 
     void execute ( RCBot@ bot )
     {
+        // Don't reload if I'm shooting!!!!
+        if ( m_iButton == IN_RELOAD )
+        {
+            if ( bot.hasEnemy() )
+            {
+                Failed();
+                return;
+            }
+        }
+
         if ( m_fStartTime == 0.0f )
             m_fStartTime = g_Engine.time + 1.0f;
         else if ( m_fStartTime < g_Engine.time )
