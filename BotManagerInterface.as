@@ -594,9 +594,9 @@ namespace BotManager
 			return HOOK_CONTINUE;
 		}
 
-		void ReadConfig ()
+		void ReadConfig ( string path )
 		{
-			File@ config = g_FileSystem.OpenFile( "scripts/plugins/BotManager/config/config.ini", OpenFile::READ);
+			File@ config = g_FileSystem.OpenFile( path, OpenFile::READ);
 
 			if ( config is null )
 				return;
@@ -656,7 +656,8 @@ namespace BotManager
 			@m_pScheduledFunction = g_Scheduler.SetInterval( @this, "Think", 0.1 );
 			@m_pWaypointDisplay = g_Scheduler.SetInterval(@this, "WaypointDisplay", 1);
 
-			ReadConfig();
+			ReadConfig( "scripts/plugins/BotManager/config/config.ini" );
+			ReadMapConfig();
 
 			m_fAddBotTime = g_Engine.time + 10.0f;
 
@@ -720,6 +721,13 @@ namespace BotManager
 			return HOOK_CONTINUE;
 	
 		} 
+
+		void ReadMapConfig()
+		{
+			string mapname = g_Engine.mapname;
+
+			ReadConfig( "scripts/plugins/BotManager/config/" + mapname + ".ini" );
+		}
 		
 		HookReturnCode MapChange()
 		{
@@ -736,6 +744,9 @@ namespace BotManager
 			g_bTeleportSet = false;
 
 			g_WaypointsLoaded = false;
+
+			ReadConfig( "scripts/plugins/BotManager/config/config.ini" );
+			ReadMapConfig();
 
 			return HOOK_CONTINUE;
 		}
