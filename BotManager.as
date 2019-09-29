@@ -81,6 +81,9 @@ final class RCBot : BotManager::BaseBot
 
 	EHandle m_pFollowingNPC;
 
+	float m_flJumpPlatformTime = 0;
+	CBaseEntity@ m_pExpectedPlatform = null;
+
 	Vector m_vLadderVector;
 
 	void setFollowingNPC ( CBaseEntity@ NPC )
@@ -455,6 +458,25 @@ final class RCBot : BotManager::BaseBot
 			
 			if ( m_pUseBelief.GetBool() )
 			 	message += "[" +m_fBelief.getBeliefPercent(m_pNextWpt.iIndex) + " danger]";	
+
+
+		}
+
+		if ( m_iCurrentWaypoint != -1 )
+		{
+			CWaypoint@ pWpt = g_Waypoints.getWaypointAtIndex(m_iCurrentWaypoint);
+			 message += "\nCurrent Wpt: " + m_iCurrentWaypoint;
+			
+		     message += " (distance = " + distanceFrom(pWpt.m_vOrigin) + ")";
+
+			 Vector m_vOrigin = m_pPlayer.pev.origin;
+
+			 CBasePlayer@ lp = ListenPlayer();
+
+			 if ( lp !is null )
+			{
+				 drawBeam(lp,m_vOrigin,pWpt.m_vOrigin,WptColor(200,200,200));
+			}
 		}
 
 		message += "\nEnemy: ";
@@ -1660,6 +1682,8 @@ case 	CLASS_BARNACLE	:
 
 			@m_pNextWpt = null;
 
+		m_flJumpPlatformTime = 0;
+		@m_pExpectedPlatform = null;
 		m_iLastWaypointFrom = -1;
 		m_iLastWaypointTo = -1;
 
@@ -1739,7 +1763,6 @@ case 	CLASS_BARNACLE	:
 		//	navigator.execute(this);
 		float fStuckSpeed = 0.1*m_fDesiredMoveSpeed;
 
-
 		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
 			fStuckSpeed /= 2;
 		else if ( m_pPlayer.pev.waterlevel > 1 )
@@ -1774,6 +1797,8 @@ case 	CLASS_BARNACLE	:
 			m_pLastEnemy = null;
 			m_bLastSeeEnemyValid = false;
 		}		
+
+		DoJump();
 	}
 
 	bool IsHoldingMinigun ()
@@ -1791,6 +1816,9 @@ case 	CLASS_BARNACLE	:
 		return false;
 	}
 
+	bool JumpPending = false;
+	float m_fPendingJumpTime = 0.0f;
+	
 	void Jump ()
 	{
 		if ( IsHoldingMinigun() )
@@ -1799,9 +1827,28 @@ case 	CLASS_BARNACLE	:
 			m_pPlayer.DropItem("weapon_minigun");		
 		}
 
-		m_flJumpTime = g_Engine.time;
-		PressButton(IN_JUMP);
+		// wait before pressing jump in order to speed up
+		m_fPendingJumpTime = g_Engine.time + Math.RandomFloat(0.1f,0.5f);
 
+		//m_flJumpTime = g_Engine.time;
+		//PressButton(IN_JUMP);
+
+	}
+
+	void DoJump ()
+	{
+		if ( m_fPendingJumpTime > 0.0f )
+		{
+			// can only jump on ground
+
+				if ( (( (m_pPlayer.pev.flags & FL_ONGROUND) == FL_ONGROUND )&&(m_pPlayer.pev.velocity.Length2D() > (m_pPlayer.pev.maxspeed/16))) || (m_fPendingJumpTime < g_Engine.time) )
+				{
+					m_fPendingJumpTime = 0.0f;
+					PressButton(IN_JUMP);
+					m_flJumpTime = g_Engine.time;
+				}
+			
+		}
 	}
 
 	CWaypoint@ m_pNextWpt = null;

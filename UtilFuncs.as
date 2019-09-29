@@ -541,14 +541,39 @@ bool UTIL_CanUseTank ( CBaseEntity@ pBot, CBaseEntity@ pTankEnt )
 bool UTIL_IsReachable ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
 {
 	Vector vComp = vTo - vFrom;
+	Vector vCross;
+	// Check sides for width
+	Vector vCrossRight = Vector(0,0,1);
+	TraceResult tr;
 
+
+	// check the origin first
+	g_Utility.TraceLine( vFrom, vTo, ignore_monsters,ignore_glass, ignore is null ? null : ignore.edict(), tr );
+	if ( tr.flFraction < 1.0f )
+			return false;		
+
+	vCross = UTIL_CrossProduct(vComp,vCrossRight);
+	vCross = vCross / vCross.Length();
+	vCross = vCross * 16; // width of player
+
+
+	// check one side
+	g_Utility.TraceLine( vFrom + vCross, vTo + vCross, ignore_monsters,ignore_glass, ignore is null ? null : ignore.edict(), tr );
+	if ( tr.flFraction < 1.0f )
+			return false;
+	// check the other
+	g_Utility.TraceLine( vFrom - vCross, vTo - vCross, ignore_monsters,ignore_glass, ignore is null ? null : ignore.edict(), tr );
+	if ( tr.flFraction < 1.0f )
+			return false;
+		
+	// check the ground along the way
 	vComp = vComp / 8;
 
 	Vector vCurrent = vFrom;
 
 	for ( int i = 0; i < 8; i ++ )
 	{
-        TraceResult tr;
+        
 
         g_Utility.TraceLine( vCurrent, vCurrent - Vector(0,0,64.0), ignore_monsters,ignore_glass, ignore is null ? null : ignore.edict(), tr );
 

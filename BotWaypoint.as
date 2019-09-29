@@ -701,6 +701,9 @@ class CWaypoints
 	private array<CWaypoint> m_Waypoints(MAX_WAYPOINTS);
 	//private array<float> m_fDanger(MAX_WAYPOINTS);
 
+	// look up for flagged waypoints (speed up)
+	private array<array<int>> m_FlaggedLookup;
+
 	bool g_WaypointsOn = false;
 	int m_iNumWaypoints = 0;
 	int m_PathFrom;
@@ -1113,7 +1116,49 @@ class CWaypoints
 		int iIndex = -1;
 		float min_distance = 0;
 
-		for( int i = 0; i < m_iNumWaypoints; i ++ )
+		if ( m_FlaggedLookup.length() == 0 )
+			return -1;
+
+		//BotMessage("Length = " + m_FlaggedLookup.length() + "\n");
+
+		for( uint x = 0; x < 32; x ++ )
+		{
+			if ( iFlags & (1<<x) == (1<<x) )
+			{
+				//BotMessage("Length = " + m_FlaggedLookup[x].length() + "\n");
+
+				for ( uint j = 0; j < m_FlaggedLookup[x].length(); j ++ )
+				{
+					int i = m_FlaggedLookup[x][j];
+
+					//UTIL_DebugMsg(null,"Got Wpt",0);
+
+					if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
+						continue;	
+
+					if ( m_Waypoints[i].m_iFlags & iFlags == iFlags )
+					{
+						if ( failed !is null && failed.contains(i) )
+							continue;
+
+						float distance = m_Waypoints[i].distanceFrom(vOrigin);
+
+						if ( belief !is null )
+						{
+							distance += belief.getBeliefCost(i);
+						}
+
+						if ( iIndex == -1 || distance < min_distance )
+						{
+							min_distance = distance;
+							iIndex = i;
+						}
+					}				
+				}
+			}
+		}
+
+		/*for( int i = 0; i < m_iNumWaypoints; i ++ )
 		{
 			if ( m_Waypoints[i].m_iFlags & W_FL_DELETED == W_FL_DELETED )
 				continue;	
@@ -1136,7 +1181,7 @@ class CWaypoints
 					iIndex = i;
 				}
 			}
-		}
+		}*/
 		
 		return iIndex;
 	}
@@ -1168,7 +1213,40 @@ class CWaypoints
 	int getRandomFlaggedWaypoint ( int iFlags, CFailedWaypointsList@ failed = null, CBeliefWaypointsList@ fBelief = null )
 	{
 		RCBotWaypointBeliefSorter@ wpts = RCBotWaypointBeliefSorter();
-		//array<int> wpts;
+
+		// not initialised yet or waypoints not yet loaded
+		if ( m_FlaggedLookup.length() == 0 )
+			return -1;
+
+		for( uint x = 0; x < 32; x ++ )
+		{
+			if ( iFlags & (1<<x) == (1<<x) )
+			{
+				for ( uint j = 0; j < m_FlaggedLookup[x].length(); j ++ )
+				{
+					int i = m_FlaggedLookup[x][j];
+
+					CWaypoint@ pWpt;
+					
+					@pWpt = m_Waypoints[i];
+
+					if ( pWpt.m_iFlags & W_FL_DELETED == W_FL_DELETED )
+						continue;	
+
+					if ( pWpt.m_iFlags & iFlags == iFlags )
+					{
+						if ( failed !is null && failed.contains(i) )
+							continue;
+
+						wpts.add(i,fBelief.getBelief(i));
+						//wpts.insertLast(i);
+					}					
+				}
+			}
+
+		}
+
+		/*		
 		
 		for( int i = 0; i < m_iNumWaypoints; i ++ )
 		{
@@ -1185,7 +1263,7 @@ class CWaypoints
 				wpts.add(i,fBelief.getBelief(i));
 				//wpts.insertLast(i);
 			}
-		}
+		}*/
 		
 //		if ( wpts.m_pWaypoints.length() == 0 )
 ///			return -1;
@@ -1341,6 +1419,16 @@ class CWaypoints
 				return false;
 			}
 
+			// reinitialise lookup
+			m_FlaggedLookup = array<array<int>>();
+			// lookup up to 32 waypoint types
+			m_FlaggedLookup.resize(32);
+			// initialise all to empty array
+			for ( int i = 0; i < 32; i ++ )
+			{
+				m_FlaggedLookup[i] = array<int>();
+			}
+
 			BotMessage("Waypoint Header : " + hdr.number_of_waypoints + "\n");
 
 			//if ( hdr !is null )
@@ -1350,8 +1438,18 @@ class CWaypoints
 			{
 				if ( !m_Waypoints[i].Read(buf,i) )
 				{
-					BotMessage("WAYPOINT " + i + " CORRUPT!");
+				//	BotMessage("WAYPOINT " + i + " CORRUPT!");
 					return false;
+				}
+				// check any waypoint types this waypoint has
+				// and add to lookup
+				for ( int j = 0; j < 32; j ++ )
+				{
+					if ( m_Waypoints[i].m_iFlags & (1<<j) == (1<<j) )
+					{
+						//BotMessage("ADDING ONE TO " + j + "\n");
+						m_FlaggedLookup[j].push_back(i);
+					}
 				}
 			}
 
@@ -1889,7 +1987,22 @@ final class RCBotNavigator
 
 		bool bTouchedWpt = false;
 
-		if ( wpt.hasFlags(W_FL_CROUCH) )
+		if ( bot.m_flJumpPlatformTime > g_Engine.time )
+		{
+			if ( wpt.hasFlags(W_FL_PLATFORM) )
+			{
+				if ( bot.m_pPlayer.pev.groundentity !is null )
+				{
+					if ( g_EntityFuncs.Instance(bot.m_pPlayer.pev.groundentity) is bot.m_pExpectedPlatform )
+					{
+						bot.m_flJumpPlatformTime = 0;
+						// we're on a platform
+						bTouchedWpt = true;
+					}
+				}
+			}
+		}
+		else if ( wpt.hasFlags(W_FL_CROUCH) )
 			touch_distance = 32;
 		else if ( wpt.hasFlags(W_FL_JUMP))
 			touch_distance = 32;
@@ -1905,7 +2018,7 @@ final class RCBotNavigator
 
 		//BotMessage("Current = " + m_iCurrentWaypoint + " , Dist = " + distance);
 
-		if ( bTouchedWpt || (distance < touch_distance) || (distance > (m_fPreviousDistance+touch_distance)) )
+		if ( bTouchedWpt || (distance < touch_distance) || (distance > (m_fPreviousDistance+(touch_distance*2))) )
 		{
 			CWaypoint@ pNextWpt = null;
 			CWaypoint@ pThirdWpt = null;
