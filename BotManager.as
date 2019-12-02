@@ -28,7 +28,7 @@ const int PRIORITY_OVERRIDE = 7;
 // ------------------------------------
 final class RCBot : BotManager::BaseBot
 {	
-	private float m_fNextThink = 0;
+	//private float m_fNextThink = 0;
 
 	RCBotSchedule@ m_pCurrentSchedule;
 
@@ -238,14 +238,48 @@ final class RCBot : BotManager::BaseBot
 			{
 				RCBotSchedule@ sched = SCHED_CREATE_NEW();
 				RCBotTask@ task = SCHED_CREATE_PATH(vTalker,talker);
+				
+				float fTime = 90.0f;
 
 				bBotHeard = true;
+
+				// should work for eg....
+				//  "Wait 2 min" or "wait here 2 min" or "wait here for 2 mins"
+				if ( args.length() > 2 )
+				{
+					uint arg = 2;
+
+					// search for a number
+					while ( arg < args.length() )
+					{
+						fTime = atof(args[arg++]);
+
+						if ( fTime > 0.0f ) // valid number
+							break;
+					}
+
+					if ( arg < args.length() )
+					{
+						if ( args[arg] == "min" || args[arg] == "mins" )
+						{
+							fTime *= 60.0f;
+						}
+						else if ( args[arg] == "hour" || args[arg] == "hours" )
+						{
+							fTime *= 3600.0f;
+						}											
+					}
+				}
+
+				// no time given
+				if ( fTime == 0.0f )
+					fTime = 90.0f;
 
 				if ( task !is null )
 				{
 					sched.addTask(task);
 					sched.addTask(CBotMoveToOrigin(vTalker));
-					sched.addTask(CBotTaskWait(90.0f,vTalker));
+					sched.addTask(CBotTaskWait(fTime,vTalker));
 					OK = true;
 				}
 			}
@@ -1403,6 +1437,9 @@ case 	CLASS_BARNACLE	:
 		//if ( m_fNextThink > g_Engine.time )
 		//	return;
 
+		// make bots randomly alter thinking time
+		//m_fNextThink = g_Engine.time + Math.RandomFloat(0.5,1.5);
+
 		/*
 
 		CSoundEnt@ soundEnt = GetSoundEntInstance();
@@ -1470,9 +1507,6 @@ case 	CLASS_BARNACLE	:
 		ReleaseButtons();
 
 		m_fDesiredMoveSpeed = m_pPlayer.pev.maxspeed;
-
-		// 100 ms think
-		//m_fNextThink = g_Engine.time + 0.1;
 
 		BotManager::BaseBot::Think();
 		
@@ -2022,8 +2056,10 @@ case 	CLASS_BARNACLE	:
 		}
 		else
 		{
-			//BotMessage("m_pCurrentSchedule == null");
-			@m_pCurrentSchedule = utils.execute(this);
+			if ( m_pDisableUtil.GetBool() == false )
+			{
+				@m_pCurrentSchedule = utils.execute(this);
+			}
 		}
 
 		m_iCurrentPriority = PRIORITY_NONE;

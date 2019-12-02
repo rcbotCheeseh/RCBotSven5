@@ -56,6 +56,7 @@ CCVar@ m_pDontShoot;
 CCVar@ m_pUseBelief;
 CCVar@ m_pBeliefMultiplier;
 CCVar@ m_pWPAutoPathDist;
+CCVar@ m_pDisableUtil;
 
 //CCVar@ m_pAutoConfig;
 int g_ScriptEntityOffset = 0;
@@ -161,7 +162,8 @@ void PluginInit()
 	@m_pDontShoot = CCVar("dont_shoot",0,"if 1, bots wont shoot", ConCommandFlag::AdminOnly);
 	@m_pBeliefMultiplier = CCVar("belief_mult",400,"belief cost multiplier", ConCommandFlag::AdminOnly);
 	@m_pWPAutoPathDist = CCVar("autopath_dist",512,"Distance to auto add paths to waypoints", ConCommandFlag::AdminOnly);
-	
+	@m_pDisableUtil = CCVar("disable_util", 0, "Disable bot's utility function, debug only", ConCommandFlag::AdminOnly);
+
 	g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
