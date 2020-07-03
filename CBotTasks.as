@@ -976,6 +976,15 @@ class CFindPathSchedule : RCBotSchedule
     }
 }
 
+class CThrowGrenadeSchedule : RCBotSchedule 
+{
+    CThrowGrenadeSchedule ( RCBot@ bot, Vector vThrowTo )
+    {       
+        addTask(CBotThrowGrenade(bot,vThrowTo));
+        addTask(CBotTaskFindCoverTask(bot,vThrowTo));
+        addTask(CBotTaskWait(1.0,vThrowTo));
+    }
+}
 
 class CBotTaskFindCoverSchedule : RCBotSchedule
 {    
@@ -986,6 +995,73 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
         addTask(CBotButtonTask(IN_RELOAD));
     }
     
+}
+
+class CBotThrowGrenade : RCBotTask
+{
+    Vector vThrowTo;
+    float m_fWaitTime;
+
+    int MAX_GREN_THROW_DIST = 800;
+
+    CBotThrowGrenade ( RCBot@ bot, Vector throwTo )
+    {
+        float distance = bot.distanceFrom(throwTo);
+        
+        float fFraction = distance/MAX_GREN_THROW_DIST;
+        m_fWaitTime = 0.0f;
+        vThrowTo = throwTo;
+		// add gravity offset
+		vThrowTo.z += (800 *  Math.RandomFloat(0.8f,1.2f) * fFraction);      
+    }
+
+    string DebugString ()
+    {
+        return "CBotThrowGrenade";
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        CBotWeapon@ pGrenade = bot.getGrenade();
+        CBaseEntity@ pPlayer = bot.m_pPlayer;
+
+          // stop bot from attacking enemies whilst healing
+        bot.ceaseFire(true);
+
+        if ( pGrenade is null )
+        {
+                Failed();
+                return;
+        }
+
+        if ( pGrenade.getPrimaryAmmo(bot) == 0 )
+        {
+            Failed();
+            return;
+        }        
+
+        if ( !bot.isCurrentWeapon(pGrenade) )
+        {
+            bot.selectWeapon(pGrenade);
+            return;
+        }
+
+        bot.StopMoving();
+        bot.setLookAt(vThrowTo);
+
+         if ( m_fWaitTime == 0.0f )
+            m_fWaitTime = g_Engine.time + 1.0f; // hold for one second
+        else if ( m_fWaitTime < g_Engine.time )
+        {
+            Complete();        
+            // stop bot from attacking enemies whilst healing
+            bot.ceaseFire(false);
+
+        }
+        else // else hold the button
+            bot.PressButton(IN_ATTACK);
+        
+    }
 }
 
 class CGrappleTask : RCBotTask
@@ -1830,6 +1906,32 @@ class CBotHealPlayerUtil : CBotUtil
     }
 }
 
+class CBotThrowGrenadeUtil : CBotUtil
+{
+    string DebugMessage ()
+    {
+        return "CBotThrowGrenadeUtil";
+    }
+
+    float calculateUtility ( RCBot@ bot )
+    {        
+        return 1.0f;
+    }    
+
+    bool canDo (RCBot@ bot)
+    {
+        float distance = bot.distanceFrom(bot.m_vLastSeeEnemy);
+        //bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
+        return UTIL_IsVisible(bot.m_pPlayer.pev.origin, bot.m_vLastSeeEnemy, bot.m_pPlayer) && bot.m_bLastSeeEnemyValid && (bot.getGrenade() !is null) && (distance > 300) && (distance<1000);
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        RCBotSchedule@ sched = CThrowGrenadeSchedule(bot,bot.m_vLastSeeEnemy);
+        return sched;
+    }    
+}
+
 /**
  * CBotHealPlayerUtil
  *
@@ -2466,6 +2568,7 @@ class CBotUtilities
             m_Utils.insertLast(CBotRevivePlayerUtil());
             m_Utils.insertLast(CBotUseTankUtil());
             m_Utils.insertLast(CCheckoutNoiseUtil());
+            m_Utils.insertLast(CBotThrowGrenadeUtil());
     }
 
     void reset ()

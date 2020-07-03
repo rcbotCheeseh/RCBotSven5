@@ -1266,6 +1266,13 @@ case 	CLASS_BARNACLE	:
 		return m_pWeapons.findBotWeapon("weapon_grapple");
 	}	
 
+	
+	CBotWeapon@ getGrenade ()
+	{
+		return m_pWeapons.findBotWeapon("weapon_handgrenade");
+	}	
+
+
 	CBotWeapon@ getExplosives ()
 	{
 		return m_pWeapons.findBotWeapon("weapon_explosive");
