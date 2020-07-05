@@ -38,6 +38,10 @@ final class RCBot : BotManager::BaseBot
 
 	EHandle m_pEnemy;
 
+//	EHandle m_pNextEnemy;
+
+	BotEnemiesVisible m_pEnemiesVisible;
+
 	CBotVisibles@ m_pVisibles;
 
 	CBotUtilities@ utils;
@@ -523,6 +527,8 @@ final class RCBot : BotManager::BaseBot
 		}
 		else 
 			message += "none";
+
+		message += "\nEnemies Visible = " + m_pEnemiesVisible.EnemiesVisible();
 
 		message += "\nHealth: " + (HealthPercent()*100) + "%";		
 		message += "\nArmor: " + (ArmorPercent()*100) + "%";		
@@ -1640,13 +1646,9 @@ case 	CLASS_BARNACLE	:
 
 		if ( IsEnemy(ent) )
 		{
+			m_pEnemiesVisible.newEnemy(ent);
+
 			//BotMessage("NEW ENEMY !!!  " + ent.pev.classname + "\n");
-
-			if ( m_pEnemy.GetEntity() is null )
-				m_pEnemy = ent;
-			else if ( getEnemyFactor(ent) < getEnemyFactor(m_pEnemy) )
-				m_pEnemy = ent;		
-
 			m_fLastSeeEnemyTime = g_Engine.time;
 		}
 
@@ -1687,13 +1689,18 @@ case 	CLASS_BARNACLE	:
 
 	void lostVisible ( CBaseEntity@ ent )
 	{
+		//BotMessage("lost visible\n");
+
+		
 		if ( m_pEnemy.GetEntity() is ent )
 		{
 			m_pLastEnemy = m_pEnemy.GetEntity();
 			m_vLastSeeEnemy = m_pEnemy.GetEntity().pev.origin;
-			m_bLastSeeEnemyValid = true;
-			m_pEnemy = null;
+			m_bLastSeeEnemyValid = true;			
 		}
+
+		m_pEnemiesVisible.enemyLost(ent);
+
 
 		if ( m_pHeal.GetEntity() is ent )
 		{
@@ -1723,6 +1730,7 @@ case 	CLASS_BARNACLE	:
 
 			@m_pNextWpt = null;
 
+		m_pEnemiesVisible.clear();
 		m_flJumpPlatformTime = 0;
 		@m_pExpectedPlatform = null;
 		m_iLastWaypointFrom = -1;
@@ -1778,6 +1786,7 @@ case 	CLASS_BARNACLE	:
 	{
 		// update visible objects
 		m_pVisibles.update();
+		m_pEnemy = m_pEnemiesVisible.getBestEnemy(this);
 	}
 
 	void RemoveLastEnemy ()
@@ -1920,7 +1929,7 @@ case 	CLASS_BARNACLE	:
 		{
 			setLookAt(m_vHurtOrigin,PRIORITY_HURT);
 		}		
-		else if ( hasHeardNoise() )
+		else if ( hasHeardNoise() && (m_pEnemiesVisible.EnemiesVisible() == 0 ) )
 		{
 			setLookAt(m_vNoiseOrigin,PRIORITY_LISTEN);
 		}
@@ -2076,4 +2085,183 @@ case 	CLASS_BARNACLE	:
 BotManager::BaseBot@ CreateRCBot( CBasePlayer@ pPlayer )
 {
 	return @RCBot( pPlayer );
+}
+
+
+final class BotEnemySeen
+{
+	EHandle pEnemy;
+	//Vector vLastKnown;	
+
+	BotEnemySeen ( CBaseEntity@ pent )
+	{
+		pEnemy = EHandle(pent);
+		//vLastKnown = Vector(0,0,0); // not used atm
+	}
+
+	bool isEnemy ( CBaseEntity@ pent )
+	{
+		return pEnemy.GetEntity() is pent;
+	}	
+
+	float getEnemyFactor ( RCBot@ bot )
+	{
+		CBaseEntity @entity = pEnemy.GetEntity();
+
+		float fFactor = bot.distanceFrom(entity.pev.origin) * entity.pev.size.Length();
+
+		if ( entity.GetClassname() == "func_breakable" )
+			fFactor *= 2;
+		else if ( entity.GetClassname() == "monster_male_assassin" )
+			fFactor /= 2;
+		// focus on nearly dead enemies
+		fFactor += entity.pev.health;
+
+		return fFactor;
+	}
+
+	/*bool LastKnownVisible ()
+	{
+		return bot.Visible(vLastKnown);
+	}*/
+
+}
+
+final class BotEnemiesVisible
+{
+	array<BotEnemySeen@> enemiesVisible;
+
+	void clear ()
+	{
+		enemiesVisible =  {};
+	}
+
+	void newEnemy ( CBaseEntity@ pent )
+	{
+		enemiesVisible.push_back(BotEnemySeen(pent));
+	}
+
+	void enemyLost ( CBaseEntity@ pent )
+	{
+		removeEnemy(pent);
+		 //BotMessage("enemy lost\n");
+	}
+
+	EHandle getBestEnemy ( RCBot@ bot )
+	{
+		uint i;
+		float min_factor = 0.0f;
+		EHandle ret = EHandle(null);
+		bool none = true;
+		array<BotEnemySeen@> toRemove;
+
+		for ( i = 0; i < enemiesVisible.length(); i ++ )
+		{
+			BotEnemySeen@ temp = @enemiesVisible[i];
+			float factor = 0;
+
+			if ( temp.pEnemy.GetEntity() is null )
+			{
+				toRemove.push_back(temp);
+				continue;
+			}
+
+			if ( !bot.IsEnemy(temp.pEnemy.GetEntity()) )
+			{
+				toRemove.push_back(temp);
+				continue;
+			}
+
+			factor = temp.getEnemyFactor(bot);
+//BotMessage("fator = " + factor);	
+			if ( none || (factor < min_factor) )
+			{			
+				none = false;
+				min_factor = factor;
+				ret = temp.pEnemy;
+			} 
+		}
+
+		clearIndices(toRemove);
+
+		//if ( ret.GetEntity() !is null )
+		//	BotMessage("Best enemy ==  " + ret.GetEntity().pev.classname + "\n");
+		//	else 
+		//	BotMessage("Best enemy == null :( length == " + enemiesVisible.length() + "  \n");
+
+		return ret;
+	}
+
+	int EnemiesVisible ()
+	{
+		return enemiesVisible.length();
+	}
+
+	void removeEnemy ( CBaseEntity@ pent )
+	{
+		uint i;
+	//	BotMessage("removeEnemy");
+		for ( i = 0; i < enemiesVisible.length(); i ++ )
+		{
+			BotEnemySeen@ temp = enemiesVisible[i];
+
+			if ( temp.isEnemy(pent) )
+			{
+				enemiesVisible.removeAt(i);					
+				return;
+			}
+		}
+	//	BotMessage("removeEnemy FAILED");
+	}
+
+	void clearIndices ( array<BotEnemySeen@> to_clear )
+	{
+		uint i;
+		while ( to_clear.length() > 0 )
+		{
+			BotEnemySeen@ toRemove = to_clear[0];
+
+			for ( i = 0; i < enemiesVisible.length(); i ++ )
+			{
+				BotEnemySeen@ temp = enemiesVisible[i];
+
+				if ( temp is toRemove )
+				{
+					enemiesVisible.removeAt(i);
+					to_clear.removeAt(0);
+					break;
+				}
+			}
+		}
+	}
+
+	/*BotEnemySeen@ NearestLastKnownVisible ( RCBot@ bot )
+	{
+		int i;
+		float min_distance = 1000.0f;
+		BotEnemySeen@ ret = null;
+
+		array<BotEnemySeen@> toRemove;
+
+		for ( i = 0; i < enemiesVisible.length(); i ++ )
+		{
+			BotEnemySeen@ temp = @enemiesVisible[i];
+
+			if ( temp.pEnemy.GetEntity() is null )
+			{
+				toRemove.push_back(temp);
+				continue;
+			}
+
+			if ( temp.LastKnownVisible() )
+			{
+				bot.distanceFrom(temp.pEnemy.GetEntity());
+				if ( enemiesVisible[i].p
+			} 
+		}
+
+		clearIndices(toRemove);
+
+		return ret;
+	}*/
 }

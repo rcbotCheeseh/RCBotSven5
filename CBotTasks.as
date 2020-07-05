@@ -1920,6 +1920,10 @@ class CBotThrowGrenadeUtil : CBotUtil
 
     bool canDo (RCBot@ bot)
     {
+        Vector vLastSeeEnemy = bot.m_vLastSeeEnemy;
+
+        if ( vLastSeeEnemy.z > (bot.m_pPlayer.pev.origin.z+128) )
+            return false; // can't throw high
         float distance = bot.distanceFrom(bot.m_vLastSeeEnemy);
         //bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
         return UTIL_IsVisible(bot.m_pPlayer.pev.origin, bot.m_vLastSeeEnemy, bot.m_pPlayer) && bot.m_bLastSeeEnemyValid && (bot.getGrenade() !is null) && (distance > 300) && (distance<1000);
