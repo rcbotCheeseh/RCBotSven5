@@ -1220,15 +1220,17 @@ class CBotTaskRevivePlayer : RCBotTask
 class CBotTaskFollow : RCBotTask
 {
     EHandle m_pFollow;
+    bool LostPlayer = false;
     float m_fLastVisibleTime;
     string DebugString ()
     {
         return "CBotTaskRevivePlayer";
     }
-     CBotTaskFollow ( CBaseEntity@ pFollow )
+     CBotTaskFollow ( CBaseEntity@ pFollow, bool lostPlayer )
      {
          m_pFollow = pFollow;
          m_fLastVisibleTime = 0.0f;
+         LostPlayer = lostPlayer;
      }
 
      void execute ( RCBot@ bot )
@@ -1247,10 +1249,29 @@ class CBotTaskFollow : RCBotTask
         if ( m_fLastVisibleTime == 0.0f )
             m_fLastVisibleTime = g_Engine.time + 3.0f;
         else if ( bot.isEntityVisible(pFollow) )
-            m_fLastVisibleTime = g_Engine.time + 3.0f;
+        {
+            m_fLastVisibleTime = g_Engine.time + 1.0f;
+            LostPlayer = false;
+        }
         else if ( m_fLastVisibleTime < g_Engine.time )
         {
-            Failed();
+            if ( !LostPlayer )
+            {
+                int iWpt = g_Waypoints.getNearestWaypointIndex(UTIL_EntityOrigin(pFollow),null,-1,400.0,true,false);
+
+                if ( iWpt == -1 )
+                {
+                    Failed();
+                }
+                else 
+                {
+                    m_pContainingSchedule.addTask(CFindPathTask(bot,iWpt,pFollow));                
+                    m_pContainingSchedule.addTask(CBotTaskFollow(pFollow,true));
+                    Complete();
+                }
+            }
+            else 
+                Failed();
             return;
         }
 
@@ -1603,8 +1624,65 @@ class CBotHumanTowerTask : RCBotTask
         m_fJumpTime = 0.0f;
     }
 
+    /*int State = 0;
+
+    int State_DetectRole = 0; // find out what role I will be in the tower
+    int State_Role_Below = 1; // I am below
+    int State_Role_OnTop = 2;  // I am on top*/
+
      void execute ( RCBot@ bot )
      {
+        /* TODO 
+        
+        if ( m_fTime == 0.0f ) // timeout
+            m_fTime = g_Engine.Time() + RandomFloat(15.0f,30.0f);
+
+         if ( bot.
+
+         switch ( State )
+         {
+             case State_DetectRole:
+                // Check if there is a player crouching already nearby
+                CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
+
+                if ( bot.m_pPlayer.pev.groundentity is groundPlayer.edict() )
+                    State = State_Role_OnTop;
+                else if ( UTIL_FindNearestPlayerOnTop(bot.m_pPlayer) !is null )               
+                {
+                    // some one on top of me, I'm below
+                    State = State_Role_Below;
+                }
+                else 
+                    State_Role_JumpOnTop; // jump on the player that is crouching (if exists)
+
+                
+             break;
+             case State_Role_JumpOnTop:
+                 CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
+
+                 // Face the player crouching and jump on top
+
+                 if (( (bot.m_pPlayer.pev.groundentity !is null) && ((bot.m_pPlayer.pev.groundentity.pev.flags & FL_PLAYER )== FL_PLAYER)) || ( UTIL_FindNearestPlayerOnTop(bot.m_pPlayer) !is null )    
+                 {
+                     State = State_DetectRole;
+                 } 
+                 else 
+                 {
+                      bot.setMove(m_vOrigin);
+
+                      
+                 }
+
+             break;
+             case State_Role_Below:
+                // Stay crouched
+             break;
+             case State_Role_OnTop:
+                // I'm already on top. Face my next waypoint and jump forward
+                
+             break;
+         }
+        */
          CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
 
          if ( m_fTime == 0.0f ) 
@@ -1626,8 +1704,7 @@ class CBotHumanTowerTask : RCBotTask
             m_fTime = g_Engine.time + 5.0f; // wait for another six second max
 
             if ( bot.m_pPlayer.pev.groundentity is groundPlayer.edict() )
-            {
-                
+            {                
                 bot.StopMoving();
 
                 if ( m_fJumpTime == 0.0f )
@@ -1868,7 +1945,7 @@ class CBotHealPlayerUtil : CBotUtil
 {
     float calculateUtility ( RCBot@ bot )
     {        
-        return 0.9f;
+        return 0.99f - (bot.m_pEnemiesVisible.EnemiesVisible()*0.1f);
     }
 
     string DebugMessage ()
@@ -1945,7 +2022,7 @@ class CBotRevivePlayerUtil : CBotUtil
 {
     float calculateUtility ( RCBot@ bot )
     {        
-        return 1.0f;
+        return 1.0f - (bot.m_pEnemiesVisible.EnemiesVisible()*0.1f);
     }
 
     bool canDo (RCBot@ bot)
