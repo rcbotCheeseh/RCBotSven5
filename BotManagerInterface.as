@@ -906,6 +906,15 @@ namespace BotManager
 					m_fAddBotTime = g_Engine.time + 5.0f;
 				}
 			}
+			else if ( m_Bots.length() > m_iBotQuota )
+			{
+				if ( m_fAddBotTime < g_Engine.time )
+				{
+					UTIL_KickNextBot();
+
+					m_fAddBotTime = g_Engine.time + 5.0f;
+				}
+			}
 			
 			g_Waypoints.runVisibility();
 

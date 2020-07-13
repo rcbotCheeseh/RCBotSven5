@@ -1985,6 +1985,7 @@ class CBotHealPlayerUtil : CBotUtil
 
 class CBotThrowGrenadeUtil : CBotUtil
 {
+     Vector vLastSeeEnemy;
     string DebugMessage ()
     {
         return "CBotThrowGrenadeUtil";
@@ -1997,18 +1998,32 @@ class CBotThrowGrenadeUtil : CBotUtil
 
     bool canDo (RCBot@ bot)
     {
-        Vector vLastSeeEnemy = bot.m_vLastSeeEnemy;
+        if ( bot.getGrenade() !is null )
+        {
+            BotEnemyLastSeen@ nearestLastSeen = bot.m_pEnemiesVisible.nearestEnemySeen(bot);
 
-        if ( vLastSeeEnemy.z > (bot.m_pPlayer.pev.origin.z+128) )
-            return false; // can't throw high
-        float distance = bot.distanceFrom(bot.m_vLastSeeEnemy);
-        //bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
-        return UTIL_IsVisible(bot.m_pPlayer.pev.origin, bot.m_vLastSeeEnemy, bot.m_pPlayer) && bot.m_bLastSeeEnemyValid && (bot.getGrenade() !is null) && (distance > 300) && (distance<1000);
+            if ( nearestLastSeen !is null )
+            {
+                vLastSeeEnemy = nearestLastSeen.getGrenadePosition();
+
+                if ( vLastSeeEnemy.z > (bot.m_pPlayer.pev.origin.z+128) )
+                    return false; // can't throw high
+
+                float distance = bot.distanceFrom(vLastSeeEnemy);
+                
+                if ( UTIL_IsVisible(bot.m_pPlayer.pev.origin, bot.m_vLastSeeEnemy, bot.m_pPlayer) && bot.m_bLastSeeEnemyValid && (distance > 300) && (distance<1000) )
+                {
+                    return CBotUtil::canDo(bot);
+                }
+            }
+        }
+
+        return false;
     }
 
     RCBotSchedule@ execute ( RCBot@ bot )
     {
-        RCBotSchedule@ sched = CThrowGrenadeSchedule(bot,bot.m_vLastSeeEnemy);
+        RCBotSchedule@ sched = CThrowGrenadeSchedule(bot,vLastSeeEnemy);
         return sched;
     }    
 }

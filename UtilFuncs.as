@@ -664,3 +664,18 @@ bool UTIL_DoesNearestTeleportGoTo ( Vector vTeleportOrigin, Vector vGoto )
 	return (UTIL_EntityOrigin(pTeleportDestination) - vGoto).Length() < 400.0f;
 
 }
+
+
+void UTIL_KickNextBot ( )
+{
+	for( int iPlayer = 1; iPlayer <= g_Engine.maxClients; ++iPlayer )
+	{
+		CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex( iPlayer );
+		
+		if( pPlayer !is null && ( pPlayer.pev.flags & FL_FAKECLIENT ) != 0 )
+		{
+			g_AdminControl.KickPlayer(pPlayer);		
+			return;
+		}
+	}
+}

@@ -2156,6 +2156,12 @@ final class BotEnemyLastSeen
 		return pEnemy.GetEntity() is pent;
 	}
 
+	Vector getGrenadePosition ( )
+	{
+		// don't add velocity 
+		return vLastSeen;
+	}
+
 	CBaseEntity@ getEntity ()
 	{
 		return pEnemy.GetEntity();
