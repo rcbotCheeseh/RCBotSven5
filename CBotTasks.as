@@ -1983,6 +1983,36 @@ class CBotHealPlayerUtil : CBotUtil
     }
 }
 
+class CBotFindCoverUtil : CBotUtil
+{
+    float calculateUtility ( RCBot@ bot )
+    {        
+        return (1.0f - bot.HealthPercent()) * bot.m_pEnemiesVisible.EnemiesVisible();
+    }    
+
+    bool canDo (RCBot@ bot)
+    {
+        if  ( bot.m_pEnemy.GetEntity() !is null && bot.m_pEnemiesVisible.EnemiesVisible() > 0 ) 
+            return CBotUtil::canDo(bot);
+
+        return false;
+    }
+
+    string DebugMessage ()
+    {
+        return "CbotFindCoverUtil";
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        Vector vHideFrom = UTIL_EntityOrigin(bot.m_pEnemy.GetEntity());
+
+        RCBotSchedule@ sched = CBotTaskFindCoverSchedule(bot,vHideFrom);
+        return sched;
+    } 
+    
+}
+
 class CBotThrowGrenadeUtil : CBotUtil
 {
      Vector vLastSeeEnemy;
@@ -2665,6 +2695,7 @@ class CBotUtilities
             m_Utils.insertLast(CBotUseTankUtil());
             m_Utils.insertLast(CCheckoutNoiseUtil());
             m_Utils.insertLast(CBotThrowGrenadeUtil());
+            m_Utils.insertLast(CBotFindCoverUtil());
     }
 
     void reset ()
