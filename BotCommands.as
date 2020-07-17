@@ -8,6 +8,7 @@
 
 CConCommand@ m_pRCBotWaypointConvertType;
 CConCommand@ m_pAddBot;
+CConCommand@ m_pRemoveBot;
 CConCommand@ m_pRCBotWaypointAdd;
 CConCommand@ m_pRCBotWaypointDelete;
 CConCommand@ m_pRCBotWaypointInfo;
@@ -110,6 +111,7 @@ void PluginInit()
 	g_BotManager.PluginInit();
 	
 	@m_pAddBot = @CConCommand( "addbot", "Adds a new bot", @AddBotCallback );
+	@m_pRemoveBot = @CConCommand( "removebot", "Removes a bot", @RemoveBotCallback );
 
 	@m_pRCBotWaypointConvertType = @CConCommand( "waypoint_convert_type", "Convert waypoint type to other", @WaypointConvertType );
 //ConvertFlagsToOther WaypointConvertType
@@ -227,6 +229,31 @@ void TeleportWpt ( const CCommand@ args )
 		}
 	}
 
+}
+/**
+ * Increase bot quota
+ */
+void AddBotCallback( const CCommand@ args )
+{
+	int val = g_BotManager.m_iBotQuota+1;
+
+	if ( val > g_Engine.maxClients )
+		val = g_Engine.maxClients;
+
+	g_BotManager.m_iBotQuota = uint(val);
+}
+
+/**
+ * Increase bot quota
+ */
+void RemoveBotCallback( const CCommand@ args )
+{
+	int val = g_BotManager.m_iBotQuota-1;
+
+	if ( val < 0 )
+		val = 0;
+
+	g_BotManager.m_iBotQuota = uint(val);
 }
 
 void RCBot_Quota ( const CCommand@ args )
@@ -652,27 +679,6 @@ void RCBot_Kickbots( const CCommand@ args )
 // ------------------------------------
 // COMMANDS - 	start
 // ------------------------------------
-void AddBotCallback( const CCommand@ args )
-{
-	BotManager::BaseBot@ pBot = g_BotManager.CreateBot( );
-	/*if (m_pAutoConfig.GetBool()) {
-		File@ configFile = g_FileSystem.OpenFile( "scripts/plugins/BotManager/config/config.ini", OpenFile::READ);
-		if ( configFile !is null )
-			while ( !configFile.EOFReached() )
-			{
-				string fileLine; configFile.ReadLine( fileLine );
-				fileLine.Trim();
-				if ( fileLine.Length() > 1 ) {
-					if ( fileLine[0] == "!" ) {
-						NetworkMessage message( MSG_ONE, NetworkMessages::NetworkMessageType(9), pBot.Player.edict() );
-						message.WriteString( fileLine.SubString(1) );
-						message.End();
-					} else if ( fileLine[0] != "#" )
-						g_EngineFuncs.ServerCommand( fileLine );
-				}
-			}
-	}*/
-}
 
 void WaypointInfo ( const CCommand@ args )
 {

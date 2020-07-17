@@ -520,6 +520,8 @@ bool UTIL_CanUseTank ( CBaseEntity@ pBot, CBaseEntity@ pTankEnt )
 		//BotMessage("pTank is null");
 		return false;
 	}
+	if ( !pTank.CanFire() )
+		return false;
 
 	if ( pTank.pev.effects & EF_NODRAW == EF_NODRAW )
 		return false;
