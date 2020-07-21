@@ -101,6 +101,8 @@
 
 				if ( pPlayer.pev.groundentity !is pOnTopOf.edict() )
 					continue;
+				
+			//	BotMessage("OK!!!!");
 
 				dist  = (pPlayer.pev.origin - vOrigin).Length();
 									
@@ -111,10 +113,13 @@
 				}
 			}
 
+			//if ( ret !is null )
+			//	BotMessage("NOT NULL!!!!");
+
 			return ret;
 	}	
 
-	CBasePlayer@ UTIL_FindNearestPlayer ( Vector vOrigin, float minDistance = 512.0f, CBasePlayer@ ignore = null, bool onGroundOnly = false, bool bMovingOnly = false )
+	CBasePlayer@ UTIL_FindNearestPlayer ( Vector vOrigin, float minDistance = 512.0f, CBasePlayer@ ignore = null, bool onGroundOnly = false, bool bMovingOnly = false, int flags = 0 )
 	{
 		CBasePlayer@ ret = null;
 
@@ -132,22 +137,15 @@
 
 				if ( onGroundOnly )
 				{
-					if ( pPlayer.pev.groundentity !is null )
-					{
-					CBaseEntity@ gnd = g_EntityFuncs.Instance(pPlayer.pev.groundentity);
-
-					if ( gnd.GetClassname() != "worldspawn" )
-						continue;
-					}
-
-					if ( pPlayer.pev.flags & FL_DUCKING != FL_DUCKING )
-						continue;
-
-					if ( pPlayer.pev.flags & FL_ONGROUND != FL_ONGROUND )
-						continue;
-
 					if ( pPlayer.pev.movetype == MOVETYPE_FLY )
 						continue;
+				}
+
+				if ( flags > 0 )
+				{
+					if ( pPlayer.pev.flags & flags != flags )
+						continue;
+					
 				}
 
 				if ( bMovingOnly )

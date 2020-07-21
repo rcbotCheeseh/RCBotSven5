@@ -1604,154 +1604,152 @@ class CBotTaskHealPlayer : RCBotTask
      }
 }
 
+    enum State_Role
+  {
+    State_DetectRole,
+    State_Role_Below,
+    State_Role_OnTop,
+    State_Role_OnTop_MoveToGoal
+  };
 class CBotHumanTowerTask : RCBotTask
 {
-    Vector m_vOrigin;
+    Vector m_vGround;
+    Vector m_vGoal;
+
     float m_fTime;
     float m_fJumpTime;
 
-        string DebugString ()
+    string DebugString ()
     {
-        return "CBotHumanTowerTask";
+        string ret = "CBotHumanTowerTask (";
+
+         switch ( State )
+         {
+            case State_DetectRole:
+            ret += "State_DetectRole)";
+            break;
+            case State_Role_Below:
+ret += "State_Role_Below)";
+            break;
+            case State_Role_OnTop:
+ret += "State_Role_OnTop)";
+            break;
+            case State_Role_OnTop_MoveToGoal:
+ret += "State_Role_OnTop_MoveToGoal)";
+            break;
+         }
+
+        return ret;
     } 
 
-    CBotHumanTowerTask ( Vector vOrigin )
+    CBotHumanTowerTask ( Vector vGround, Vector vGoal )
     {
-        m_vOrigin = vOrigin;
-
+        m_vGround = vGround;
+        m_vGoal = vGoal;
        // setTimeout(15.0f);
         m_fTime = 0.0f;
         m_fJumpTime = 0.0f;
     }
 
-    /*int State = 0;
-
-    int State_DetectRole = 0; // find out what role I will be in the tower
-    int State_Role_Below = 1; // I am below
-    int State_Role_OnTop = 2;  // I am on top*/
-
+   
+   State_Role State = State_DetectRole;
+   
      void execute ( RCBot@ bot )
      {
-        /* TODO 
-        
-        if ( m_fTime == 0.0f ) // timeout
-            m_fTime = g_Engine.Time() + RandomFloat(15.0f,30.0f);
-
-         if ( bot.
-
+         CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vGround,64,bot.m_pPlayer,true,false,FL_ONGROUND&FL_DUCKING);
+// search for a player near the ground point, ignoring me
+            
          switch ( State )
          {
              case State_DetectRole:
-                // Check if there is a player crouching already nearby
-                CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
-
-                if ( bot.m_pPlayer.pev.groundentity is groundPlayer.edict() )
-                    State = State_Role_OnTop;
-                else if ( UTIL_FindNearestPlayerOnTop(bot.m_pPlayer) !is null )               
+                m_fTime = g_Engine.time+Math.RandomFloat(10.0,20.0);
+                if ( groundPlayer is null )
                 {
-                    // some one on top of me, I'm below
                     State = State_Role_Below;
                 }
                 else 
-                    State_Role_JumpOnTop; // jump on the player that is crouching (if exists)
-
-                
-             break;
-             case State_Role_JumpOnTop:
-                 CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
-
-                 // Face the player crouching and jump on top
-
-                 if (( (bot.m_pPlayer.pev.groundentity !is null) && ((bot.m_pPlayer.pev.groundentity.pev.flags & FL_PLAYER )== FL_PLAYER)) || ( UTIL_FindNearestPlayerOnTop(bot.m_pPlayer) !is null )    
-                 {
-                     State = State_DetectRole;
-                 } 
-                 else 
-                 {
-                      bot.setMove(m_vOrigin);
-
-                      
-                 }
-
+                    State = State_Role_OnTop;
              break;
              case State_Role_Below:
-                // Stay crouched
+
+                if ( m_fTime < g_Engine.time && groundPlayer !is null )
+                {                                 
+                    State = State_DetectRole;
+                    break;
+                }
+                // go to ground position and crouch until player is on top of me
+                if ( bot.distanceFrom(m_vGround) > 64 )
+                    bot.setMove(m_vGround);
+                else 
+                {
+                    CBaseEntity@ playerOnTop = UTIL_FindNearestPlayerOnTop(bot.m_pPlayer);
+                    
+                    bot.StopMoving();
+
+                    // if I have a player on top, stop crouching
+                    if ( playerOnTop is null  )       
+                    {             
+                         bot.PressButton(IN_DUCK);
+                         // BotMessage("ducking...");
+                    }
+                    else 
+                        bot.setLookAt(UTIL_EntityOrigin(playerOnTop));
+                     //else                         
+				     //   BotMessage("playerOnTop is NOT NULL!!!!");
+                }
              break;
              case State_Role_OnTop:
-                // I'm already on top. Face my next waypoint and jump forward
-                
-             break;
-         }
-        */
-         CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vOrigin,128,bot.m_pPlayer,true);
-
-         if ( m_fTime == 0.0f ) 
-            m_fTime = g_Engine.time + 10.0f; // wait for ten second max
-        else if ( m_fTime < g_Engine.time )
-            Failed();
-
-        bot.setMoveSpeed(bot.m_pPlayer.pev.maxspeed/2);
-
-         if ( groundPlayer !is null )
-         {
-            Vector vPlayer = UTIL_EntityOrigin(groundPlayer);            
-
-            if ( UTIL_yawAngleFromEdict(vPlayer,bot.m_pPlayer.pev.v_angle,bot.m_pPlayer.pev.origin) < 15 )    
-                bot.setMove(vPlayer);
-
-            bot.setLookAt(vPlayer);
-
-            m_fTime = g_Engine.time + 5.0f; // wait for another six second max
-
-            if ( bot.m_pPlayer.pev.groundentity is groundPlayer.edict() )
-            {                
-                bot.StopMoving();
-
-                if ( m_fJumpTime == 0.0f )
-                    m_fJumpTime = g_Engine.time + 1.5f;
-                else if ( m_fJumpTime < g_Engine.time )
+               
+                if ( groundPlayer is null )
                 {
-                    bot.PressButton(IN_JUMP);
-                    Complete();
-                }
-            }
-
-            else if ( bot.distanceFrom(groundPlayer) < 96 )
-            {
-                if ( Math.RandomLong(0,100) > 50 )
-                    bot.PressButton(IN_JUMP);
-            }
-         }
-         else
-         {
-            if ( bot.distanceFrom(m_vOrigin) > 96 )
-            {
-                bot.setMove(m_vOrigin);
-
-                UTIL_DebugMsg(bot.m_pPlayer,"bot.distanceFrom(m_vOrigin) > 96",DEBUG_TASK);
-            }
-            else 
-            {
-                CBaseEntity@ playerOnTop = UTIL_FindNearestPlayerOnTop(bot.m_pPlayer);
-
-                if ( playerOnTop !is null  )
-                {
-                    UTIL_DebugMsg(bot.m_pPlayer,"playerOnTop !is null",DEBUG_TASK);
-
-                    // stand up 
-                    // look at player
-                    bot.setLookAt(UTIL_EntityOrigin(playerOnTop));
-
-                    m_fTime = g_Engine.time + 6.0f; // wait for another six second max
+                    // wrong role
+                  
+                        State = State_DetectRole;
                 }
                 else 
                 {
-                    bot.PressButton(IN_DUCK);
+                    if ( bot.m_pPlayer.pev.groundentity !is null )
+                    {
+                        if ( bot.m_pPlayer.pev.groundentity.vars.flags & FL_CLIENT == FL_CLIENT )
+                        {
+                            State = State_Role_OnTop_MoveToGoal;
+                            m_fJumpTime = g_Engine.time + Math.RandomLong(3.0,6.0);
+                            break;
+                        }
+                    }
+
+                    Vector vOrigin = UTIL_EntityOrigin(groundPlayer);
+
+                    bot.setLookAt(vOrigin);
+                    bot.setMove(vOrigin);
+
+                   
+                    if ( Math.RandomLong(0,100) > 50 )
+                        bot.PressButton(IN_JUMP);
+                                
                 }
 
-                bot.StopMoving();
-            }
+             break;
+             case State_Role_OnTop_MoveToGoal:
+
+                if ( m_fJumpTime < g_Engine.time )
+                {
+                    State = State_DetectRole;
+                    break;
+                }
+
+                bot.setMove(m_vGoal);
+                bot.setLookAt(m_vGoal);
+                
+                if ( Math.RandomLong(0,100) > 50 )
+                    bot.PressButton(IN_JUMP);
+
+                if ( bot.distanceFrom(m_vGoal) < 64 )
+                    Complete();
+
+             break;
          }
+   
      }
 }
 
