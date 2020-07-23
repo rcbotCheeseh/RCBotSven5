@@ -1040,9 +1040,8 @@ case 	CLASS_BARNACLE	:
 
 		if( wpt.hasFlags(W_FL_HUMAN_TOWER) && m_pNextWpt !is null )
 		{
-			addToSchedule(CBotHumanTowerTask(wpt.m_vOrigin,m_pNextWpt.m_vOrigin));
+			addToSchedule(CBotHumanTowerTask(wpt.m_vOrigin,m_pNextWpt.m_vOrigin,m_pNextWpt.m_iFlags));
 		}
-
 
 		if ( pThirdWpt !is null )
 		{

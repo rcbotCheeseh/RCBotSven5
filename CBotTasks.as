@@ -685,6 +685,7 @@ final class CUseButtonTask : RCBotTask
     EHandle m_pButton;
     bool m_bIsMomentary;
     bool m_bMomentaryStarted;
+    float m_fMomentaryHoldTime;
     
     string DebugString ()
     {
@@ -694,8 +695,16 @@ final class CUseButtonTask : RCBotTask
     CUseButtonTask ( CBaseEntity@ button )
     {
         m_pButton = button;
-        m_fDefaultTimeout = 10.0f;
+
+        m_fMomentaryHoldTime = 0.0f;
+        
         m_bIsMomentary = (button.GetClassname() == "momentary_rot_button")||(button.GetClassname() == "func_rot_button");
+
+        if ( m_bIsMomentary )
+            m_fDefaultTimeout = 20.0f;
+        else
+            m_fDefaultTimeout = 10.0f;
+
         m_bMomentaryStarted = false;
     } 
 
@@ -716,7 +725,12 @@ final class CUseButtonTask : RCBotTask
         else if ( m_bIsMomentary && m_bMomentaryStarted )
         {
             if ( fButtonVelocity == 0.0 )
-                Complete();
+            {
+                if ( m_fMomentaryHoldTime == 0.0 )
+                    m_fMomentaryHoldTime = g_Engine.time + Math.RandomFloat(3.0f,10.0f);
+                else if ( m_fMomentaryHoldTime < g_Engine.time )   
+                    Complete();
+            }
         }
 
         bot.setLookAt(vOrigin,PRIORITY_TASK+1);
@@ -880,11 +894,13 @@ final class CBotButtonTask : RCBotTask
         }
 
         if ( m_fStartTime == 0.0f )
-            m_fStartTime = g_Engine.time + 1.0f;
+            m_fStartTime = g_Engine.time + Math.RandomLong(2.0,4.0);
         else if ( m_fStartTime < g_Engine.time )
             Complete();
-
-        bot.PressButton(m_iButton);
+        bot.StopMoving();
+        
+        if ( Math.RandomLong(0,100) > 50 )
+            bot.PressButton(m_iButton);
     }
 }
 
@@ -1615,7 +1631,7 @@ class CBotHumanTowerTask : RCBotTask
 {
     Vector m_vGround;
     Vector m_vGoal;
-
+    int m_iFlags;
     float m_fTime;
     float m_fJumpTime;
 
@@ -1642,13 +1658,14 @@ ret += "State_Role_OnTop_MoveToGoal)";
         return ret;
     } 
 
-    CBotHumanTowerTask ( Vector vGround, Vector vGoal )
+    CBotHumanTowerTask ( Vector vGround, Vector vGoal, int iFlags )
     {
         m_vGround = vGround;
         m_vGoal = vGoal;
        // setTimeout(15.0f);
         m_fTime = 0.0f;
         m_fJumpTime = 0.0f;
+        m_iFlags=iFlags;
     }
 
    
@@ -1746,6 +1763,9 @@ ret += "State_Role_OnTop_MoveToGoal)";
 
                 if ( bot.distanceFrom(m_vGoal) < 64 )
                     Complete();
+
+                if ( m_iFlags & W_FL_CROUCH == W_FL_CROUCH )
+                    bot.PressButton(IN_DUCK);
 
              break;
          }
