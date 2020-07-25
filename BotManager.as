@@ -989,11 +989,10 @@ case 	CLASS_BARNACLE	:
 					return 3;
 				}
 			}
-			// Wait No player wapoint or a ladder waypoint and not on ladder
-			else if( pNextWpt.hasFlags(W_FL_WAIT_NO_PLAYER) || 
-			((pNextWpt.hasFlags(W_FL_LADDER))&&(!IsOnLadder())) )
+			// Wait No player waypoint 
+			else if( pNextWpt.hasFlags(W_FL_WAIT_NO_PLAYER) )
 			{
-				if ( m_pCurrentSchedule is null )
+				if ( m_pCurrentSchedule is null ) // create new schedule if none exists
 					m_pCurrentSchedule = RCBotSchedule();
 				
 				m_pCurrentSchedule.addTaskFront(CBotTaskWaitNoPlayer(pNextWpt.m_vOrigin));
