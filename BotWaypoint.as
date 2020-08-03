@@ -2250,6 +2250,15 @@ final class RCBotNavigator
 								// add extra cost to human tower waypoints
 								if ( currWpt.hasFlags(W_FL_HUMAN_TOWER) )
 									fCost += 512.0f;
+								
+							    if ( succWpt.m_vOrigin.z < currWpt.m_vOrigin.z )
+								{
+									if ( bot.HealthPercent() > 0 )
+									{
+										// add extra cost to high heights
+										fCost += (succWpt.m_vOrigin.z - currWpt.m_vOrigin.z) / bot.HealthPercent();
+									}
+								}
 
 								if ( succ.isOpen() || succ.isClosed() )
 								{

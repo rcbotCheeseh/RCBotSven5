@@ -687,7 +687,13 @@ final class RCBot : BotManager::BaseBot
 			return BreakableIsEnemy(entity);
 
 		if ( szClassname == "func_tank")
-			return false;
+		{
+		    CBaseTank@ pTank = cast<CBaseTank@>( entity );
+
+
+// to test
+			return pTank.IsBreakable() && pTank.IsPlayerAlly() == false;
+		}
 
 		if ( entity.pev.deadflag != DEAD_NO )
 			return false;
@@ -695,19 +701,27 @@ final class RCBot : BotManager::BaseBot
 		if ( entity.pev.health <= 0 )
 			return false;
 
-		switch ( entity.Classify() )
+			if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )
+			return false; // can't see
+
+			if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+			{
+
+				//http://www.svencoop.com/manual/classes.html
+				switch ( entity.Classify() )
 		{
 case 	CLASS_FORCE_NONE	:
-case 	CLASS_PLAYER_ALLY	:
 case 	CLASS_NONE	:
 case 	CLASS_PLAYER	:
-case 	CLASS_HUMAN_PASSIVE	:
-case 	CLASS_ALIEN_PASSIVE	:
-case 	CLASS_INSECT	:
-case 	CLASS_PLAYER_BIOWEAPON	:
-case 	CLASS_ALIEN_BIOWEAPON	:
 
- 		if ( szClassname == "monster_leech" )
+case 	CLASS_ALIEN_PASSIVE	:
+case 	CLASS_PLAYER_BIOWEAPON	:
+	return false; // ignore
+case 	CLASS_PLAYER_ALLY	:
+case 	CLASS_HUMAN_PASSIVE	:
+	return false; // ally
+case 	CLASS_INSECT	:
+if ( szClassname == "monster_leech" )
 		{
 			if ( entity.pev.waterlevel > 0 && m_pPlayer.pev.waterlevel > 0 )
 			{
@@ -719,6 +733,7 @@ case 	CLASS_ALIEN_BIOWEAPON	:
 			}
 		}
 		return false;
+case 	CLASS_ALIEN_BIOWEAPON	:
 case 	CLASS_MACHINE	:
 case 	CLASS_HUMAN_MILITARY	:
 case 	CLASS_ALIEN_MILITARY	:
@@ -729,32 +744,53 @@ case 	CLASS_XRACE_PITDRONE	:
 case 	CLASS_XRACE_SHOCK	:
 case 	CLASS_BARNACLE	:
 
-		if ( szClassname == "monster_tentacle" ) // tentacle things dont die
-			return false;
-
 		if ( szClassname == "monster_turret" || szClassname == "monster_miniturret" )
 		{
-			// turret is invincible
+			// turret is invincible when closed
 			if ( entity.pev.sequence == 0 )
 				return false;
 		}
-/*
-		if ( szClassname == "monster_generic" )
+return true;
+		}
+		/*switch ( entity.Classify() )
+		{
+case 	CLASS_FORCE_NONE	:
+case 	CLASS_PLAYER_ALLY	:
+case 	CLASS_NONE	:
+case 	CLASS_PLAYER	:
+case 	CLASS_HUMAN_PASSIVE	:
+case 	CLASS_ALIEN_PASSIVE	:
+case 	CLASS_INSECT	:
+case 	CLASS_PLAYER_BIOWEAPON	:
+case 	CLASS_ALIEN_BIOWEAPON	:*/
+
+ 		
+		/*return false;
+case 	CLASS_MACHINE	:
+case 	CLASS_HUMAN_MILITARY	:
+case 	CLASS_ALIEN_MILITARY	:
+case 	CLASS_ALIEN_MONSTER	:
+case 	CLASS_ALIEN_PREY	:
+case 	CLASS_ALIEN_PREDATOR	:
+case 	CLASS_XRACE_PITDRONE	:
+case 	CLASS_XRACE_SHOCK	:
+case 	CLASS_BARNACLE	:*/
+
+	/*	if ( szClassname == "monster_tentacle" ) // tentacle things dont die
 			return false;
-		 else if ( szClassname,"monster_furniture") )
-			return FALSE;
-		else if ( FStrEq(szClassname,"monster_leech") )
-			return FALSE;
-		else if ( FStrEq(szClassname,"monster_cockroach") )
-			return FALSE;		*/
 
-		return !entity.IsPlayerAlly();
 
-		default:
+		return !entity.IsPlayerAlly();*/
+
+			}
+
+			return false;
+
+		/*default:
 		break;
 		}
 
-		return false;
+		return false;*/
 	}
 
 	bool hasEnemy ()
@@ -1406,7 +1442,7 @@ case 	CLASS_BARNACLE	:
 		if ( m_fNextTakeCover < g_Engine.time )
 		{
 			@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,vOrigin);
-			m_fNextTakeCover = g_Engine.time + 8.0;
+			m_fNextTakeCover = g_Engine.time + Math.RandomFloat(6.0,12.0);
 		}			
 	}
 

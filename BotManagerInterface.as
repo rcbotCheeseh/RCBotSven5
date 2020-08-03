@@ -20,6 +20,7 @@ enum eCamLookState
 // one bot cam, other players can tune into it
 class CBotCam
 {
+	//array<EHandle> m_pPlayersWatching;
 
 	CBotCam ()
 	{
@@ -77,6 +78,20 @@ class CBotCam
 				//BotMessage("BOTCAM, Best bot is " + m_pCurrentBot.m_pPlayer.pev.netname);
 			}*/
 		}
+		else 
+		{
+			// check current bot is visible and alive
+
+			if ( m_pCurrentBot is null || !g_BotManager.IsBotValid(m_pCurrentBot) )
+			{
+				m_fNextChangeBotTime = 0.0f;
+			}
+			else 
+			{
+				if ( !UTIL_IsVisible(vCamOrigin,m_pCurrentBot.m_pPlayer.pev.origin,m_pCurrentBot.m_pPlayer) )
+					m_fNextChangeBotTime = 0.0f;
+			}
+		}
 
 		UpdateCamera();
 	}
@@ -111,8 +126,17 @@ class CBotCam
 			m_pCameraEdict.pev.v_angle = vAngles;
 			m_pCameraEdict.pev.angles = vAngles;
 			m_pCameraEdict.pev.angles.x = -vAngles.x;
-m_pCameraEdict.SetOrigin(vCamOrigin);
+			m_pCameraEdict.SetOrigin(vCamOrigin);
 
+			/*for ( uint i = 0; i < m_pPlayersWatching.length(); i ++ )
+			{
+				@pPlayer = m_pPlayersWatching[i].GetEntity();
+
+				if ( pPlayer !is null )
+				{
+					g_EngineFuncs.SetView(pPlayer.edict(),m_pCameraEdict.edict());
+				}
+			}*/
 		}
 	}
 
@@ -136,6 +160,8 @@ m_pCameraEdict.SetOrigin(vCamOrigin);
 			return false;
 		}
 
+		//m_pPlayersWatching.push_back(EHandle(pPlayer));
+
 		g_EngineFuncs.SetView(pPlayer.edict(),m_pCameraEdict.edict());
 
 		return true;
@@ -143,7 +169,18 @@ m_pCameraEdict.SetOrigin(vCamOrigin);
 
 	void TuneOff ( CBasePlayer@ pPlayer )
 	{
-		g_EngineFuncs.SetView(pPlayer.edict(),pPlayer.edict());
+		/*uint index;
+
+		for ( index = 0; index < m_pPlayersWatching.length(); index ++ )
+		{
+			if ( m_pPlayersWatching[index].GetEntity() is pPlayer )
+				break;
+		}*/
+
+		//if ( index < m_pPlayersWatching.length() )
+		//	m_pPlayersWatching.removeAt(index);
+
+		g_EngineFuncs.SetView(pPlayer.edict(),pPlayer.edict());		
 	}
 
 	bool IsWorking ()
@@ -180,7 +217,7 @@ Vector vCamOrigin;
 
 		   g_Utility.TraceLine( pPlayer.EyePosition(), vOrigin, ignore_monsters,dont_ignore_glass, m_pCurrentBot.m_pPlayer.edict(), tr );
 
-		vCamOrigin = tr.vecEndPos;	
+		vCamOrigin = tr.vecEndPos + g_Engine.v_forward;	
 
 	//	BotMessage("Now tracking... BOTNAME\n");
 		}
@@ -767,6 +804,23 @@ namespace BotManager
 			ReadMapConfig();
 
 			return HOOK_CONTINUE;
+		}
+
+		bool IsBotValid ( BaseBot@ bot )
+		{
+			
+
+			for( uint uiIndex = 0; uiIndex < m_Bots.length(); ++uiIndex )
+			{
+				BaseBot@ pBot = m_Bots[ uiIndex ];
+				
+				if( pBot !is null && pBot is bot )
+				{
+					return true;
+				}
+			}
+			
+			return false;
 		}
 		
 		uint GetBotCount() const

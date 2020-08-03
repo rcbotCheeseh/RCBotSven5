@@ -259,6 +259,17 @@
 				 v.x < pent.pev.absmax.x && v.y < pent.pev.absmax.y && v.z < pent.pev.absmax.z );
 	}
 
+	Vector UTIL_TraceLineEndPos ( Vector vFrom, CBaseEntity@ pTo )
+	{
+		TraceResult tr;
+
+		Vector vTo = UTIL_EntityOrigin(pTo);
+
+		g_Utility.TraceLine( vFrom, vTo, ignore_monsters,ignore_glass,null, tr );
+
+        return tr.vecEndPos;
+	}
+
     bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
     {
         TraceResult tr;

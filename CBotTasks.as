@@ -686,6 +686,7 @@ final class CUseButtonTask : RCBotTask
     bool m_bIsMomentary;
     bool m_bMomentaryStarted;
     float m_fMomentaryHoldTime;
+    Vector vOrigin;
     
     string DebugString ()
     {
@@ -697,13 +698,18 @@ final class CUseButtonTask : RCBotTask
         m_pButton = button;
 
         m_fMomentaryHoldTime = 0.0f;
+
+        vOrigin = UTIL_EntityOrigin(button);
         
         m_bIsMomentary = (button.GetClassname() == "momentary_rot_button")||(button.GetClassname() == "func_rot_button");
 
         if ( m_bIsMomentary )
             m_fDefaultTimeout = 20.0f;
         else
+        {
             m_fDefaultTimeout = 10.0f;
+            vOrigin = vOrigin + Vector(0,0,Math.RandomFloat(-button.pev.size.z/4,button.pev.size.z/4));
+        }
 
         m_bMomentaryStarted = false;
     } 
@@ -717,7 +723,7 @@ final class CUseButtonTask : RCBotTask
             Complete();
             return;
         }
-        Vector vOrigin = UTIL_EntityOrigin(pButton);
+       
         float fButtonVelocity = pButton.pev.avelocity.Length();
 
         if ( pButton.pev.frame != 0 )
@@ -761,9 +767,12 @@ final class CUseButtonTask : RCBotTask
              {
                 UTIL_DebugMsg(bot.m_pPlayer,"bot.PressButton(IN_USE)",DEBUG_TASK);            
 
-                if ( m_bIsMomentary || ( Math.RandomLong(0,100) < 99)  )
+                if ( m_bIsMomentary || ( Math.RandomLong(0,100) < 50)  )
                 {
                     bot.PressButton(IN_USE);
+
+                    if ( !m_bIsMomentary )
+                        vOrigin = UTIL_EntityOrigin(pButton) + Vector(0,0,Math.RandomFloat(-pButton.pev.size.z/4,pButton.pev.size.z/4));
                 }
              }
 

@@ -62,6 +62,7 @@ class CBotVisibles
 		}
 		else 
 		{
+			// new visible
 			if ( !wasVisible )
 				m_pBot.newVisible(ent);
 		}
@@ -149,18 +150,29 @@ class CBotVisibles
 				}
 			}
 
-			if ( bBodyVisible && m_pCurrentEntity.GetClassname() == "grenade")
+			if ( bBodyVisible )
 			{
 				if ( m_pBot.distanceFrom(m_pCurrentEntity) < 300.0f )
 				{
-					if ( m_pCurrentEntity.pev.owner !is null )
+					if ( m_pCurrentEntity.GetClassname() == "grenade" )
 					{
-						CBaseEntity@ pentOwner = g_EntityFuncs.Instance(m_pCurrentEntity.pev.owner);
-
-						if ( pentOwner !is null )
+						if ( m_pCurrentEntity.pev.owner !is null )
 						{
-							if ( pentOwner is m_pBot.m_pPlayer || m_pBot.IsEnemy(pentOwner,false) )
-								m_pBot.TakeCover(UTIL_EntityOrigin(m_pCurrentEntity));
+							CBaseEntity@ pentOwner = g_EntityFuncs.Instance(m_pCurrentEntity.pev.owner);
+
+							if ( pentOwner !is null )
+							{
+								if ( pentOwner is m_pBot.m_pPlayer || m_pBot.IsEnemy(pentOwner,false) )
+									m_pBot.TakeCover(UTIL_EntityOrigin(m_pCurrentEntity));
+							}
+						}
+					}
+					else if ( m_pCurrentEntity.GetClassname() == "monster_alien_voltigore" && m_pCurrentEntity.pev.frame == 255 )				
+					{
+						if ( m_pCurrentEntity.IsPlayerAlly() == false )
+						{
+							// take cover from dying voltigore as it may explode
+							m_pBot.TakeCover(UTIL_EntityOrigin(m_pCurrentEntity));
 						}
 					}
 				}
