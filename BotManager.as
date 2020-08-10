@@ -704,6 +704,9 @@ final class RCBot : BotManager::BaseBot
 			if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )
 			return false; // can't see
 
+			if ( szClassname == "hornet" )
+				return false;
+
 			if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
 			{
 
@@ -1435,7 +1438,15 @@ case 	CLASS_BARNACLE	:*/
 
 		m_fNextTakeCover = g_Engine.time;
 	}
-	
+
+	void TakeCoverFromGrenade ( CBaseEntity@ pGrenade )
+	{
+		if ( m_fNextTakeCover < g_Engine.time )
+		{
+			@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,UTIL_GrenadeEndPoint(pGrenade));
+			m_fNextTakeCover = g_Engine.time + Math.RandomFloat(6.0,12.0);
+		}			
+	}
 
 	void TakeCover ( Vector vOrigin )
 	{

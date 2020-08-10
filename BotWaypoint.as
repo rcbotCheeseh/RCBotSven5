@@ -2127,8 +2127,12 @@ final class RCBotNavigator
 								// It has a button ?
 								CBaseEntity@ pButton = UTIL_FindButton(pDoor,bot.m_pPlayer);
 
+								UTIL_DebugMsg(bot.m_pPlayer,"UTIL_FindButton()",DEBUG_NAV);
+
 								if ( pButton !is null )
 								{								
+									UTIL_DebugMsg(bot.m_pPlayer,"pButton !is null",DEBUG_NAV);
+
 									bot.pressButton(pButton,m_iCurrentWaypoint);
 									bUse = false;
 								}

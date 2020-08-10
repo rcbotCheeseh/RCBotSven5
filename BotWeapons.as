@@ -58,7 +58,10 @@ final class CBotWeaponsInfo
 
     CBotWeaponsInfo ()
     {
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.5,"weapon_crowbar",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,99));        
+        //CBotWeaponInfo ( float fFirePercent, string name, float min_dist, float max_dist, int flags, int priority, float secondary_min_dist = 0, float secondary_max_dist = 0 )
+    
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_gauss",0.0,2000.0,WEAP_FL_PRIMARY_EXPLOSIVE,100));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.5,"weapon_crowbar",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,1));        
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_9mmhandgun",0.0,1500.0,WEAP_FL_UNDERWATER|WEAP_FL_SECONDARY,1,0.0,1500.0));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_shotgun",0.0,768.0,WEAP_FL_NONE,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_357",0.0,2000.0,WEAP_FL_NONE,7));
@@ -68,7 +71,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_egon",100.0,2000.0,WEAP_FL_PRIMARY_EXPLOSIVE,12));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_hornetgun",0.0,2000.0,WEAP_FL_UNDERWATER,6));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_m16",0.0,2000.0,WEAP_FL_SECONDARY_EXPLOSIVE,13,200,1300));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.5,"weapon_pipewrench",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,99));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.5,"weapon_pipewrench",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,2));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.8,"weapon_rpg",512.0,5000.0,WEAP_FL_RPG|WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER,16));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_shockrifle",100.0,2000.0,WEAP_FL_NONE,9));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_snark",300.0,2000.0,WEAP_FL_GRENADE|WEAP_FL_UNDERWATER,10));
@@ -517,12 +520,12 @@ class CBotWeapons
 
                 if ( desiredWeapon !is m_pCurrentWeapon )
                 {
-                    if ( m_pCurrentWeapon.IsMinigun() && !desiredWeapon.IsMinigun() )
+                    if ( m_pCurrentWeapon !is null && m_pCurrentWeapon.IsMinigun() && !desiredWeapon.IsMinigun() )
                     {
                         // drop the weapon 
                         bot.m_pPlayer.DropItem("weapon_minigun");
                     }
-                    else                     
+                    else
                         selectWeapon(bot,desiredWeapon);
                 }
             }

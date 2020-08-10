@@ -646,7 +646,18 @@ final class CFindButtonTask : RCBotTask
 
         if ( pent !is null )
         {
-                        UTIL_DebugMsg(bot.m_pPlayer,"func_rot_button",DEBUG_TASK);
+                UTIL_DebugMsg(bot.m_pPlayer,"func_rot_button",DEBUG_TASK);
+                // add Task to pick up health
+                m_pContainingSchedule.addTask(CUseButtonTask(pent));
+                Complete();
+                return;                                    
+        }
+
+        @pent = UTIL_FindNearestEntity("func_door_rotating",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
+
+        if ( pent !is null )
+        {
+                        UTIL_DebugMsg(bot.m_pPlayer,"func_door_rotating",DEBUG_TASK);
                         // add Task to pick up health
                         m_pContainingSchedule.addTask(CUseButtonTask(pent));
                         Complete();
@@ -687,6 +698,8 @@ final class CUseButtonTask : RCBotTask
     bool m_bMomentaryStarted;
     float m_fMomentaryHoldTime;
     Vector vOrigin;
+    bool m_bIsShootable;
+    int prev_frame = 0;
     
     string DebugString ()
     {
@@ -697,7 +710,11 @@ final class CUseButtonTask : RCBotTask
     {
         m_pButton = button;
 
+        prev_frame = int(button.pev.frame);
+
         m_fMomentaryHoldTime = 0.0f;
+
+        m_bIsShootable = button.pev.health>0;
 
         vOrigin = UTIL_EntityOrigin(button);
         
@@ -717,6 +734,7 @@ final class CUseButtonTask : RCBotTask
     void execute ( RCBot@ bot )
     {
         CBaseEntity@ pButton = m_pButton.GetEntity();
+        CBotWeapon@ pBestWeapon = bot.m_pWeapons.findBestWeapon(bot,UTIL_EntityOrigin(pButton),pButton);        
 
         if ( pButton is null )
         {
@@ -726,7 +744,7 @@ final class CUseButtonTask : RCBotTask
        
         float fButtonVelocity = pButton.pev.avelocity.Length();
 
-        if ( pButton.pev.frame != 0 )
+        if ( pButton.pev.frame != int(prev_frame) )
             Complete();
         else if ( m_bIsMomentary && m_bMomentaryStarted )
         {
@@ -741,7 +759,16 @@ final class CUseButtonTask : RCBotTask
 
         bot.setLookAt(vOrigin,PRIORITY_TASK+1);
 
-        if ( (vOrigin-bot.m_pPlayer.pev.origin).Length2D() > 70 )
+        if ( m_bIsShootable )
+        {
+            if ( pBestWeapon !is null && !bot.isCurrentWeapon(pBestWeapon) )
+            {
+                bot.selectWeapon(pBestWeapon);            
+                return;
+            }     
+        }
+
+        if ( (!m_bIsShootable||(pBestWeapon is null)||pBestWeapon.IsMelee()) && (vOrigin-bot.m_pPlayer.pev.origin).Length2D() > 70 )
         {
             bot.setMove(vOrigin);
             UTIL_DebugMsg(bot.m_pPlayer,"bot.setMove(vOrigin)",DEBUG_TASK);
@@ -769,7 +796,12 @@ final class CUseButtonTask : RCBotTask
 
                 if ( m_bIsMomentary || ( Math.RandomLong(0,100) < 50)  )
                 {
-                    bot.PressButton(IN_USE);
+                    if ( m_bIsShootable )
+                    {
+                        bot.PressButton(IN_ATTACK);
+                    }
+                    else                         
+                        bot.PressButton(IN_USE);
 
                     if ( !m_bIsMomentary )
                         vOrigin = UTIL_EntityOrigin(pButton) + Vector(0,0,Math.RandomFloat(-pButton.pev.size.z/4,pButton.pev.size.z/4));

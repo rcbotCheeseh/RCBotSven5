@@ -640,10 +640,17 @@ void RCBotSearch ( const CCommand@ args )
 	Vector v = lp.pev.origin;
 	CBaseEntity@ pent = null;
 
+	string classname = "*";
+	bool extra_detail = false;
+
 	if ( args.ArgC() > 1 )
 		distance = atof(args[1]);
+	if ( args.ArgC() > 2 ) 
+		classname = args[2];
+	if ( args.ArgC() > 3 )
+		extra_detail = args[3] == "1";
 
-	while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, "*")) !is null )
+	while ( (@pent =  g_EntityFuncs.FindEntityByClassname(pent, classname)) !is null )
 	{
 		if ( (UTIL_EntityOrigin(pent) - v).Length() < distance )
 		{
@@ -651,7 +658,12 @@ void RCBotSearch ( const CCommand@ args )
 			
 			Vector vOrigin = UTIL_EntityOrigin(pent);
 
-			BotMessage("" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (vOrigin-v).Length() + " (x=" + vOrigin.x + ",y=" + vOrigin.y + ",z=" + vOrigin.z + ")" + " visible=" + ((pent.pev.effects & EF_NODRAW == EF_NODRAW)?"0":"1") + ",solid=" + pent.pev.solid + ",angle.x = " + pent.pev.angles.x + ", angle.y = " + pent.pev.angles.y + " active = " + (UTIL_ToggleIsActive(pent,lp) ? "1" : "0") );
+			string message = "" + index + " : " + pent.GetClassname() + " frame="+pent.pev.frame + " distance = " + (vOrigin-v).Length() + " (x=" + vOrigin.x + ",y=" + vOrigin.y + ",z=" + vOrigin.z + ")" + " visible=" + ((pent.pev.effects & EF_NODRAW == EF_NODRAW)?"0":"1") + ",solid=" + pent.pev.solid + ",angle.x = " + pent.pev.angles.x + ", angle.y = " + pent.pev.angles.y + " active = " + (UTIL_ToggleIsActive(pent,lp) ? "1" : "0");
+
+			if ( extra_detail )
+				message = message + " health=" + pent.pev.health + " target=" + pent.pev.target + " targetname='"+pent.pev.targetname+"'";
+
+			BotMessage(message);
 		}
 	}
 }

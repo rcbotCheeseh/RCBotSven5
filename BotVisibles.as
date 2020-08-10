@@ -163,7 +163,7 @@ class CBotVisibles
 							if ( pentOwner !is null )
 							{
 								if ( pentOwner is m_pBot.m_pPlayer || m_pBot.IsEnemy(pentOwner,false) )
-									m_pBot.TakeCover(UTIL_EntityOrigin(m_pCurrentEntity));
+									m_pBot.TakeCoverFromGrenade(m_pCurrentEntity);
 							}
 						}
 					}

@@ -259,7 +259,7 @@
 				 v.x < pent.pev.absmax.x && v.y < pent.pev.absmax.y && v.z < pent.pev.absmax.z );
 	}
 
-	Vector UTIL_TraceLineEndPos ( Vector vFrom, CBaseEntity@ pTo )
+	TraceResult UTIL_TraceLine ( Vector vFrom, CBaseEntity@ pTo )
 	{
 		TraceResult tr;
 
@@ -267,8 +267,17 @@
 
 		g_Utility.TraceLine( vFrom, vTo, ignore_monsters,ignore_glass,null, tr );
 
-        return tr.vecEndPos;
+        return tr;
 	}
+
+	TraceResult UTIL_TraceLine ( Vector vFrom, Vector vTo )
+	{
+		TraceResult tr;
+
+		g_Utility.TraceLine( vFrom, vTo, ignore_monsters,ignore_glass,null, tr );
+
+        return tr;
+	}	
 
     bool UTIL_IsVisible ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
     {
@@ -427,6 +436,32 @@ CBasePlayer@ UTIL_FindPlayer ( string szName, CBaseEntity@ pIgnore = null, bool 
 
 }
 
+/**
+ * Return approximate grenade landing position
+ */
+Vector UTIL_GrenadeEndPoint ( CBaseEntity@ grenade )
+{
+	Vector vPrev = UTIL_EntityOrigin(grenade);
+	Vector vVelocity = grenade.pev.velocity;
+	Vector vNext;
+
+	TraceResult tr;
+
+	tr.flFraction = 1.0;
+	vNext.z = 0;
+
+	while ( tr.flFraction >= 1.0 && vNext.z > -8192 )
+	{
+		vVelocity = vVelocity - Vector(0,0,800); // default gravity
+
+		vNext = vPrev + vVelocity;
+
+		tr = UTIL_TraceLine(vPrev,vNext);
+	}
+
+	return vNext;
+}
+
 CBaseEntity@ UTIL_FindButton ( CBaseToggle@ door, CBaseEntity@ pPlayer )
 {
     string masterName = door.m_sMaster;
@@ -439,18 +474,23 @@ CBaseEntity@ UTIL_FindButton ( CBaseToggle@ door, CBaseEntity@ pPlayer )
 		UTIL_DebugMsg(pPlayer,"pMaster !is null",DEBUG_THINK);
 		return UTIL_RandomTarget(pMaster.pev.targetname,pPlayer);
     }
+	else 
+		UTIL_DebugMsg(pPlayer,"pMaster is null",DEBUG_THINK);
 
 	if ( door.pev.targetname == "" )
 	{
 		UTIL_DebugMsg(pPlayer,"door.pev.targetname is empty :(",DEBUG_THINK);		
 		return null;
 	}	
+	else 
+		UTIL_DebugMsg(pPlayer,"door.pev.targetname is '"+door.pev.targetname+"'",DEBUG_THINK);		
 
 	@pButton = FIND_ENTITY_BY_TARGET(null,door.pev.targetname);
 
 	if ( pButton !is null )
 	{
 		string szClassname = pButton.GetClassname();
+		
 		UTIL_DebugMsg(pPlayer,"pButton !is null",DEBUG_THINK);
 
 		if ( szClassname != "func_button" && szClassname != "func_rot_button"  && szClassname != "momentary_rot_button" )
@@ -461,6 +501,10 @@ CBaseEntity@ UTIL_FindButton ( CBaseToggle@ door, CBaseEntity@ pPlayer )
 		}
 		else 
 			return UTIL_RandomTarget(door.pev.targetname,pPlayer);
+	}
+	else 
+	{
+		UTIL_DebugMsg(pPlayer,"pButton is null :(",DEBUG_THINK);	
 	}
 
 	return null;
