@@ -734,13 +734,15 @@ final class CUseButtonTask : RCBotTask
     void execute ( RCBot@ bot )
     {
         CBaseEntity@ pButton = m_pButton.GetEntity();
-        CBotWeapon@ pBestWeapon = bot.m_pWeapons.findBestWeapon(bot,UTIL_EntityOrigin(pButton),pButton);        
+        CBotWeapon@ pBestWeapon = null;
 
         if ( pButton is null )
         {
             Complete();
             return;
         }
+
+        @pBestWeapon = bot.m_pWeapons.findBestWeapon(bot,UTIL_EntityOrigin(pButton),pButton);        
        
         float fButtonVelocity = pButton.pev.avelocity.Length();
 
