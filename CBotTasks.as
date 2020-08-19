@@ -691,6 +691,45 @@ final class CFindButtonTask : RCBotTask
     }
 }
 
+final class CLongjumpTask: RCBotTask
+{
+    float m_fCrouchtime = 0.0f;
+    Vector m_vTo;
+    CLongjumpTask (Vector vTo)
+    {
+        m_vTo = vTo;
+    }
+
+    bool jump = false;
+
+    void execute ( RCBot@ bot )
+    {
+        bot.setMove(m_vTo);
+
+        if ( jump == false )
+        {
+           // BotMessage("velocity = " + bot.m_pPlayer.pev.velocity.Length2D()+"\r\n");
+            if ( bot.m_pPlayer.pev.velocity.Length2D() > 80 ) // minimum long jump speed
+                jump = true;
+        }
+        else 
+        {           
+           // BotMessage("DUCK\r\n");
+            bot.PressButton(IN_DUCK);
+
+            if ( m_fCrouchtime == 0.0f )
+                m_fCrouchtime = g_Engine.time + 0.25f;
+            if ( m_fCrouchtime < g_Engine.time )
+            {
+                bot.Jump();
+                Complete();
+            }
+        }
+        
+        
+    }
+}
+
 final class CUseButtonTask : RCBotTask
 {
     EHandle m_pButton;

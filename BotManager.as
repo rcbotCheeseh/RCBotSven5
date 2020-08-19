@@ -701,14 +701,20 @@ final class RCBot : BotManager::BaseBot
 		if ( entity.pev.health <= 0 )
 			return false;
 
-			if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )
-			return false; // can't see
+		if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )
+		return false; // can't see
 
-			if ( szClassname == "hornet" )
-				return false;
+		if ( szClassname == "hornet" )
+			return false;
 
-			if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
-			{
+		if ( szClassname == "monster_tentacle" ) // tentacle things dont die
+			return false;
+
+		if ( szClassname == "monster_gargantua" )
+			return !entity.IsPlayerAlly();
+
+		if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+		{
 
 				//http://www.svencoop.com/manual/classes.html
 				switch ( entity.Classify() )
@@ -1072,7 +1078,16 @@ case 	CLASS_BARNACLE	:*/
 			Jump();
 		if ( wpt.hasFlags(W_FL_CROUCHJUMP) )
 		{
-			Jump();
+			if ( m_pNextWpt !is null )
+			{			
+				addToSchedule(CLongjumpTask(m_pNextWpt.m_vOrigin));
+			}
+			else 
+			{	
+				g_EngineFuncs.MakeVectors(m_pPlayer.pev.angles);
+
+				addToSchedule(CLongjumpTask(m_pPlayer.pev.origin + (g_Engine.v_forward * 2048.0f)));
+			}
 		}
 		
 
