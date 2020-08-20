@@ -814,6 +814,12 @@ case 	CLASS_BARNACLE	:*/
 
 	bool canGotoWaypoint ( CWaypoint@ currWpt, CWaypoint@ succWpt )
 	{
+		if ( succWpt.hasFlags(W_FL_CROUCHJUMP) )
+		{
+			// this waypoint requires the long jump modules
+			if ( m_pPlayer.m_fLongJump == false )
+				return false;
+		}
 		if ( m_bLastPathFailed )
 		{
 			if ( currWpt.iIndex == m_iLastWaypointFrom && succWpt.iIndex == m_iLastWaypointTo )
@@ -1080,13 +1086,13 @@ case 	CLASS_BARNACLE	:*/
 		{
 			if ( m_pNextWpt !is null )
 			{			
+				// need this
 				addToSchedule(CLongjumpTask(m_pNextWpt.m_vOrigin));
 			}
-			else 
-			{	
-				g_EngineFuncs.MakeVectors(m_pPlayer.pev.angles);
-
-				addToSchedule(CLongjumpTask(m_pPlayer.pev.origin + (g_Engine.v_forward * 2048.0f)));
+			else// just jump --- and fall !!!
+			{
+				Jump(); // dooooooh!
+				BotMessage("Nooooo!\r\n");
 			}
 		}
 		

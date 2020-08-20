@@ -705,26 +705,27 @@ final class CLongjumpTask: RCBotTask
     void execute ( RCBot@ bot )
     {
         bot.setMove(m_vTo);
+        bot.setLookAt(m_vTo);
 
-        if ( jump == false )
+        /*if ( jump == false )
         {
            // BotMessage("velocity = " + bot.m_pPlayer.pev.velocity.Length2D()+"\r\n");
             if ( bot.m_pPlayer.pev.velocity.Length2D() > 80 ) // minimum long jump speed
                 jump = true;
         }
         else 
-        {           
+        {        */   
            // BotMessage("DUCK\r\n");
             bot.PressButton(IN_DUCK);
 
             if ( m_fCrouchtime == 0.0f )
-                m_fCrouchtime = g_Engine.time + 0.25f;
+                m_fCrouchtime = g_Engine.time + 0.15f;
             if ( m_fCrouchtime < g_Engine.time )
             {
                 bot.Jump();
                 Complete();
             }
-        }
+        //}
         
         
     }
