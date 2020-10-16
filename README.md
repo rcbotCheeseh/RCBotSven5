@@ -12,8 +12,8 @@ http://rcbot.bots-united.com/forums/index.php?act=Attach&type=post&id=561
 
 
 ```
-"plugins"
-{
+
+
 
 
  "plugin"
@@ -24,7 +24,7 @@ http://rcbot.bots-united.com/forums/index.php?act=Attach&type=post&id=561
     }
 
 
-}
+
 ```
 
 do not put comments (//) in front of these lines!!!
