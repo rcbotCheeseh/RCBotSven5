@@ -988,7 +988,7 @@ namespace BotManager
 				}
 			}
 			
-			g_Waypoints.runVisibility();
+			g_Waypoints.Think();
 
 			g_BotCam.Think();
 

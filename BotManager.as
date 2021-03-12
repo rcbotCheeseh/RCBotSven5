@@ -13,7 +13,6 @@
 
 BotManager::BotManager g_BotManager( @CreateRCBot );
 
-
 const int PRIORITY_NONE = 0;
 const int PRIORITY_WAYPOINT = 1;	
 const int PRIORITY_LISTEN = 2;
