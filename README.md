@@ -70,6 +70,18 @@ show waypoints with
 similarly, put them back off with
   
     as_command rcbot.waypoint_off
+    
+# Auto waypointing
+
+auto waypointing adds waypoints whilst you run around a map. It can create jump waypoints, crouch waypoints, ladder waypoints and waypoints round corners.
+
+Enable auto waypointing with the command 
+
+    as_command rcbot.waypoint_auto
+    
+Disable auto waypointing with the command
+
+    as_command rcbot.waypoint_auto off
 
 # Adding a waypoint
 
