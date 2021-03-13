@@ -2545,7 +2545,8 @@ const int OnLadder = 2;
 const int Standing = 3;
 const float AutoWaypointTypeDistance = 64.0f;
 const float AutoWaypointPathDistance = 200.0f;
-const int iLastPositionsMax = 5;
+const int iLastPositionsMax = 10;
+const float RunWaypointCheckTime = 0.33f;
 
 class AutoWaypointer 
 {
@@ -2564,7 +2565,7 @@ class AutoWaypointer
 		State = Standing;
 	}
 
-	void CreateWaypoint ( Vector vPosition, float fDistance, int flags )
+	void CreateWaypoint ( Vector vPosition, float fDistance, int flags, bool singlePath = false )
 	{
 		int wpt = g_Waypoints.getNearestWaypointIndex(vPosition,m_pPlayer,-1,fDistance,true);
 
@@ -2573,9 +2574,9 @@ class AutoWaypointer
 			if ( m_pPlayer.pev.flags & FL_DUCKING == FL_DUCKING )
 				flags |= W_FL_CROUCH;
 
-			// add a waypoint
+			// add a waypoint - automatic paths at the moment
 			wpt = g_Waypoints.addWaypoint(vPosition,flags,m_pPlayer);
-
+			
 			g_Waypoints.playsound(m_pPlayer,wpt!=-1);
 		}
 		
@@ -2585,7 +2586,12 @@ class AutoWaypointer
 			// add path from previous waypoint to current waypoint
 
 			if ( previousWaypoint !is null )
+			{
+				if ( singlePath ) // keep a single path (remove existing) for this waypoint
+					currentWaypoint.removePaths();
+
 				previousWaypoint.addPath(wpt);
+			}
 
 			@previousWaypoint = currentWaypoint;
 			currentWaypoint.addWaypointType(flags);
@@ -2612,14 +2618,15 @@ class AutoWaypointer
 			if ( m_pPlayer.pev.button & IN_JUMP == IN_JUMP )
 			{
 				State = Jumping;
-				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_JUMP);
-				// don't add waypoint yet
+				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_JUMP,true);
+				vLastPositions = {};
 			}
 			else if ( m_pPlayer.IsOnLadder() )
 			{
 				State = OnLadder;
 				// Add waypoint
 				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_LADDER);
+				vLastPositions = {};
 			}
 			else if ( m_fRunCheckTime < g_Engine.time ) 
 			{
@@ -2662,9 +2669,16 @@ class AutoWaypointer
 					}
 				}
 
-				m_fRunCheckTime = g_Engine.time + 0.5;
+				m_fRunCheckTime = g_Engine.time + RunWaypointCheckTime;
+
+				if ( @previousWaypoint !is null )
+				{
+					if ( previousWaypoint.distanceFrom(m_pPlayer.pev.origin) > AutoWaypointPathDistance )
+						CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointPathDistance,0);
+				}
 				// normal shiz
-				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointPathDistance,0);
+				else 
+					CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointPathDistance,0);
 			}
 			else if ( m_pPlayer.pev.velocity.Length() < 1 )
 			{
@@ -2698,7 +2712,7 @@ class AutoWaypointer
 			{
 				State = Jumping;
 				// Add Jump waypoint
-				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_JUMP);
+				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_JUMP,true);
 			}
 			else if ( !m_pPlayer.IsOnLadder())
 			{
