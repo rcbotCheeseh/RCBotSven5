@@ -620,6 +620,9 @@ bool UTIL_IsReachable ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
 	g_Utility.TraceLine( vFrom - vCross, vTo - vCross, ignore_monsters,ignore_glass, ignore is null ? null : ignore.edict(), tr );
 	if ( tr.flFraction < 1.0f )
 			return false;
+
+	if ( (g_EngineFuncs.PointContents(vFrom) == CONTENTS_WATER) && (g_EngineFuncs.PointContents(vTo) == CONTENTS_WATER) )
+		return true; // swimmable
 		
 	// check the ground along the way
 	vComp = vComp / 8;
@@ -628,8 +631,6 @@ bool UTIL_IsReachable ( Vector vFrom, Vector vTo, CBaseEntity@ ignore = null )
 
 	for ( int i = 0; i < 8; i ++ )
 	{
-        
-
         g_Utility.TraceLine( vCurrent, vCurrent - Vector(0,0,64.0), ignore_monsters,ignore_glass, ignore is null ? null : ignore.edict(), tr );
 
 		vCurrent = vCurrent + vComp;

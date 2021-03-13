@@ -987,8 +987,6 @@ namespace BotManager
 					m_fAddBotTime = g_Engine.time + 5.0f;
 				}
 			}
-			
-			g_Waypoints.Think();
 
 			g_BotCam.Think();
 
@@ -1001,7 +999,12 @@ namespace BotManager
 
 				g_WaypointsLoaded = true;
 				g_MapInit = false;
+				
 			}
+			
+			if ( g_MapInit == false )
+				g_Waypoints.Think();
+
 
 			if ( g_NoTouch )
 			{

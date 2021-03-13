@@ -930,7 +930,11 @@ case 	CLASS_BARNACLE	:*/
 
 		//if ( (iSucc != m_iGoalWaypoint) && !m_pBot.canGotoWaypoint(vOrigin,succWpt,currWpt) )
 	//		continue;
-
+		if ( currWpt.hasFlags(W_FL_WATER) )
+		{
+			if ( g_EngineFuncs.PointContents(currWpt.m_vOrigin) != CONTENTS_WATER )
+				return false;
+		}
 
 		if ( currWpt.hasFlags(W_FL_TELEPORT) )
 		{

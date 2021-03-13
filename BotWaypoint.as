@@ -7,7 +7,7 @@
 CWaypoints g_Waypoints;
 CWaypointTypes g_WaypointTypes;
 
-const int W_FL_UNDEFINED_0 = (1<<0);//	= ((1<<0) + (1<<1));  /* allow for 4 teams (0-3) */
+const int W_FL_WATER = (1<<0);			// can go here in water only
 const int W_FL_WAIT_NO_PLAYER = (1<<1); // bots wait until space is clear to avoid over crowding
 const int W_FL_SCIENTIST = (1<<2); //	bot waits a while for allies to come by
 //const int W_FL_TEAM_SPECIFIC = (1<<2);  /* waypoint only for specified team */
@@ -205,6 +205,9 @@ class CWaypointTypes
 
 					switch ( flag )
 					{
+						case W_FL_WATER:
+							name = "water";
+							break;
 						case W_FL_WAIT_NO_PLAYER :
 							name = "wait_noplayer";
 							break;
@@ -1028,6 +1031,9 @@ class CWaypoints
 
 							BotMessage(classname);
 						}
+
+						if ( g_EngineFuncs.PointContents(vecLocation) == CONTENTS_WATER )
+							flags |= W_FL_WATER;
 					}
 				}
 
@@ -1380,6 +1386,9 @@ class CWaypoints
 		string filename = g_Engine.mapname;
 		
 		File@ f;
+
+		// clear the auto waypointer
+		@autoWaypointer = null;
 
 		filename += ".rcwa";		
 
@@ -2543,6 +2552,7 @@ const int Run = 0;
 const int Jumping = 1;
 const int OnLadder = 2;
 const int Standing = 3;
+const int Swimming = 4;
 const float AutoWaypointTypeDistance = 64.0f;
 const float AutoWaypointPathDistance = 200.0f;
 const int iLastPositionsMax = 10;
@@ -2555,6 +2565,7 @@ class AutoWaypointer
 	CWaypoint@ previousWaypoint;
 	array<Vector> vLastPositions;
 	int State;
+	Vector vJumpWaypointLocation;
 
 	AutoWaypointer ( CBasePlayer@ pPlayer )
 	{
@@ -2600,6 +2611,59 @@ class AutoWaypointer
 			@previousWaypoint = null;
 	}
 
+	void CheckPreviousPoints ()
+	{
+		TraceResult tr;
+
+		vLastPositions.push_back(m_pPlayer.pev.origin);
+
+		if ( vLastPositions.size() > iLastPositionsMax )
+			vLastPositions.removeAt(0);
+
+		if ( previousWaypoint !is null )
+		{
+			g_Utility.TraceLine( m_pPlayer.pev.origin, previousWaypoint.m_vOrigin, ignore_monsters,dont_ignore_glass, m_pPlayer.edict(), tr );
+
+			if ( tr.flFraction < 1.0 )	
+			{
+				// find which last point is visible to previous waypoint and current waypoint
+				for ( uint i = 0; i < vLastPositions.size(); i ++ )
+				{
+					TraceResult tr1;
+					TraceResult tr2;
+
+					g_Utility.TraceLine( m_pPlayer.pev.origin, vLastPositions[i], ignore_monsters,dont_ignore_glass, m_pPlayer.edict(), tr1 );
+					g_Utility.TraceLine( vLastPositions[i], previousWaypoint.m_vOrigin, ignore_monsters,dont_ignore_glass, m_pPlayer.edict(), tr2 );	
+
+					if ( tr1.flFraction >= 1.0 && tr2.flFraction >= 1.0 )
+					{
+						// Add Waypoint Here
+						CreateWaypoint(vLastPositions[i],32.0,0);
+						return;
+					}
+					
+				}
+
+				
+				// Add Waypoint Here
+				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,0);
+
+				return;
+			}
+		}
+
+		m_fRunCheckTime = g_Engine.time + RunWaypointCheckTime;
+
+		if ( @previousWaypoint !is null )
+		{
+			if ( previousWaypoint.distanceFrom(m_pPlayer.pev.origin) > AutoWaypointPathDistance )
+				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointPathDistance,0);
+		}
+		// normal shiz
+		else 
+			CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointPathDistance,0);
+	}
+
 	void Think ()
 	{
 		if ( !m_pPlayer.IsAlive() )
@@ -2611,14 +2675,33 @@ class AutoWaypointer
 			return;
 		}
 
+		if ( previousWaypoint !is null )
+		{
+			// check previous waypoint is still used
+			if ( previousWaypoint.isDeleted() )
+				@previousWaypoint = null;
+		}
+
 		switch ( State )
 		{
+		case Swimming:
+			if ( m_pPlayer.pev.waterlevel < 3 )
+				State = Run;
+			else 
+			{
+				CheckPreviousPoints();
+			}
+			break;
 		case Run:
 		
-			if ( m_pPlayer.pev.button & IN_JUMP == IN_JUMP )
+			if ( m_pPlayer.pev.waterlevel >= 3 )
+			{
+				State = Swimming;
+			}
+			else if ( m_pPlayer.pev.button & IN_JUMP == IN_JUMP )
 			{
 				State = Jumping;
-				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_JUMP,true);
+				vJumpWaypointLocation = m_pPlayer.pev.origin;
 				vLastPositions = {};
 			}
 			else if ( m_pPlayer.IsOnLadder() )
@@ -2630,55 +2713,7 @@ class AutoWaypointer
 			}
 			else if ( m_fRunCheckTime < g_Engine.time ) 
 			{
-				TraceResult tr;
-
-				vLastPositions.push_back(m_pPlayer.pev.origin);
-
-				if ( vLastPositions.size() > iLastPositionsMax )
-					vLastPositions.removeAt(0);
-
-				if ( previousWaypoint !is null )
-				{
- 					g_Utility.TraceLine( m_pPlayer.pev.origin, previousWaypoint.m_vOrigin, ignore_monsters,dont_ignore_glass, m_pPlayer.edict(), tr );
-
-					if ( tr.flFraction < 1.0 )	
-					{
-						// find which last point is visible to previous waypoint and current waypoint
-						for ( uint i = 0; i < vLastPositions.size(); i ++ )
-						{
-							TraceResult tr1;
-							TraceResult tr2;
-
-							g_Utility.TraceLine( m_pPlayer.pev.origin, vLastPositions[i], ignore_monsters,dont_ignore_glass, m_pPlayer.edict(), tr1 );
-							g_Utility.TraceLine( vLastPositions[i], previousWaypoint.m_vOrigin, ignore_monsters,dont_ignore_glass, m_pPlayer.edict(), tr2 );	
-
-							if ( tr1.flFraction >= 1.0 && tr2.flFraction >= 1.0 )
-							{
-								// Add Waypoint Here
-								CreateWaypoint(vLastPositions[i],32.0,0);
-								break;
-							}
-							
-						}
-
-						
-						// Add Waypoint Here
-						CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,0);
-
-						break;
-					}
-				}
-
-				m_fRunCheckTime = g_Engine.time + RunWaypointCheckTime;
-
-				if ( @previousWaypoint !is null )
-				{
-					if ( previousWaypoint.distanceFrom(m_pPlayer.pev.origin) > AutoWaypointPathDistance )
-						CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointPathDistance,0);
-				}
-				// normal shiz
-				else 
-					CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointPathDistance,0);
+				CheckPreviousPoints();
 			}
 			else if ( m_pPlayer.pev.velocity.Length() < 1 )
 			{
@@ -2697,6 +2732,7 @@ class AutoWaypointer
 			if ( m_pPlayer.pev.flags & FL_ONGROUND == FL_ONGROUND )
 			{
 				State = Run;
+				CreateWaypoint(vJumpWaypointLocation,AutoWaypointTypeDistance,W_FL_JUMP,true);
 				// Add Waypoint
 				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,0);
 			}
@@ -2712,7 +2748,7 @@ class AutoWaypointer
 			{
 				State = Jumping;
 				// Add Jump waypoint
-				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_JUMP,true);
+				vJumpWaypointLocation = m_pPlayer.pev.origin;
 			}
 			else if ( !m_pPlayer.IsOnLadder())
 			{
