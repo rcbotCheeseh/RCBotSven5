@@ -2046,7 +2046,8 @@ class CBotHealPlayerUtil : CBotUtil
 {
     float calculateUtility ( RCBot@ bot )
     {        
-        return 0.99f - (bot.m_pEnemiesVisible.EnemiesVisible()*0.1f);
+        // reduced utility 15/03/21
+        return 1.0f - (bot.m_pEnemiesVisible.EnemiesVisible()*0.2f);
     }
 
     string DebugMessage ()

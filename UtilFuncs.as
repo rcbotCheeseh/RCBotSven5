@@ -303,7 +303,7 @@
 
         CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
 
-        return tr.flFraction >= 1.0f || ((pTo is pEntity)&&(pTo !is null));
+        return tr.flFraction >= 1.0f || ((pTo == pEntity)&&(pTo !is null));
     }   
 		 	        
 

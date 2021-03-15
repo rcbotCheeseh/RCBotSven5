@@ -649,7 +649,7 @@ final class RCBotSearchResult
 void RCBotSearch ( const CCommand@ args )
 {
 	float distance = 200.0f;
-	CBaseEntity@ lp = ListenPlayer();
+	CBasePlayer@ lp = ListenPlayer();
 	Vector v = lp.pev.origin;
 	CBaseEntity@ pent = null;
 
@@ -670,6 +670,11 @@ void RCBotSearch ( const CCommand@ args )
 		if ( (UTIL_EntityOrigin(pent) - v).Length() < distance )
 		{
 			results.insertLast(RCBotSearchResult(pent,distance));
+
+			if ( classname != "*" )
+			{
+				drawBeam (lp, lp.pev.origin, UTIL_EntityOrigin(pent), WptColor(255,255,255), 50 );
+			}
 		}
 	}
 
