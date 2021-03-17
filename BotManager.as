@@ -1052,7 +1052,37 @@ case 	CLASS_BARNACLE	:*/
 				m_pCurrentSchedule.addTaskFront(CBotTaskWaitNoPlayer(pNextWpt.m_vOrigin));
 			}			
 		}
-				
+		if ( wpt.hasFlags(W_FL_LIFT) )
+		{
+			// find platform
+			if ( m_pPlayer.pev.groundentity !is null )
+			{
+				CBaseEntity@ pGroundEnt = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);
+
+				if ( pGroundEnt !is null )
+				{
+					CBaseToggle@ pDoor = cast<CBaseToggle@>(pGroundEnt);
+
+					if ( pDoor !is null )
+					{
+						//classname, Vector vOrigin, float fMinDist, bool checkFrame, bool bVisible
+						CBaseEntity@ pButton = UTIL_FindNearestEntity("func_button",m_pPlayer.pev.origin,200.0f,false,true);
+
+						if ( pButton !is null )
+							pressButton(pButton);
+						else 
+							BotMessage("pButton null");
+					}
+					else 
+							BotMessage("pDoor null");
+				}
+				else 
+					BotMessage("pGroundEnt instance null");
+
+			}
+			else 
+					BotMessage("pGroundEnt instance null");
+		}
 		if ( wpt.hasFlags(W_FL_WAIT) )
 		{
 			if ( m_pCurrentSchedule is null )
@@ -1285,26 +1315,38 @@ case 	CLASS_BARNACLE	:*/
 	}
 
 	// press button and go back to original waypoint
-	void pressButton ( CBaseEntity@ pButton, int iLastWpt )
+	void pressButton ( CBaseEntity@ pButton, int iLastWpt=-1, bool findPath = false )
 	{
-		//CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null )
-		int iWpt = g_Waypoints.getNearestWaypointIndex(UTIL_EntityOrigin(pButton),pButton);
-		
-		if ( iWpt == -1 )
+		int iWpt = -1;
+
+		if ( findPath )
 		{
-			UTIL_DebugMsg(m_pPlayer,"pressButton() NO PATH",DEBUG_THINK);
-			return;
+			//CFindPathTask ( RCBot@ bot, int wpt, CBaseEntity@ pEntity = null )
+			iWpt = g_Waypoints.getNearestWaypointIndex(UTIL_EntityOrigin(pButton),pButton);
+			
+			if ( iWpt == -1 )
+			{
+				UTIL_DebugMsg(m_pPlayer,"pressButton() NO PATH",DEBUG_THINK);
+				return;
+			}
 		}
 
 		// don't overflow tasks
 		if ( m_pCurrentSchedule.numTasksRemaining() < 5 )
 		{
-			// This will be the third task
-			m_pCurrentSchedule.addTaskFront(CFindPathTask(this,iLastWpt));
+			if ( findPath )
+			{
+				// This will be the third task
+				m_pCurrentSchedule.addTaskFront(CFindPathTask(this,iLastWpt));
+			}
 			// This will be the second task
 			m_pCurrentSchedule.addTaskFront(CUseButtonTask(pButton));
-			// This will be the first task
-			m_pCurrentSchedule.addTaskFront(CFindPathTask(this,iWpt,pButton));
+
+			if ( findPath )
+			{
+				// This will be the first task
+				m_pCurrentSchedule.addTaskFront(CFindPathTask(this,iWpt,pButton));
+			}
 			
 
 			UTIL_DebugMsg(m_pPlayer,"pressButton() OK",DEBUG_THINK);

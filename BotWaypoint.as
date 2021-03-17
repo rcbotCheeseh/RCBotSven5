@@ -2161,7 +2161,7 @@ final class RCBotNavigator
 								{								
 									UTIL_DebugMsg(bot.m_pPlayer,"pButton !is null",DEBUG_NAV);
 
-									bot.pressButton(pButton,m_iCurrentWaypoint);
+									bot.pressButton(pButton,m_iCurrentWaypoint,true);
 									bUse = false;
 								}
 						
