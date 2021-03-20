@@ -1028,6 +1028,8 @@ class CWaypoints
 								flags |= W_FL_ARMOR;
 							else if ( classname.SubString(0,12) == "trigger_hurt" )
 								flags |= W_FL_PAIN;			
+							else if ( classname == "trigger_changelevel" )
+								flags |= W_FL_ENDLEVEL;
 
 							BotMessage(classname);
 						}
@@ -2553,6 +2555,7 @@ const int Jumping = 1;
 const int OnLadder = 2;
 const int Standing = 3;
 const int Swimming = 4;
+const int Falling = 5;
 const float AutoWaypointTypeDistance = 64.0f;
 const float AutoWaypointPathDistance = 200.0f;
 const int iLastPositionsMax = 10;
@@ -2566,6 +2569,7 @@ class AutoWaypointer
 	array<Vector> vLastPositions;
 	int State;
 	Vector vJumpWaypointLocation;
+	Vector vFallLocation;
 
 	AutoWaypointer ( CBasePlayer@ pPlayer )
 	{
@@ -2577,25 +2581,30 @@ class AutoWaypointer
 	}
 
 	void CreateWaypoint ( Vector vPosition, float fDistance, int flags, bool singlePath = false )
-	{
+	{	
+		// check for existing waypoint
 		int wpt = g_Waypoints.getNearestWaypointIndex(vPosition,m_pPlayer,-1,fDistance,true);
 
 		if ( wpt == -1 )
 		{
+			// no exisitng waypoint - create one
 			if ( m_pPlayer.pev.flags & FL_DUCKING == FL_DUCKING )
-				flags |= W_FL_CROUCH;
+				flags |= W_FL_CROUCH; // make sure its a crouch waypoint if crouching
 
 			// add a waypoint - automatic paths at the moment
 			wpt = g_Waypoints.addWaypoint(vPosition,flags,m_pPlayer);
 			
-			g_Waypoints.playsound(m_pPlayer,wpt!=-1);
+			// play sound if displaying
+			if ( g_Waypoints.g_WaypointsOn )
+				g_Waypoints.playsound(m_pPlayer,wpt!=-1);
 		}
 		
 		if ( wpt != -1 )
 		{
+			// we've got a new current waypoint
 			CWaypoint@ currentWaypoint = g_Waypoints.getWaypointAtIndex(wpt);
-			// add path from previous waypoint to current waypoint
 
+			// add path from previous waypoint to current waypoint
 			if ( previousWaypoint !is null )
 			{
 				if ( singlePath ) // keep a single path (remove existing) for this waypoint
@@ -2611,6 +2620,8 @@ class AutoWaypointer
 			@previousWaypoint = null;
 	}
 
+	// if at any point the previous waypoint becomes invisible
+	// check intermediate points until both previous and current waypoint position becomes visible.
 	void CheckPreviousPoints ()
 	{
 		TraceResult tr;
@@ -2711,6 +2722,11 @@ class AutoWaypointer
 				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_LADDER);
 				vLastPositions = {};
 			}
+			else if ( m_pPlayer.pev.flags & FL_ONGROUND != FL_ONGROUND )
+			{
+				State = Falling;
+				vFallLocation = m_pPlayer.pev.origin;
+			}
 			else if ( m_fRunCheckTime < g_Engine.time ) 
 			{
 				CheckPreviousPoints();
@@ -2728,6 +2744,21 @@ class AutoWaypointer
 				State = Run;
 			}
 		break;
+		case Falling:
+			if ( m_pPlayer.pev.flags & FL_ONGROUND == FL_ONGROUND )
+			{
+				State = Run;
+				CreateWaypoint(vFallLocation,AutoWaypointTypeDistance,0,true);
+				// Add Waypoint
+				CreateWaypoint(m_pPlayer.pev.origin,200.0f,0);
+			}
+			else if ( m_pPlayer.IsOnLadder())
+			{
+				State = OnLadder;
+				// Add waypoint
+				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,W_FL_LADDER);
+			}
+			break;
 		case Jumping:
 			if ( m_pPlayer.pev.flags & FL_ONGROUND == FL_ONGROUND )
 			{
@@ -2752,9 +2783,18 @@ class AutoWaypointer
 			}
 			else if ( !m_pPlayer.IsOnLadder())
 			{
+				Vector vForward;
+
+				g_EngineFuncs.MakeVectors(m_pPlayer.pev.v_angle);
+
+				vForward = g_Engine.v_forward;
+				// make 2D
+				vForward.z = 0;
+				vForward = vForward.Normalize();
+
 				State = Run;
 				// Add waypoint
-				CreateWaypoint(m_pPlayer.pev.origin,AutoWaypointTypeDistance,0);
+				CreateWaypoint(m_pPlayer.pev.origin+(vForward*16.0f),48.0f,W_FL_LADDER);
 			}
 		break;
 

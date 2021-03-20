@@ -2049,6 +2049,10 @@ case 	CLASS_BARNACLE	:*/
 		{
 			setLookAt(m_vHurtOrigin,PRIORITY_HURT);
 		}		
+		else if ( m_pNextWpt !is null &&  m_pNextWpt.hasFlags(W_FL_JUMP) )
+		{
+			setLookAt(m_pNextWpt.m_vOrigin,PRIORITY_WAYPOINT);
+		}
 		else if ( hasHeardNoise() && (m_pEnemiesVisible.EnemiesVisible() == 0 ) )
 		{
 			setLookAt(m_vNoiseOrigin,PRIORITY_LISTEN);
@@ -2062,6 +2066,8 @@ case 	CLASS_BARNACLE	:*/
 			if ( m_pNextWpt !is null )
 			{
 				int index = m_pNextWpt.iIndex;
+
+
 
 				Vector vLookat = m_pNextWpt.m_vOrigin;
 
