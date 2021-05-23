@@ -1451,7 +1451,7 @@ case 	CLASS_BARNACLE	:*/
             return false;
 		}
 
-		if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+		if ( (entity.pev.flags & FL_MONSTER) == FL_MONSTER )
 		{
 			if ( m_pHealNPC.GetBool() )
 			{						
@@ -1466,11 +1466,11 @@ case 	CLASS_BARNACLE	:*/
 		}	
 		else
 		{
-			if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )	
+			if ( (entity.pev.flags & FL_CLIENT) != FL_CLIENT )	
 				return false;
 		}
 
-		if ( entity.pev.flags & FL_GODMODE == FL_GODMODE )
+		if ( (entity.pev.flags & FL_GODMODE) == FL_GODMODE )
 			return false;
 // probably a spectator
 		if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )

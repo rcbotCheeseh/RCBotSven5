@@ -2057,7 +2057,7 @@ class CBotHealPlayerUtil : CBotUtil
 
     bool canDo (RCBot@ bot)
     {
-        return (g_Engine.time > m_fNextDo) && bot.m_pHeal.GetEntity() !is null && bot.CanHeal(bot.m_pHeal.GetEntity());
+        return (g_Engine.time > m_fNextDo) && (bot.m_pHeal.GetEntity() !is null) && bot.CanHeal(bot.m_pHeal.GetEntity());
     }    
 
     RCBotSchedule@ execute ( RCBot@ bot )
