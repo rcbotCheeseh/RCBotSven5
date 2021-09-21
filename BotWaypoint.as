@@ -2277,7 +2277,9 @@ final class RCBotNavigator
 								float fCost = curr.getCost();
 
 								if ( m_pUseBelief.GetBool() )
-									fCost += bot.m_fBelief.getBeliefCost(iCurrentNode);								
+									fCost += bot.m_fBelief.getBeliefCost(iCurrentNode);			
+								if ( currWpt.m_iFlags != 0 ) // add cost to any flagged waypoint
+									fCost += 48.0f;					
 
 								if ( !currWpt.hasFlags(W_FL_TELEPORT) && !succWpt.hasFlags(W_FL_TELEPORT) )								
 									fCost += (succWpt.distanceFrom(currWpt.m_vOrigin));

@@ -1718,13 +1718,14 @@ case 	CLASS_BARNACLE	:*/
 	float getEnemyFactor ( CBaseEntity@ entity )
 	{
 		float fFactor = distanceFrom(entity.pev.origin) * entity.pev.size.Length();
+			
+		// focus on nearly dead enemies
+		fFactor += entity.pev.health;
 
 		if ( entity.GetClassname() == "func_breakable" )
 			fFactor *= 2;
-		else if ( entity.GetClassname() == "monster_male_assassin" )
-			fFactor /= 2;
-		// focus on nearly dead enemies
-		fFactor += entity.pev.health;
+		else if ( entity.GetClassname() == "monster_male_assassin" || entity.GetClassname() == "monster_hwgrunt" )
+			fFactor /= 2; // focus more on stronger enemies
 
 		return fFactor;
 	}
