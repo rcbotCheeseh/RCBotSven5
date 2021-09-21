@@ -16,11 +16,12 @@ BotManager::BotManager g_BotManager( @CreateRCBot );
 const int PRIORITY_NONE = 0;
 const int PRIORITY_WAYPOINT = 1;	
 const int PRIORITY_LISTEN = 2;
-const int PRIORITY_TASK = 3;
-const int PRIORITY_HURT = 4;
-const int PRIORITY_ATTACK = 5;
-const int PRIORITY_LADDER = 6;
-const int PRIORITY_OVERRIDE = 7;
+const int PRIORITY_LAST_SEE_ENEMY = 3;
+const int PRIORITY_TASK = 4;
+const int PRIORITY_HURT = 5;
+const int PRIORITY_ATTACK = 6;
+const int PRIORITY_LADDER = 7;
+const int PRIORITY_OVERRIDE = 8;
 
 // ------------------------------------
 // BOT BASE - START
@@ -700,7 +701,7 @@ final class RCBot : BotManager::BaseBot
 		if ( entity.pev.health <= 0 )
 			return false;
 
-		if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )
+		if ( (entity.pev.effects & EF_NODRAW) == EF_NODRAW )
 		return false; // can't see
 
 		if ( szClassname == "hornet" )
@@ -712,7 +713,7 @@ final class RCBot : BotManager::BaseBot
 		if ( szClassname == "monster_gargantua" )
 			return !entity.IsPlayerAlly();
 
-		if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+		if ( (entity.pev.flags & FL_MONSTER) == FL_MONSTER )
 		{
 
 				//http://www.svencoop.com/manual/classes.html
@@ -1167,7 +1168,7 @@ case 	CLASS_BARNACLE	:*/
 
 	void followingWpt ( Vector vOrigin, int flags )
 	{
-		if ( flags & W_FL_PLATFORM == W_FL_PLATFORM )
+		if ( (flags & W_FL_PLATFORM) == W_FL_PLATFORM )
 		{
 			if ( m_pPlayer.pev.groundentity !is null )
 			{
@@ -1203,7 +1204,7 @@ case 	CLASS_BARNACLE	:*/
 			}			
 		}
 
-		if ( flags & W_FL_CROUCH == W_FL_CROUCH )
+		if ( (flags & W_FL_CROUCH) == W_FL_CROUCH )
 			PressButton(IN_DUCK);
 
 		if ( IsOnLadder() || ((flags & W_FL_LADDER) == W_FL_LADDER) )
@@ -1213,7 +1214,7 @@ case 	CLASS_BARNACLE	:*/
 			PressButton(IN_FORWARD);
 		}
 
-		if ( flags & W_FL_STAY_NEAR == W_FL_STAY_NEAR )
+		if ( (flags & W_FL_STAY_NEAR) == W_FL_STAY_NEAR )
 			setMoveSpeed(m_pPlayer.pev.maxspeed/4);
 
 		//BotMessage("Following Wpt");	
@@ -1410,7 +1411,7 @@ case 	CLASS_BARNACLE	:*/
 			return false;
 
 	
-		if ( entity.pev.flags & FL_MONSTER == FL_MONSTER )
+		if ( (entity.pev.flags & FL_MONSTER) == FL_MONSTER )
 		{
 			if ( m_pReviveNPC.GetBool() )
 			{				
@@ -1425,7 +1426,7 @@ case 	CLASS_BARNACLE	:*/
 		}	
 		else
 		{
-			if ( entity.pev.flags & FL_CLIENT != FL_CLIENT )	
+			if ( (entity.pev.flags & FL_CLIENT) != FL_CLIENT )	
 				return false;
 		}
 		if ( entity.pev.deadflag != DEAD_RESPAWNABLE )
@@ -1473,7 +1474,7 @@ case 	CLASS_BARNACLE	:*/
 		if ( (entity.pev.flags & FL_GODMODE) == FL_GODMODE )
 			return false;
 // probably a spectator
-		if ( entity.pev.effects & EF_NODRAW == EF_NODRAW )
+		if ( (entity.pev.effects & EF_NODRAW) == EF_NODRAW )
 		{
 			return false;
 		}
@@ -1879,9 +1880,9 @@ case 	CLASS_BARNACLE	:*/
 					return false;
 			}
 		}			
-		if ( ent.pev.flags & FL_CLIENT == FL_CLIENT )
+		if ( (ent.pev.flags & FL_CLIENT) == FL_CLIENT )
 			return true;
-		if ( ent.pev.flags & FL_MONSTER == FL_MONSTER )
+		if ( (ent.pev.flags & FL_MONSTER) == FL_MONSTER )
 			return true;
 
 		return false;		
@@ -2034,7 +2035,7 @@ case 	CLASS_BARNACLE	:*/
 
 		if ( pEnemy !is null )
 		{						
-			if ( m_pVisibles.isVisible(pEnemy.entindex()) & VIS_FL_HEAD == VIS_FL_HEAD )
+			if ( (m_pVisibles.isVisible(pEnemy.entindex()) & VIS_FL_HEAD) == VIS_FL_HEAD )
 				setLookAt(UTIL_EyePosition(pEnemy),PRIORITY_ATTACK);
 			else
 				setLookAt(UTIL_EntityOrigin(pEnemy),PRIORITY_ATTACK);
@@ -2059,7 +2060,7 @@ case 	CLASS_BARNACLE	:*/
 		}
 		else if ( m_bLastSeeEnemyValid && ((m_fLastSeeEnemyTime+5) > g_Engine.time) )
 		{
-			setLookAt(m_vLastSeeEnemy,PRIORITY_WAYPOINT);
+			setLookAt(m_vLastSeeEnemy,PRIORITY_LAST_SEE_ENEMY);
 		}
 		else if (m_bMoveToValid )
 		{			
