@@ -33,6 +33,8 @@ final class RCBot : BotManager::BaseBot
 	RCBotSchedule@ m_pCurrentSchedule;
 
 	float m_fNextShoutMedic;
+	float m_fNextShoutTakeCover;
+	float m_fNextShout;
 
 	bool init;
 
@@ -555,7 +557,7 @@ final class RCBot : BotManager::BaseBot
 	{
 		CBasePlayer@ pPlayer = m_pPlayer;
 
-		NetworkMessage m(MSG_ONE, NetworkMessages::NetworkMessageType(9), pPlayer.edict());
+		NetworkMessage m(MSG_ONE, NetworkMessages::SVC_STUFFTEXT, pPlayer.edict());
 			m.WriteString( command );
 		m.End();
 
@@ -1512,6 +1514,7 @@ case 	CLASS_BARNACLE	:*/
 		{
 			@m_pCurrentSchedule = CBotTaskFindCoverSchedule(this,UTIL_GrenadeEndPoint(pGrenade));
 			m_fNextTakeCover = g_Engine.time + Math.RandomFloat(6.0,12.0);
+			ShoutTakeCover();
 		}			
 	}
 
@@ -1628,16 +1631,16 @@ case 	CLASS_BARNACLE	:*/
 		
 		ceaseFire(false);
 
-		m_iCurrentPriority = PRIORITY_NONE;
-		m_pWeapons.updateWeapons(this);
+		m_iCurrentPriority = PRIORITY_NONE; // reset move/look priority
+		m_pWeapons.updateWeapons(this); // keep weapons up to date this frame
 
-		ReleaseButtons();
+		ReleaseButtons(); // let go of all buttons - these will be updated later
 
-		m_fDesiredMoveSpeed = m_pPlayer.pev.maxspeed;
+		m_fDesiredMoveSpeed = m_pPlayer.pev.maxspeed; // assume bot wants to move - until set by move look
 
-		BotManager::BaseBot::Think();
+		BotManager::BaseBot::Think(); // do base think stuff
 		
-		//If the bot is dead and can be respawned, send a button press
+		//If the bot is dead and can be respawned, send a button press to respawn
 		if( Player.pev.deadflag >= DEAD_RESPAWNABLE )
 		{
 			// don't press attack if we're dead and it's survival mode
@@ -1652,14 +1655,14 @@ case 	CLASS_BARNACLE	:*/
 			return; // Dead , nothing else to do
 		}
 
-		m_iPrevHealthArmor = m_iCurrentHealthArmor;
+		m_iPrevHealthArmor = m_iCurrentHealthArmor; // keep track of how much armor we have
 
-		init = false;
+		init = false; // we have already spawned
 
-		if ( m_pEnemy.GetEntity()  !is null )
+		if ( m_pEnemy.GetEntity()  !is null ) // keep checking current enemy
 		{
-			if ( !IsEnemy(m_pEnemy.GetEntity() ) )
-				m_pEnemy = null;
+			if ( !IsEnemy(m_pEnemy.GetEntity() ) ) // is it still an enemy?
+				m_pEnemy = null; // clear the enemy
 		}
 		/*
 		KeyValueBuffer@ pInfoBuffer = g_EngineFuncs.GetInfoKeyBuffer( Player.edict() );
@@ -1686,31 +1689,31 @@ case 	CLASS_BARNACLE	:*/
 		{
 			m_vecVelocity[ uiIndex ] = Math.RandomLong( -50, 50 );
 		}*/
-		DoTasks();
-		DoVisibles();
+		DoTasks(); // do schedule/tasks 
+		DoVisibles(); // update visible list
 
-		DoListen();
+		DoListen(); // update nearby listenable objects
 
-		DoMove();
-		DoLook();
+		DoMove(); // update move command
+		DoLook(); // update look command
 
-		DoWeapons();
-		DoButtons();
+		DoWeapons(); // update weapon/attack commands
+		DoButtons(); // update button presses
 
 		
 		
 	}
 
-	EHandle m_pBlocking = null;
+	EHandle m_pBlocking = null; // blocking object
 
-	void setBlockingEntity ( CBaseEntity@ blockingEntity )
+	void setBlockingEntity ( CBaseEntity@ blockingEntity ) 
 	{
 		m_pBlocking = blockingEntity;
 	}
 
 	void DoWeapons ()
 	{	
-		if ( !ceasedFiring() )
+		if ( !ceasedFiring() ) // only do weapons if not told to cease fire by task
 			m_pWeapons.DoWeapons(this,m_pEnemy);
 	}
 
@@ -1722,51 +1725,54 @@ case 	CLASS_BARNACLE	:*/
 		// focus on nearly dead enemies
 		fFactor += entity.pev.health;
 
-		if ( entity.GetClassname() == "func_breakable" )
+		if ( entity.GetClassname() == "func_breakable" ) // less emphasis on breakables - focus more on things that can hurt us
 			fFactor *= 2;
 		else if ( entity.GetClassname() == "monster_male_assassin" || entity.GetClassname() == "monster_hwgrunt" )
 			fFactor /= 2; // focus more on stronger enemies
 
 		return fFactor;
 	}
-
+	// we got a new visible event
 	void newVisible ( CBaseEntity@ ent )
 	{
-		if ( ent is null )
+		if ( ent is null ) // probably shouldnt happen but may have seen it before ???
 		{
 			// WTFFFFF!!!!!!!
 			return;
 		}
 
-		if ( CanHeal(ent) )
+		if ( CanHeal(ent) ) // Oh I can heal this entity?
 		{
 			//BotMessage("CanHeal == TRUE");
+			// update the heal entity to this guy
 			if ( m_pHeal.GetEntity() is null )
-				m_pHeal = ent;
+				m_pHeal = ent; 
 			else if ( getHealFactor(ent) < getHealFactor(m_pHeal) )
 				m_pHeal = ent;
 		}		
-		else if ( CanRevive(ent) )
+		else if ( CanRevive(ent) ) // Oh I can revive this entity?
 		{
 			//BotMessage("CanRevive == TRUE");
-
+			// update the revive entity to this guy
 			if ( m_pRevive.GetEntity() is null )
-				m_pRevive = ent;
+				m_pRevive = ent; 
 			else if ( getHealFactor(ent) < getHealFactor(m_pRevive) )
 				m_pRevive = ent;
 		}
 
-
 		//BotMessage("New Visible " + ent.pev.classname + "\n");
 
+		// Oh, this guy is an enemy?
 		if ( IsEnemy(ent) )
 		{
+			// call new enemy event
 			m_pEnemiesVisible.newEnemy(ent);
 
 			//BotMessage("NEW ENEMY !!!  " + ent.pev.classname + "\n");
+			// update the last time I saw an enemy
 			m_fLastSeeEnemyTime = g_Engine.time;
 		}
-
+		// Oh I see a tank I could control?
 		if ( ent.GetClassname() == "func_tank" )
 		{
 			if ( UTIL_CanUseTank(m_pPlayer,ent) )
@@ -1774,68 +1780,74 @@ case 	CLASS_BARNACLE	:*/
 				setNearestTank(ent);
 			}
 		}
-
+		// Oh I see a friendly scientist?!
 		if ( ent.GetClassname() == "monster_scientist" )
 		{
 			CBaseEntity@ pScientist = m_pLastSeenScientist.GetEntity();
 
-			if ( ent.IsPlayerAlly() )
+			if ( ent.IsPlayerAlly() ) // check he is friendly
 			{
 				if ( (pScientist is null) || (distanceFrom(ent) < distanceFrom(pScientist)) )
 				{
+					// update my scientist to the nearest one
 					m_pLastSeenScientist = ent;
 				}
 			}
 		}
-
+		// Oh I see a friendly barney
 		if ( ent.GetClassname() == "monster_barney" || ent.GetClassname() == "monster_otis" )
 		{
 			CBaseEntity@ pBarney = m_pLastSeenBarney.GetEntity();
-
+			// Make sure he is friendly
 			if ( ent.IsPlayerAlly() )
 			{
 				if ( (pBarney is null) || (distanceFrom(ent) < distanceFrom(pBarney)) )
 				{
+					// update my barney to the nearest one
 					m_pLastSeenBarney = ent;
 				}
 			}
 		}	
 	}
-
+	// Lost a visible event
 	void lostVisible ( CBaseEntity@ ent )
 	{
 		//BotMessage("lost visible\n");
 
-
+		// he might have been an enemy
 		m_pEnemiesVisible.enemyLost(ent,this);
 
+		// Todo --- Really need to clear these? I may have lost sight of them
+		// But they are actually still there!!!
+
+		// Otherwise he might have been my healable
 		if ( m_pHeal.GetEntity() is ent )
 		{
 			m_pHeal = null;
 		}
-
+		// Maybe it was my revivable?
 		if ( m_pRevive.GetEntity() is ent )
 		{
 			m_pRevive = null;
 		}
-
+		// Or maybe lost visibility of my tank?
 		if ( m_pNearestTank.GetEntity() is ent )
 		{
-			m_pNearestTank = null;
+			m_pNearestTank = null; // Clear it
 		}
 	}
-
+	// Remember that I failed going some way
 	void failedPath ( bool failed )
 	{
 		m_bLastPathFailed = failed;
 	}
-
+	// reinitialise variables at spawn
 	void SpawnInit ()
 	{
 		if ( init == true )
 			return;
 
-			@m_pNextWpt = null;
+		@m_pNextWpt = null;
 
 		m_pEnemiesVisible.clear();
 		m_flJumpPlatformTime = 0;
@@ -1846,6 +1858,8 @@ case 	CLASS_BARNACLE	:*/
 		m_flJumpTime = 0.0f;
 
 		m_fNextShoutMedic = 0.0f;
+		m_fNextShoutTakeCover = 0.0f;
+		m_fNextShout = 0.0f;
 
 		m_pWeapons.spawnInit();
 		m_iLastFailedWaypoint = -1;
@@ -1862,16 +1876,16 @@ case 	CLASS_BARNACLE	:*/
 		m_pHeal = null;
 
 	}
-
+	// check if I can avoid this
 	bool CanAvoid ( CBaseEntity@ ent )
 	{
-		if ( IsOnLadder() )
+		if ( IsOnLadder() ) // I won't avoid while I am on a ladder
 			return false;
-		if ( distanceFrom(ent) > 200 )
+		if ( distanceFrom(ent) > 200 ) // I can't avoid anything outside this distance
 			return false;
-		if ( ent == m_pPlayer )
+		if ( ent == m_pPlayer ) // I can't avoid myself
 			return false;
-		if ( m_pEnemy.GetEntity() is ent )
+		if ( m_pEnemy.GetEntity() is ent ) // I should probably avoid my enemy so it doesn't hit me
 		{
 			CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
 
@@ -1881,9 +1895,9 @@ case 	CLASS_BARNACLE	:*/
 					return false;
 			}
 		}			
-		if ( (ent.pev.flags & FL_CLIENT) == FL_CLIENT )
+		if ( (ent.pev.flags & FL_CLIENT) == FL_CLIENT ) // I can avoid players, so I don't bump into them
 			return true;
-		if ( (ent.pev.flags & FL_MONSTER) == FL_MONSTER )
+		if ( (ent.pev.flags & FL_MONSTER) == FL_MONSTER ) // I should probably avoid monsters do they dont hit me
 			return true;
 
 		return false;		
@@ -1893,9 +1907,9 @@ case 	CLASS_BARNACLE	:*/
 	{
 		// update visible objects
 		m_pVisibles.update();
-		m_pEnemy = m_pEnemiesVisible.getBestEnemy(this);
+		m_pEnemy = m_pEnemiesVisible.getBestEnemy(this); // Get best enemy from within list of visible enemies
 
-		BotEnemyLastSeen@ nearestLastSeen = m_pEnemiesVisible.nearestEnemySeen(this);
+		BotEnemyLastSeen@ nearestLastSeen = m_pEnemiesVisible.nearestEnemySeen(this); // which is my nearest last seen enemy
 
 		if ( nearestLastSeen !is null )
 		{
@@ -1915,8 +1929,8 @@ case 	CLASS_BARNACLE	:*/
 	{
 		m_pLastEnemy = null;
 		m_bLastSeeEnemyValid = false;
-
 	}
+
 	bool HasWeapon ( string classname )
 	{
 		return m_pPlayer.HasNamedPlayerItem(classname) !is null;
@@ -1993,7 +2007,7 @@ case 	CLASS_BARNACLE	:*/
 	
 	void Jump ()
 	{
-		if ( IsHoldingMinigun() )
+		if ( IsHoldingMinigun() ) // we can't jump if we are holding minigun, if we really need to jump then drop it
 		{
 			// can't jump while holding minigun
 			m_pPlayer.DropItem("weapon_minigun");		
@@ -2009,7 +2023,7 @@ case 	CLASS_BARNACLE	:*/
 
 	void DoJump ()
 	{
-		if ( m_fPendingJumpTime > 0.0f )
+		if ( m_fPendingJumpTime > 0.0f ) // ready to jump
 		{
 			// can only jump on ground
 
@@ -2024,6 +2038,72 @@ case 	CLASS_BARNACLE	:*/
 	}
 
 	CWaypoint@ m_pNextWpt = null;
+
+	/*void te_sprite(Vector pos, string sprite="sprites/zerogxplode.spr", 
+	uint8 scale=10, uint8 alpha=200, 
+	NetworkMessageDest msgType=MSG_BROADCAST, edict_t@ dest=null)
+	{
+		NetworkMessage m(msgType, NetworkMessages::SVC_TEMPENTITY, dest);
+		m.WriteByte(TE_SPRITE);
+		m.WriteCoord(pos.x);
+		m.WriteCoord(pos.y);
+		m.WriteCoord(pos.z);
+		m.WriteShort(g_EngineFuncs.ModelIndex(sprite));
+		m.WriteByte(scale);
+		m.WriteByte(alpha);
+		m.End();
+	}*/
+/*
+void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f, 
+	string sprite="sprites/bubble.spr", uint16 life=16, 
+	NetworkMessageDest msgType=MSG_BROADCAST, edict_t@ dest=null)
+{
+	NetworkMessage m(msgType, NetworkMessages::SVC_TEMPENTITY, dest);
+	m.WriteByte(TE_PLAYERATTACHMENT);
+	m.WriteByte(target.entindex());
+	m.WriteCoord(vOffset);
+	m.WriteShort(g_EngineFuncs.ModelIndex(sprite));
+	m.WriteShort(life);
+	m.End();
+}
+*/
+
+	void PlayerAttachment ( string Sprite, uint16 life = 30 )
+	{
+		NetworkMessage m(MSG_BROADCAST, NetworkMessages::SVC_TEMPENTITY, null);
+		m.WriteByte(TE_PLAYERATTACHMENT);
+		m.WriteByte(m_pPlayer.entindex());
+		m.WriteCoord(48.0f);
+		m.WriteShort(g_EngineFuncs.ModelIndex(Sprite));
+		m.WriteShort(life);
+		m.End();
+	}
+
+	void ShoutTakeCover ()
+	{
+		if ( m_fNextShoutTakeCover < g_Engine.time && m_fNextShout < g_Engine.time )
+		{
+			m_fNextShoutTakeCover = g_Engine.time + Math.RandomFloat( 20.0f, 40.0f );
+			m_fNextShout = g_Engine.time + 3.0f;
+
+			PlayerAttachment("sprites/grenade.spr");
+
+			g_SoundSystem.EmitSound( m_pPlayer.edict(), CHAN_BODY, "fgrunt/cover.wav", 1, ATTN_NORM ); 
+		}
+	}
+
+	void ShoutMedic ()
+	{
+		if ( m_fNextShoutMedic < g_Engine.time && m_fNextShout < g_Engine.time  )
+		{
+			m_fNextShoutMedic = g_Engine.time + Math.RandomFloat( 20.0f, 40.0f );
+			m_fNextShout = g_Engine.time + 3.0f;
+			
+			PlayerAttachment("sprites/saveme.spr");
+
+			g_SoundSystem.EmitSound( m_pPlayer.edict(), CHAN_BODY, "fgrunt/medic.wav", 1, ATTN_NORM ); 
+		}
+	}
 
 	/**
 	 * DoLook()
@@ -2125,10 +2205,9 @@ case 	CLASS_BARNACLE	:*/
 		//if ( m_pEnemy.GetEntity() !is null )
 		//	BotMessage("ENEMY");
 
-		if ( (m_fNextShoutMedic < g_Engine.time) && (HealthPercent() < 0.5f) )
+		if ( HealthPercent() < 0.5f )
 		{
-			ClientCommand("medic");
-			m_fNextShoutMedic = g_Engine.time + 30.0f;
+			ShoutMedic();
 		}
 
 		if ( !ceasedFiring() )

@@ -5,7 +5,7 @@
 #include "UtilFuncs"
 #include "BotWeapons"
 #include "CBotBits"
-
+// List of all console command functions created by rcbot plugin below
 CConCommand@ m_pRCBotWaypointConvertType;
 CConCommand@ m_pAddBot;
 CConCommand@ m_pRemoveBot;
@@ -49,7 +49,7 @@ CConCommand@ m_pRCBotWaypointMove1;
 CConCommand@ m_pRCBotWaypointMove2;
 CConCommand@ m_pBeliefDebug;
 CConCommand@ m_pRCBotWaypointAuto;
-
+// List of all console variables used by rcbot plugin below
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
 CCVar@ m_pHealNPC;
@@ -60,16 +60,17 @@ CCVar@ m_pBeliefMultiplier;
 CCVar@ m_pWPAutoPathDist;
 CCVar@ m_pDisableUtil;
 
-//CCVar@ m_pAutoConfig;
-int g_ScriptEntityOffset = 0;
-//bool g_DebugOn = false;
-bool g_NoTouch = false;
+// some globals below
+int g_ScriptEntityOffset = 0;	// used by script - entity index in script is offset by this value, default is number of max clients
+bool g_NoTouch = false; // if no touch is enabled - user will be put in spectator mode indefinitely
 bool g_NoTouchChange = false;
-int g_DebugLevel = 0;
-EHandle g_DebugBot = null;
-Vector g_vTeleportSet = Vector(0,0,0);
-bool g_bTeleportSet = false;
+int g_DebugLevel = 0;			// the admin's debug level choice - will output debug messages based on this
+EHandle g_DebugBot = null;		// the admin's debugging bot, bot debug info will be printed
+Vector g_vTeleportSet = Vector(0,0,0); // the teleport vector that the admin has set
+bool g_bTeleportSet = false; // if the teleport vector has been set, this will be TRUE, should be reset after map change
 
+// This function returns the "Listen Player", i.e. the bot admin if we are running a listen server
+// which we should be because we're using BOTS!!!!
 CBasePlayer@ ListenPlayer ()
 {
 	//If the plugin was reloaded, find all bots and add them again.
@@ -82,6 +83,8 @@ CBasePlayer@ ListenPlayer ()
 			
 		if( ( pPlayer.pev.flags & FL_FAKECLIENT ) == FL_FAKECLIENT )
 			continue;
+
+		// We simply return the first player (non-bot player) in the list of clients
 			
 		return  pPlayer;
 	}
@@ -89,7 +92,7 @@ CBasePlayer@ ListenPlayer ()
 	return null;
 
 }
-
+// Map initialise!
 void MapInit()
 {
 	g_Game.AlertMessage( at_console, "************************\n" );	
@@ -98,12 +101,12 @@ void MapInit()
 
 	g_BotCam.Clear(true);
 	g_MapInit = true;
-
+	// need this for camera
 	g_Game.PrecacheModel("models/mechgibs.mdl");
-
+	// need this for waypoint sounds
 	g_Waypoints.precacheSounds();
 }
-
+// initialise all CVARS and commands and plugin info
 void PluginInit()
 {
 	g_Module.ScriptInfo.SetAuthor( "Cheeseh" );
@@ -171,7 +174,11 @@ void PluginInit()
 	g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
-
+// Shows rcbot's belief at closest waypoint
+// Belief is a floating point value associated with each waypoint
+// if a bot dies, the belief of the closest waypoint to that bot will increase
+// if a bot kills something, the belief will reduce
+// bots tend to avoid waypoints with higher belief
 void RCBot_Belief ( const CCommand@ args )
 {
 	if ( args.ArgC() > 1 )
@@ -184,7 +191,7 @@ void RCBot_Belief ( const CCommand@ args )
 
 		if ( pBot !is null )
 		{
-			CBasePlayer@ player = ListenPlayer();
+			CBasePlayer@ player = ListenPlayer();	// print this info to the "admin"
 
 			int wpt = g_Waypoints.getNearestWaypointIndex(player.pev.origin,player,-1,128.0f,false);
 		
@@ -193,7 +200,7 @@ void RCBot_Belief ( const CCommand@ args )
 		}
 	}
 }
-
+// set the bots script entity offset
 void RCBot_ScriptEntityOffset ( const CCommand@ args )
 {
 	if ( args.ArgC() > 1 )
@@ -205,7 +212,7 @@ void RCBot_ScriptEntityOffset ( const CCommand@ args )
 		g_ScriptEntityOffset = offset;
 	}
 }
-
+// 
 void TeleportWpt ( const CCommand@ args )
 {
 	if ( args.ArgC() > 1 )
