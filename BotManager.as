@@ -2088,7 +2088,7 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 
 			PlayerAttachment("sprites/grenade.spr");
 
-			g_SoundSystem.EmitSound( m_pPlayer.edict(), CHAN_BODY, "fgrunt/cover.wav", 1, ATTN_NORM ); 
+			g_SoundSystem.EmitSound( m_pPlayer.edict(), CHAN_BODY, "speech/grenade1.wav", 1, ATTN_NORM ); 
 		}
 	}
 
