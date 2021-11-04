@@ -78,12 +78,20 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_uzi",100.0,2000.0,WEAP_FL_NONE,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_medkit",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_grapple",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.8,"weapon_handgrenade",200.0,400.0,WEAP_FL_GRENADE|WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,15)); 
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.8,"weapon_handgrenade",256.0,512.0,WEAP_FL_GRENADE|WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,15)); // will be handled in task code
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.6,"weapon_sniperrifle",512.0,8000.0,WEAP_FL_SNIPE,10)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_m249",60.0,2400.0,WEAP_FL_NONE,11)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_minigun",0.0,3000.0,WEAP_FL_NONE,16)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_sporelauncher",64.0,1024.0,WEAP_FL_GRENADE|WEAP_FL_NONE,12)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_displacer",64.0,3000.0,WEAP_FL_UNDERWATER,15)); 
+        // They hunger weapons
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_colt1911",0.0,1500.0,WEAP_FL_UNDERWATER,1,0.0,1500.0));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_sawedoff",0.0,768.0,WEAP_FL_NONE,8));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_tommygun",0.0,2000.0,WEAP_FL_NONE,13,200,1300));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_m14",0.0,4000.0,WEAP_FL_SNIPE,2));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_m16a1",0.0,2000.0,WEAP_FL_NONE,13,200,1300));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.5,"weapon_spanner",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,2));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_greasegun",100.0,2000.0,WEAP_FL_NONE,9));
     }    
 
     int numWeapons ()
