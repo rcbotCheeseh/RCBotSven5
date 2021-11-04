@@ -2101,7 +2101,7 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 			
 			PlayerAttachment("sprites/saveme.spr");
 
-			g_SoundSystem.EmitSound( m_pPlayer.edict(), CHAN_BODY, "fgrunt/medic.wav", 1, ATTN_NORM ); 
+			g_SoundSystem.EmitSound( m_pPlayer.edict(), CHAN_BODY, "speech/saveme1.wav", 1, ATTN_NORM ); 
 		}
 	}
 
