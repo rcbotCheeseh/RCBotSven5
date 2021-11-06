@@ -63,7 +63,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_gauss",0.0,2000.0,WEAP_FL_PRIMARY_EXPLOSIVE,100));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.5,"weapon_crowbar",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,1));        
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_9mmhandgun",0.0,1500.0,WEAP_FL_UNDERWATER|WEAP_FL_SECONDARY,1,0.0,1500.0));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_shotgun",0.0,768.0,WEAP_FL_NONE,8));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_shotgun",64.0,768.0,WEAP_FL_NONE,WEAP_FL_SECONDARY,8,64.0,200.0));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_357",0.0,2000.0,WEAP_FL_NONE,7));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_eagle",0.0,2000.0,WEAP_FL_NONE,6));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_9mmAR",0.0,2000.0,WEAP_FL_NONE,10));
@@ -75,7 +75,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.8,"weapon_rpg",512.0,5000.0,WEAP_FL_RPG|WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER,16));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_shockrifle",100.0,2000.0,WEAP_FL_NONE,9));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_snark",300.0,2000.0,WEAP_FL_GRENADE|WEAP_FL_UNDERWATER,10));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_uzi",100.0,2000.0,WEAP_FL_NONE,8));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_uzi",0.0,2000.0,WEAP_FL_NONE,8));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_medkit",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_grapple",0.0,0.0,WEAP_FL_NONE,0)); // will be handled in task code
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.8,"weapon_handgrenade",256.0,512.0,WEAP_FL_GRENADE|WEAP_FL_PRIMARY_EXPLOSIVE|WEAP_FL_UNDERWATER|WEAP_FL_PRIMARY_EXPLOSIVE,15)); // will be handled in task code
@@ -85,13 +85,13 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_sporelauncher",64.0,1024.0,WEAP_FL_GRENADE|WEAP_FL_NONE,12)); 
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_displacer",64.0,3000.0,WEAP_FL_UNDERWATER,15)); 
         // They hunger weapons
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_colt1911",0.0,1500.0,WEAP_FL_UNDERWATER,1,0.0,1500.0));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_sawedoff",0.0,768.0,WEAP_FL_NONE,8));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_tommygun",0.0,2000.0,WEAP_FL_NONE,13,200,1300));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_m14",0.0,4000.0,WEAP_FL_SNIPE,2));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_m16a1",0.0,2000.0,WEAP_FL_NONE,13,200,1300));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_colt1911",64.0,1500.0,WEAP_FL_UNDERWATER,1,0.0,1500.0));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_sawedoff",64.0,768.0,WEAP_FL_NONE,8));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_tommygun",64.0,2000.0,WEAP_FL_NONE,13,200,1300));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_m14",64.0,2500.0,WEAP_FL_NONE,2));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_m16a1",64.0,2000.0,WEAP_FL_NONE|WEAP_FL_SECONDARY,13,200,800));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.5,"weapon_spanner",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,2));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_greasegun",100.0,2000.0,WEAP_FL_NONE,9));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_greasegun",0.0,2000.0,WEAP_FL_NONE,9));
     }    
 
     int numWeapons ()
