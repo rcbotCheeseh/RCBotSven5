@@ -63,7 +63,7 @@ final class CBotWeaponsInfo
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_gauss",0.0,2000.0,WEAP_FL_PRIMARY_EXPLOSIVE,100));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.5,"weapon_crowbar",0.0,100.0,WEAP_FL_MELEE|WEAP_FL_UNDERWATER,1));        
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_9mmhandgun",0.0,1500.0,WEAP_FL_UNDERWATER|WEAP_FL_SECONDARY,1,0.0,1500.0));
-        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_shotgun",64.0,768.0,WEAP_FL_NONE,WEAP_FL_SECONDARY,8,64.0,200.0));
+        m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_shotgun",64.0,768.0,WEAP_FL_NONE|WEAP_FL_SECONDARY,8,64.0,200.0));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_357",0.0,2000.0,WEAP_FL_NONE,7));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(0.9,"weapon_eagle",0.0,2000.0,WEAP_FL_NONE,6));
         m_pWeaponInfo.insertLast(CBotWeaponInfo(1.0,"weapon_9mmAR",0.0,2000.0,WEAP_FL_NONE,10));
