@@ -544,6 +544,8 @@ final class RCBot : BotManager::BaseBot
 		else 
 			message += "" + ((m_pPlayer.pev.velocity.Length()/m_fDesiredMoveSpeed)*100) + "%";
 
+		message += "\nNum Tasks: " + int(m_fNumTasks) + ", Failed: " + int(m_fNumTasksFailed);
+
 		return message;
 	}
 
@@ -1545,6 +1547,10 @@ case 	CLASS_BARNACLE	:*/
 		{
 			Vector vAttacker = UTIL_EntityOrigin(attacker);
 
+			if ( damageInfo.flDamage < 0.0 )
+				BotMessage("Heal?");
+			//BotMessage("Hurt!");
+
 			if ( isEntityVisible(attacker) )
 			{
 				TakeCover(vAttacker);
@@ -1706,9 +1712,10 @@ case 	CLASS_BARNACLE	:*/
 		
 	}
 	
-	int m_FailCount = 0;
+	float m_fNumTasks = 0;
+	float m_fNumTasksFailed = 0;
+	float m_fTaskFailTime = 0.0f;
 
-	float m_fNoTaskTime = 0.0f;
 	EHandle m_pBlocking = null; // blocking object
 
 	void setBlockingEntity ( CBaseEntity@ blockingEntity ) 
@@ -1853,8 +1860,9 @@ case 	CLASS_BARNACLE	:*/
 			return;
 
 		@m_pNextWpt = null;
-		m_fNoTaskTime = 0.0f;
-		m_FailCount = 0;
+		m_fTaskFailTime = g_Engine.time + 10.0f;
+		m_fNumTasks = 0;
+		m_fNumTasksFailed = 0;
 
 		m_pEnemiesVisible.clear();
 		m_flJumpPlatformTime = 0;
@@ -2267,40 +2275,53 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 		}
 	}
 
+	float m_fSuicideTime = 0.0f;
+
 	void suicide ()
 	{
-		m_fNextShout = g_Engine.time + 3.0f; // prevents bot from shouting medic
-		m_pPlayer.Killed(m_pPlayer.pev, 0);
+		if (m_fSuicideTime < g_Engine.time )
+		{
+			m_fNextShout = g_Engine.time + 3.0f; // prevents bot from shouting medic
+			m_pPlayer.Killed(m_pPlayer.pev, 0);
+			m_fSuicideTime = g_Engine.time + 10.0f;
+			BotMessage("suicide() " + m_pPlayer.pev.netname + ": tasks: " + m_fNumTasks + ", failed: " + m_fNumTasksFailed);
+		}
 	}
 
 	void DoTasks ()
 	{
 		m_iCurrentPriority = PRIORITY_TASK;
 
-		if ( m_fNoTaskTime < g_Engine.time) 
+		if ( m_fTaskFailTime < g_Engine.time) 
 		{
-			// five failed tasks in 10 seconds, kill myself!
-			m_fNoTaskTime = g_Engine.time + 10;
+			if ( m_fNumTasksFailed > 0 && m_fNumTasks > 0 )
+			{
+				float m_fFailRate = m_fNumTasksFailed/m_fNumTasks;
 
-			if ( m_FailCount > 5 )
-				suicide(); // kill myself! stuck with no tasks for too long!!!
-			
-			m_FailCount = 0;
+				if ( m_fFailRate > 0.9f ) // 90% of tasks have failed 
+				{
+					suicide(); // kill myself! stuck with no tasks for too long!!!
+					return;
+				}
+			}
 
-			return;
+			// check again in 30 sec
+			m_fTaskFailTime = g_Engine.time + 30;
 		}
 
 		if ( m_pCurrentSchedule !is null )
 		{
 			if ( m_pCurrentSchedule.execute(this) == SCHED_TASK_FAIL )
 			{
-				m_FailCount ++;
+				m_fNumTasksFailed += 1.0f;
 				@m_pCurrentSchedule = null;
 				//BotMessage("m_pCurrentSchedule.execute(this) == SCHED_TASK_FAIL");
 			}
 			else if ( m_pCurrentSchedule.numTasksRemaining() == 0 )
 			{
-				@m_pCurrentSchedule = null;		
+				@m_pCurrentSchedule = null;	
+				// reset failed count	
+				m_fNumTasksFailed = 0;
 				//BotMessage("m_pCurrentSchedule.numTasksRemaining() == 0");
 			}
 		}
@@ -2309,6 +2330,9 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 			if ( m_pDisableUtil.GetBool() == false )
 			{
 				@m_pCurrentSchedule = utils.execute(this);
+
+				if ( @m_pCurrentSchedule != null )
+					m_fNumTasks+= 1.0f; // new task
 			}
 		}
 
