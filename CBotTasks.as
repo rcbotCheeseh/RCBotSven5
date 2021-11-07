@@ -377,10 +377,10 @@ final class CFindAmmoTask : RCBotTask
         {
             // nothing to pick up -- maybe a resupply?
             @pent = UTIL_FindNearestEntity("func_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
-        if ( pent is null )
-            @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
-           if ( pent is null )
-            @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
+            if ( pent is null )
+                @pent = UTIL_FindNearestEntity("func_door",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
+            if ( pent is null )
+                @pent = UTIL_FindNearestEntity("func_rot_button",bot.m_pPlayer.EyePosition(),REACHABLE_PICKUP_RANGE,true,false);
 
             if ( pent !is null )
             {
@@ -1092,6 +1092,7 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
         addTask(CBotTaskFindCoverTask(bot,vHideFrom));
         // reload when arrive at cover point
         addTask(CBotButtonTask(IN_RELOAD));
+        addTask(CBotTaskWait(1.0f,vHideFrom));
     }
     
 }
@@ -2057,7 +2058,7 @@ class CBotHealPlayerUtil : CBotUtil
 
     bool canDo (RCBot@ bot)
     {
-        return (g_Engine.time > m_fNextDo) && (bot.m_pHeal.GetEntity() !is null) && bot.CanHeal(bot.m_pHeal.GetEntity());
+        return (g_Engine.time > m_fNextDo) && bot.m_pHeal.GetEntity() !is null && bot.CanHeal(bot.m_pHeal.GetEntity());
     }    
 
     RCBotSchedule@ execute ( RCBot@ bot )

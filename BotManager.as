@@ -44,6 +44,8 @@ final class RCBot : BotManager::BaseBot
 
 	BotEnemiesVisible m_pEnemiesVisible;
 
+	CBaseEntity@ m_pNearestTrain = null; // experimental - i.e. not yet implemented!
+
 	CBotVisibles@ m_pVisibles;
 
 	CBotUtilities@ utils;
@@ -1703,7 +1705,10 @@ case 	CLASS_BARNACLE	:*/
 		
 		
 	}
+	
+	int m_FailCount = 0;
 
+	float m_fNoTaskTime = 0.0f;
 	EHandle m_pBlocking = null; // blocking object
 
 	void setBlockingEntity ( CBaseEntity@ blockingEntity ) 
@@ -1848,6 +1853,8 @@ case 	CLASS_BARNACLE	:*/
 			return;
 
 		@m_pNextWpt = null;
+		m_fNoTaskTime = 0.0f;
+		m_FailCount = 0;
 
 		m_pEnemiesVisible.clear();
 		m_flJumpPlatformTime = 0;
@@ -2260,20 +2267,40 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 		}
 	}
 
+	void suicide ()
+	{
+		m_fNextShout = g_Engine.time + 3.0f; // prevents bot from shouting medic
+		m_pPlayer.Killed(m_pPlayer.pev, 0);
+	}
+
 	void DoTasks ()
 	{
 		m_iCurrentPriority = PRIORITY_TASK;
+
+		if ( m_fNoTaskTime < g_Engine.time) 
+		{
+			// five failed tasks in 10 seconds, kill myself!
+			m_fNoTaskTime = g_Engine.time + 10;
+
+			if ( m_FailCount > 5 )
+				suicide(); // kill myself! stuck with no tasks for too long!!!
+			
+			m_FailCount = 0;
+
+			return;
+		}
 
 		if ( m_pCurrentSchedule !is null )
 		{
 			if ( m_pCurrentSchedule.execute(this) == SCHED_TASK_FAIL )
 			{
+				m_FailCount ++;
 				@m_pCurrentSchedule = null;
 				//BotMessage("m_pCurrentSchedule.execute(this) == SCHED_TASK_FAIL");
 			}
 			else if ( m_pCurrentSchedule.numTasksRemaining() == 0 )
 			{
-				@m_pCurrentSchedule = null;			
+				@m_pCurrentSchedule = null;		
 				//BotMessage("m_pCurrentSchedule.numTasksRemaining() == 0");
 			}
 		}
