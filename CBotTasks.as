@@ -1660,6 +1660,7 @@ class CBotTaskHealPlayer : RCBotTask
 
         // stop bot from attacking enemies whilst healing
         bot.ceaseFire(true);
+        bot.setIgnoreAvoid(pent);
 
         vHeal = pent.EyePosition();
 
@@ -1759,6 +1760,7 @@ ret += "State_Role_OnTop_MoveToGoal)";
      {
          CBasePlayer@ groundPlayer = UTIL_FindNearestPlayer(m_vGround,64,bot.m_pPlayer,true,false,FL_ONGROUND&FL_DUCKING);
 // search for a player near the ground point, ignoring me
+        bot.setIgnoreAvoid(groundPlayer);
             
          switch ( State )
          {
@@ -2189,6 +2191,8 @@ class CBotRevivePlayerUtil : CBotUtil
 
         if ( pHeal is null )
             return null;
+
+        bot.setIgnoreAvoid(pHeal);
 
         // Vector vecLocation, CBasePlayer@ player = null, int iIgnore = -1, float minDistance = 512.0f, bool bCheckVisible = true, bool bIgnoreUnreachable = true )
         int iWpt = g_Waypoints.getNearestWaypointIndex(pHeal.EyePosition(),pHeal,-1,400.0f,true,false); 

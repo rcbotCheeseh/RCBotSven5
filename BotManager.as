@@ -19,6 +19,7 @@ const int PRIORITY_LISTEN = 2;
 const int PRIORITY_LAST_SEE_ENEMY = 3;
 const int PRIORITY_TASK = 4;
 const int PRIORITY_HURT = 5;
+const int PRIORITY_STUCK = 5;
 const int PRIORITY_ATTACK = 6;
 const int PRIORITY_LADDER = 7;
 const int PRIORITY_OVERRIDE = 8;
@@ -1891,6 +1892,16 @@ case 	CLASS_BARNACLE	:*/
 		m_pHeal = null;
 
 	}
+
+	EHandle ignoreAvoid = null;
+
+	// set ignores for things like healing players/human tower etc 
+	// we want to get closer, not to avoid them
+	void setIgnoreAvoid ( CBaseEntity@ ent )
+	{
+		ignoreAvoid = ent;
+	}
+
 	// check if I can avoid this
 	bool CanAvoid ( CBaseEntity@ ent )
 	{
@@ -1899,6 +1910,8 @@ case 	CLASS_BARNACLE	:*/
 		if ( distanceFrom(ent) > 200 ) // I can't avoid anything outside this distance
 			return false;
 		if ( ent == m_pPlayer ) // I can't avoid myself
+			return false;
+		if ( ent == ignoreAvoid.GetEntity() )
 			return false;
 		if ( m_pEnemy.GetEntity() is ent ) // I should probably avoid my enemy so it doesn't hit me
 		{
@@ -1960,11 +1973,12 @@ case 	CLASS_BARNACLE	:*/
 
 	void DoMove ()
 	{
+		bool OnLadder = IsOnLadder();
 		//if ( navigator !is null )
 		//	navigator.execute(this);
 		float fStuckSpeed = 0.1*m_fDesiredMoveSpeed;
 
-		if ( IsOnLadder() || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
+		if ( OnLadder || ((m_pPlayer.pev.flags & FL_DUCKING) == FL_DUCKING) )
 			fStuckSpeed /= 2;
 		else if ( m_pPlayer.pev.waterlevel > 1 )
 			fStuckSpeed /= 2;		
@@ -1972,32 +1986,32 @@ case 	CLASS_BARNACLE	:*/
 		else if ( IsHoldingMinigun() )
 			fStuckSpeed /= 3;
 
-		// for courch jump
+		// for crouch jump
 		if ( m_flJumpTime + 0.5f > g_Engine.time )
 		{
-			if ( !IsOnLadder() )
+			if ( !OnLadder )
 				PressButton(IN_DUCK);
 		}
 
-		if (  !m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > fStuckSpeed) )
+		if ( (!m_bMoveToValid || (m_pPlayer.pev.velocity.Length() > fStuckSpeed)) )
 		{
+			m_fStuckJumpTime = g_Engine.time + Math.RandomFloat(0.5f,1.5f);
 
-			if ( m_flStuckTime == 0 )
-				m_fStuckJumpTime = Math.RandomFloat(1.0f,4.0f);
-
-			m_flStuckTime = g_Engine.time;
-
+			if ( m_bMoveToValid )
+				m_fNumTasksFailed = 0; // not stuck
 		}
-		// stuck for more than 3 sec
-		else if ( (m_flStuckTime > 0) && (g_Engine.time - m_flStuckTime) > m_fStuckJumpTime )
+		else
 		{
-			Jump();
-			m_flStuckTime = 0;
-			
-			// reset last enemy could cause lok issues
-			m_pLastEnemy = null;
-			m_bLastSeeEnemyValid = false;
-		}		
+			// stuck
+			setLookAt(m_vMoveTo,PRIORITY_STUCK);
+
+			if ( m_fStuckJumpTime < g_Engine.time )
+			{
+				m_fStuckJumpTime = g_Engine.time + Math.RandomFloat(1.0f,2.0f);
+				Jump();
+			}
+			// look at waypoint
+		}
 
 		DoJump();
 	}
