@@ -1129,6 +1129,7 @@ case 	CLASS_BARNACLE	:*/
 			{			
 				// need this
 				addToSchedule(CLongjumpTask(m_pNextWpt.m_vOrigin));
+				BotMessage("Long JUmp!\r\n");	
 			}
 			else// just jump --- and fall !!!
 			{
@@ -1719,9 +1720,29 @@ case 	CLASS_BARNACLE	:*/
 
 	EHandle m_pBlocking = null; // blocking object
 
+	float m_fHandleBlockedByPlayer = 0;
+
 	void setBlockingEntity ( CBaseEntity@ blockingEntity ) 
 	{
 		m_pBlocking = blockingEntity;
+
+		if ( blockingEntity !is null )
+		{
+			if ( blockingEntity.pev.flags & FL_CLIENT == FL_CLIENT )
+			{
+				// a player is blocking the way
+				// decide whether to move 
+				setAvoiding(m_pBlocking);
+				/*
+				if ( m_fHandleBlockedByPlayer < g_Engine.time )
+				{
+					m_fHandleBlockedByPlayer = g_Engine.time + RandomFloat(10.0f,20.0f);
+
+					
+				}*/
+			}
+
+		}
 	}
 
 	void DoWeapons ()
@@ -1861,6 +1882,7 @@ case 	CLASS_BARNACLE	:*/
 			return;
 
 		@m_pNextWpt = null;
+		m_fClearAvoidTime = 0.0;
 		m_fTaskFailTime = g_Engine.time + 10.0f;
 		m_fNumTasks = 0;
 		m_fNumTasksFailed = 0;
@@ -1894,17 +1916,24 @@ case 	CLASS_BARNACLE	:*/
 	}
 
 	EHandle ignoreAvoid = null;
+	float m_fClearAvoidTime = 0;
 
 	// set ignores for things like healing players/human tower etc 
 	// we want to get closer, not to avoid them
 	void setIgnoreAvoid ( CBaseEntity@ ent )
 	{
 		ignoreAvoid = ent;
+		m_fClearAvoidTime = g_Engine.time + 1.0f;
 	}
 
 	// check if I can avoid this
 	bool CanAvoid ( CBaseEntity@ ent )
 	{
+		if ( m_fClearAvoidTime > 0 && m_fClearAvoidTime < g_Engine.time )
+		{
+			m_fClearAvoidTime = 0;
+			ignoreAvoid = null;
+		}
 		if ( IsOnLadder() ) // I won't avoid while I am on a ladder
 			return false;
 		if ( distanceFrom(ent) > 200 ) // I can't avoid anything outside this distance
@@ -2134,6 +2163,35 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 		}
 	}
 
+	Vector getAimVector ( CBaseEntity@ pEntity )
+	{
+		Vector ret;
+
+		int visibleFlags = m_pVisibles.isVisible(pEntity.entindex());
+
+		if ( (visibleFlags & VIS_FL_HEAD) == VIS_FL_HEAD )
+			ret = UTIL_EyePosition(pEntity);
+		else
+			ret = UTIL_EntityOrigin(pEntity);
+
+		CBotWeapon@ pCurrentWeapon = m_pWeapons.getCurrentWeapon();
+
+		if ( pCurrentWeapon !is null )
+		{
+			if ( pCurrentWeapon.IsRPG() )
+			{
+				float distance = distanceFrom(pEntity);
+				float rocketspeed = 1000;
+
+				float time = distance/rocketspeed;
+
+				ret = ret + (pEntity.pev.velocity*time);
+			}
+		}
+
+		return ret;
+	}
+
 	/**
 	 * DoLook()
 	 *
@@ -2145,10 +2203,8 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 
 		if ( pEnemy !is null )
 		{						
-			if ( (m_pVisibles.isVisible(pEnemy.entindex()) & VIS_FL_HEAD) == VIS_FL_HEAD )
-				setLookAt(UTIL_EyePosition(pEnemy),PRIORITY_ATTACK);
-			else
-				setLookAt(UTIL_EntityOrigin(pEnemy),PRIORITY_ATTACK);
+			setLookAt(getAimVector(pEnemy),PRIORITY_ATTACK);
+
 
 			//BotMessage("LOOKING AT ENEMY!!!\n");
 		}
@@ -2254,15 +2310,17 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 			else if ( pEnemy !is null && pCurrentWeapon !is null )
 			{
 				float fDist = distanceFrom(pEnemy);
-
+				CBaseEntity@ enemy = m_pEnemy.GetEntity();
 				bool bPressAttack1 = pCurrentWeapon.shouldFire();
 				bool bPressAttack2 = Math.RandomLong(0,100) < 25 && pCurrentWeapon.CanUseSecondary() && pCurrentWeapon.secondaryWithinRange(fDist);
 			
 				CBaseEntity@ groundEntity = g_EntityFuncs.Instance(m_pPlayer.pev.groundentity);		
+				Vector entityOrigin = UTIL_EntityOrigin(enemy);
 
 				if ( pCurrentWeapon !is null )
 				{
-					if ( /*pCurrentWeapon.IsMelee() && */ groundEntity is m_pEnemy.GetEntity() )
+					// I am using a melee weapon and enemy is below me, I need  to crouch to hit it
+					if ( pCurrentWeapon.IsMelee() && (groundEntity is m_pEnemy.GetEntity()) || (entityOrigin.z < (m_pPlayer.pev.origin.z - 32)) )
 						PressButton(IN_DUCK);
 
 					if ( pCurrentWeapon.IsSniperRifle() && !pCurrentWeapon.IsZoomed() )

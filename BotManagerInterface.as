@@ -472,7 +472,7 @@ namespace BotManager
 
 					vComp = vComp * vAvoidComp.Length();
 
-					vMoveTo = m_pPlayer.pev.origin + vComp + (vCross*32);				
+					vMoveTo = m_pPlayer.pev.origin + vComp + (vCross*48);				
 
 					if ( m_fAvoidChangeTime < g_Engine.time )
 					{

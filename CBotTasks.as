@@ -1092,7 +1092,7 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
         addTask(CBotTaskFindCoverTask(bot,vHideFrom));
         // reload when arrive at cover point
         addTask(CBotButtonTask(IN_RELOAD));
-        addTask(CBotTaskWait(1.0f,vHideFrom));
+        addTask(CBotTaskWait(Math.RandomFloat(1.0f,2.0f),vHideFrom));
     }
     
 }
@@ -2288,7 +2288,7 @@ class CCheckoutNoiseUtil : CBotUtil
         {
             RCBotSchedule@ sched = RCBotSchedule();
             sched.addTask(CFindPathTask(bot,iRandomGoal));
-            sched.addTask(CBotTaskWait(1.0f,bot.m_vNoiseOrigin));
+            sched.addTask(CBotTaskWait(Math.RandomFloat(0.8f,1.2f),bot.m_vNoiseOrigin));
 
             return sched;
         }

@@ -457,9 +457,11 @@ Vector UTIL_GrenadeEndPoint ( CBaseEntity@ grenade )
 		vNext = vPrev + vVelocity;
 
 		tr = UTIL_TraceLine(vPrev,vNext);
+
+		BotMessage("UTIL_GrenadeEndPoint z = " + tr.vecEndPos.z );
 	}
 
-	return vNext;
+	return tr.vecEndPos + Vector(0,0,16);
 }
 
 CBaseEntity@ UTIL_FindButton ( CBaseToggle@ door, CBaseEntity@ pPlayer )

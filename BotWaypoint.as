@@ -23,6 +23,7 @@ const int W_FL_IMPORTANT	= (1<<11);/* flag position (or hostage or president) */
 const int W_FL_BARNEY  = (1<<12);
 const int W_FL_DEFEND_ZONE  =  (1<<13);
 const int W_FL_AIMING	= (1<<14); /* aiming waypoint */
+const int W_FL_VEHICLE = (1<<15); /* Experimental */
 const int W_FL_CROUCHJUMP = 	(1<<16); // }	
 const int W_FL_WAIT = (1<<17);/* wait for lift to be down before approaching this waypoint */
 const int W_FL_PAIN	= (1<<18);
@@ -419,10 +420,13 @@ class CWaypoint
 	Vector m_vOrigin;
 	// flags such as Jump, crouch etc
 	int m_iFlags;
+
+	EHandle m_pAttachment; // attachment such as a vehicle - experimental
 	
 	CWaypoint ()
 	{
 		m_iFlags = 0;
+		m_pAttachment = null;
 	}
 
 	bool isDeleted ()
@@ -488,7 +492,6 @@ class CWaypoint
 
 	void draw ( CBasePlayer@ pPlayer, bool drawPaths )
 	{
-
 		drawBeam(pPlayer,m_vOrigin-Vector(0,0,32),m_vOrigin+Vector(0,0,32),g_WaypointTypes.getColour(m_iFlags));
 
 		if ( drawPaths )
@@ -502,7 +505,6 @@ class CWaypoint
 		}
 	}
 
-	
 	float distanceFrom ( Vector vecLocation )
 	{
 		return (m_vOrigin - vecLocation).Length();
