@@ -287,6 +287,8 @@ namespace BotManager
 		int m_iGoalWaypoint = -1;
 		// for reference only!!!
 		int m_iCurrentWaypoint = -1;
+	// for reference only!!!
+		int m_iPreviousWaypoint = -1;
 
 		// nothing
 		void hurt ( DamageInfo@ damageInfo )
@@ -561,6 +563,8 @@ namespace BotManager
 			return m_pCreateBotFn( pPlayer );
 		}
 
+		/** This is best fitness for BOT CAM. If the bot has an enemy then the BOT CAM will
+		    be more likely to watch that bot for example. */
 		float getBotFitness ( RCBot@ bot )
 		{
 
@@ -578,7 +582,8 @@ namespace BotManager
 
 				return fBotFitness;
 		}
-
+		/** This function is for BOT CAM. If the bot has an enemy then the BOT CAM will
+		    be more likely to watch that bot for example. */
 		RCBot@ getBestBot ()
 		{
 			BaseBot@ ret = null;
@@ -695,12 +700,14 @@ namespace BotManager
 
 		void PluginInit()
 		{
+			float ThinkTime = 0.1;
+
 			if( m_bInitialized )
 				return;
 			
 			m_bInitialized = true;
 			g_MapInit = false;
-			
+
 			g_Hooks.RegisterHook( Hooks::Player::PlayerTakeDamage, PlayerTakeDamageHook( this.PlayerTakeDamage) );
 			g_Hooks.RegisterHook( Hooks::Player::ClientSay, ClientSayHook( this.ClientSay) );
 			g_Hooks.RegisterHook( Hooks::Game::MapChange, MapChangeHook( this.MapChange ) );
@@ -708,7 +715,7 @@ namespace BotManager
 			g_Hooks.RegisterHook( Hooks::Player::PlayerKilled, PlayerKilledHook ( this.PlayerKilled) );
 
 			//g_Hooks.RegisterHook( Hooks::CEntityFuncs, DispatchKeyValueHook(this.DispatchKeyValue) );
-			@m_pScheduledFunction = g_Scheduler.SetInterval( @this, "Think", 0.1 );
+			@m_pScheduledFunction = g_Scheduler.SetInterval( @this, "Think", ThinkTime );
 			@m_pWaypointDisplay = g_Scheduler.SetInterval(@this, "WaypointDisplay", 1);
 
 			ReadConfig( "scripts/plugins/BotManager/config/config.ini" );

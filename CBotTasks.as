@@ -243,11 +243,13 @@ final class CBotTaskWait : RCBotTask
      float m_fWaitTime = 0.0f;
      float m_fWait = 0.0f;
      Vector m_vFace;
+     bool m_bForceFacing = false;
 
-     CBotTaskWait ( float fWaitTime, Vector vface )
+     CBotTaskWait ( float fWaitTime, Vector vface, bool forceFacing = true )
      {
          m_fWait = fWaitTime;
          m_vFace = vface;
+         m_bForceFacing = forceFacing;
      }
 
     string DebugString ()
@@ -262,8 +264,11 @@ final class CBotTaskWait : RCBotTask
         else if ( m_fWaitTime < g_Engine.time )
             Complete();
 
-        //UTIL_PrintVector("m_vFace",m_vFace);
-        bot.setLookAt(m_vFace,PRIORITY_OVERRIDE+3);
+        if ( m_bForceFacing )
+        {
+            //UTIL_PrintVector("m_vFace",m_vFace);
+            bot.setLookAt(m_vFace,PRIORITY_OVERRIDE+3);
+        }
 
         bot.StopMoving();
     }
@@ -573,6 +578,105 @@ final class CPickupItemTask : RCBotTask
                 bot.PressButton(IN_USE);
 
             Complete();
+        }
+    }
+}
+
+// This task is to provide a bit better attack for bots
+// so that they don't just go through enemy lines
+final class CAttackEnemyTask : RCBotTask 
+{
+    int m_iState = 0;
+    EHandle m_pEnemy;
+    Vector m_vSeenPosition;
+    Vector m_vPreviousPosition;
+    float m_fTimeRemain;
+
+    CAttackEnemyTask ( CBaseEntity@ pEnemy, Vector position, Vector previousPosition )
+    {
+        m_fTimeRemain = g_Engine.time + Math.RandomFloat(10.0,20.0);
+        m_pEnemy = pEnemy;
+        m_vPreviousPosition = previousPosition;
+        m_vSeenPosition = position; 
+    }
+
+    string DebugString ()
+    {
+        return "CAttackEnemyTask";
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        if ( bot.getEnemy() is null )
+        {
+            Complete();
+            return;
+        }
+
+        if ( m_fTimeRemain < g_Engine.time )
+        {
+            Complete();
+            return;
+        }
+
+	    CBotWeapon@ pCurrentWeapon = bot.getCurrentWeapon();
+
+        if ( pCurrentWeapon !is null )
+        {
+            if ( pCurrentWeapon.IsMelee() )
+            {
+                Complete();
+                return;
+            }
+        }
+        else 
+        {
+            Complete();
+            return;
+        }
+
+        switch ( m_iState )
+        {
+            case 0:
+                // In seen position, decide to move to previous position
+                if ( bot.HealthPercent() < 0.5 || pCurrentWeapon.needToReload(bot) )
+                {
+                    // move to previous position
+                    m_iState = 1;
+                }
+                else 
+                    bot.StopMoving();
+            break;
+            case 1:
+                // Move to previous position
+                if ( bot.distanceFrom(m_vPreviousPosition) > 40 )
+                    bot.setMove(m_vPreviousPosition);
+                else 
+                    m_iState = 2;
+
+                if ( pCurrentWeapon.needToReload(bot) )
+                    bot.PressButton(IN_RELOAD);
+
+            break;
+            case 2:
+                bot.PressButton(IN_DUCK);
+                
+                // In previous position, decide to move to seen position
+                if ( bot.HealthPercent() > 0.5 || !pCurrentWeapon.needToReload(bot) )
+                {
+                    // move to previous position
+                    m_iState = 3;
+                }
+                else 
+                    bot.StopMoving();
+            break;
+            case 3:
+                // Move to seen position
+                if ( bot.distanceFrom(m_vSeenPosition) > 40 )
+                    bot.setMove(m_vSeenPosition);
+                else
+                    m_iState = 1;
+            break;
         }
     }
 }
@@ -1092,7 +1196,7 @@ class CBotTaskFindCoverSchedule : RCBotSchedule
         addTask(CBotTaskFindCoverTask(bot,vHideFrom));
         // reload when arrive at cover point
         addTask(CBotButtonTask(IN_RELOAD));
-        addTask(CBotTaskWait(Math.RandomFloat(1.0f,2.0f),vHideFrom));
+        addTask(CBotTaskWait(Math.RandomFloat(1.0f,2.0f),vHideFrom,false));
     }
     
 }
@@ -2040,6 +2144,47 @@ abstract class CBotUtil
     }
 }
 
+class CBotAttackEnemyUtil : CBotUtil
+{
+    float calculateUtility ( RCBot@ bot )
+    {        
+        // if 2 enemies visible - this will be just under 1.0
+        return 0.4*bot.m_pEnemiesVisible.EnemiesVisible();
+    }
+
+    string DebugMessage ()
+    {
+        return "CBotAttackEnemyUtil";
+    }
+
+    bool canDo(RCBot@ bot)
+    {
+        if ( (g_Engine.time > m_fNextDo) && bot.hasEnemy() && bot.previousWaypointValid() )
+        {
+            CBotWeapon@ weapon = bot.getCurrentWeapon();
+
+            if ( weapon !is null )
+            {
+                if ( weapon.IsMelee() )
+                    return false;
+
+                return (bot.HealthPercent() > 0.5) && !weapon.needToReload(bot);
+            }
+        }
+
+        return false;
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        RCBotSchedule@ sched = RCBotSchedule();
+
+        sched.addTask(CAttackEnemyTask(bot.getEnemy(),bot.getOrigin(),bot.previousWaypointPosition()));
+
+        return sched;
+    }
+}
+
 /**
  * CBotHealPlayerUtil
  *
@@ -2413,9 +2558,13 @@ class CBotGetArmorUtil : CBotUtil
    
     float calculateUtility ( RCBot@ bot )
     {
-        float healthPercent = float(bot.m_pPlayer.pev.armorvalue) / bot.m_pPlayer.pev.armortype;
+        if ( bot.m_pPlayer.pev.armortype > 0 )
+        {
+            float healthPercent = float(bot.m_pPlayer.pev.armorvalue) / bot.m_pPlayer.pev.armortype;
 
-        return 0.75f*(1.0f - healthPercent);
+            return 0.75f*(1.0f - healthPercent);
+        }
+        return 0;
     }
 
     RCBotSchedule@ execute ( RCBot@ bot )
@@ -2803,6 +2952,7 @@ class CBotUtilities
             m_Utils.insertLast(CCheckoutNoiseUtil());
             m_Utils.insertLast(CBotThrowGrenadeUtil());
             m_Utils.insertLast(CBotFindCoverUtil());
+            m_Utils.insertLast(CBotAttackEnemyUtil());
     }
 
     void reset ()

@@ -479,6 +479,23 @@ final class RCBot : BotManager::BaseBot
 
 	}
 
+	bool previousWaypointValid ()
+	{
+		return m_iPreviousWaypoint != -1;
+	}
+
+	Vector previousWaypointPosition ()
+	{
+		return g_Waypoints.getWaypointAtIndex(m_iPreviousWaypoint).m_vOrigin;
+	}
+
+
+	Vector getOrigin ()
+	{
+		return m_pPlayer.pev.origin;
+	}
+
+
 	string GetDebugMessage ()
 	{
 		string task = "null";
@@ -735,6 +752,7 @@ case 	CLASS_PLAYER_BIOWEAPON	:
 	return false; // ignore
 case 	CLASS_PLAYER_ALLY	:
 case 	CLASS_HUMAN_PASSIVE	:
+	
 	return false; // ally
 case 	CLASS_INSECT	:
 if ( szClassname == "monster_leech" )
@@ -768,45 +786,9 @@ case 	CLASS_BARNACLE	:
 		}
 return true;
 		}
-		/*switch ( entity.Classify() )
-		{
-case 	CLASS_FORCE_NONE	:
-case 	CLASS_PLAYER_ALLY	:
-case 	CLASS_NONE	:
-case 	CLASS_PLAYER	:
-case 	CLASS_HUMAN_PASSIVE	:
-case 	CLASS_ALIEN_PASSIVE	:
-case 	CLASS_INSECT	:
-case 	CLASS_PLAYER_BIOWEAPON	:
-case 	CLASS_ALIEN_BIOWEAPON	:*/
-
- 		
-		/*return false;
-case 	CLASS_MACHINE	:
-case 	CLASS_HUMAN_MILITARY	:
-case 	CLASS_ALIEN_MILITARY	:
-case 	CLASS_ALIEN_MONSTER	:
-case 	CLASS_ALIEN_PREY	:
-case 	CLASS_ALIEN_PREDATOR	:
-case 	CLASS_XRACE_PITDRONE	:
-case 	CLASS_XRACE_SHOCK	:
-case 	CLASS_BARNACLE	:*/
-
-	/*	if ( szClassname == "monster_tentacle" ) // tentacle things dont die
-			return false;
-
-
-		return !entity.IsPlayerAlly();*/
-
 			}
 
 			return false;
-
-		/*default:
-		break;
-		}
-
-		return false;*/
 	}
 
 	bool hasEnemy ()
@@ -1371,6 +1353,11 @@ case 	CLASS_BARNACLE	:*/
 		return (m_flHearNoiseTime > g_Engine.time);
 	}
 
+	CBotWeapon@ getCurrentWeapon ()
+	{
+		return m_pWeapons.getCurrentWeapon();
+	}
+
 	bool isCurrentWeapon ( CBotWeapon@ weap )
 	{
 		return m_pWeapons.m_pCurrentWeapon is weap;
@@ -1417,7 +1404,6 @@ case 	CLASS_BARNACLE	:*/
 
 		if ( medikit.getPrimaryAmmo(this) < 50 )
 			return false;
-
 	
 		if ( (entity.pev.flags & FL_MONSTER) == FL_MONSTER )
 		{
@@ -2368,12 +2354,15 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 		{
 			if ( m_fNumTasksFailed > 0 && m_fNumTasks > 0 )
 			{
-				float m_fFailRate = m_fNumTasksFailed/m_fNumTasks;
-
-				if ( m_fFailRate > 0.9f ) // 90% of tasks have failed 
+				if ( m_pBotSuicide.GetBool() == true )
 				{
-					suicide(); // kill myself! stuck with no tasks for too long!!!
-					return;
+					float m_fFailRate = m_fNumTasksFailed/m_fNumTasks;
+
+					if ( m_fFailRate > 0.9f ) // 90% of tasks have failed 
+					{
+						suicide(); // kill myself! stuck with no tasks for too long!!!
+						return;
+					}
 				}
 			}
 

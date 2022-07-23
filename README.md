@@ -40,6 +40,8 @@ In the developer console (https://developer.valvesoftware.com/wiki/Developer_Con
 
 Alternatively you may set a bot quota to add bots automatically. To do this, edit "config.ini" in the scripts/BotManager/config folder
 
+    as_command rcbot.quota [number of bots]
+	
 set quota=0 to another number (i.e. to the number of bots).
 
 If bots do not move ensure that rcw (Waypoints) exist for the map in the rcw folder!!!
@@ -70,18 +72,6 @@ show waypoints with
 similarly, put them back off with
   
     as_command rcbot.waypoint_off
-    
-# Auto waypointing
-
-auto waypointing adds waypoints whilst you run around a map. It can create jump waypoints, crouch waypoints, ladder waypoints and waypoints round corners.
-
-Enable auto waypointing with the command 
-
-    as_command rcbot.waypoint_auto
-    
-Disable auto waypointing with the command
-
-    as_command rcbot.waypoint_auto off
 
 # Adding a waypoint
 
@@ -130,6 +120,7 @@ then go to the second waypoint and use the command:
 # Waypoint Types
 
     Waypoint type	Usage										Implementation status
+	"water"	bots will only go here if there is water (useful for moving water)
     "wait_noplayer"	bots wait for a player to pass before going through				OK
     "scientist"	A scientist is needed to complete the important waypoint			OK
     "crouch"	Put where bot needs to crouch (auto)						OK
@@ -161,7 +152,7 @@ then go to the second waypoint and use the command:
     "humantower"	Bots crouch and wait for players to jump on them then stand. 
     			Otherwise will jump on crouching players.					OK
     "unreachable"	Used for visibility only							OK
-    "pushable"	Coming soon									Unimplemented
+    "pushable"	limited functionality
     "grenthrow"	Coming soon									Unimplemented
 
 # Giving a waypoint a type
@@ -231,12 +222,25 @@ Many waypoints have been converted from RCBot 1, however some waypoint types now
     3. The 'wait lift' waypoint is now 'wait'
     4. Ladder waypoints aren't used, but bots can still climb ladders without the need for ladder waypoints. Just make sure the path is slightly angled so that bots do not look in the wrong direction going up the ladder.
     
+# Extra waypoint commands
+
+	as_command rcbot.waypoint_cut	(deletes but rememebers waypoint type for paste)
+	as_command rcbot.waypoint_copy	(rememebers waypoint type)
+	as_command rcbot.waypoint_paste (pastes remembered waypoint type at current location)
+	as_command rcbot.waypoint_move1 (remembers waypoint type and paths and deletes waypoint)
+	as_command rcbot.waypoint_move2 (moves rememebered waypoint in 'move1' and pastes it at current location)
+	
 # Commands
 
-    visrevs      (number of visible checks every 0.1 sec - reduce to increase CPU performance but bots' reaction time will be reduced)
-    navrevs      (number of paths to check every 0.1 sec - reduce to increase CPU performance but bots' pathfinding time will be increased)
-    heal_npc     (set to '0' to disable bots healing NPCs - default is '1')
-    revive_npc   (set to '0' to disable bots reviving NPCs - default is '1')
+    as_command rcbot.visrevs      (number of visible checks every 0.1 sec - reduce to increase CPU performance but bots' reaction time will be reduced)
+    as_command rcbot.navrevs      (number of paths to check every 0.1 sec - reduce to increase CPU performance but bots' pathfinding time will be increased)
+    as_command rcbot.heal_npc     (set to '0' to disable bots healing NPCs - default is '1')
+    as_command rcbot.revive_npc   (set to '0' to disable bots reviving NPCs - default is '1')
+    as_command rcbot.suicide		(0 = disable bots suicide if they think they get stuck)
+	as_command rcbot.disable_util	(1 = disable bots doing anything)
+	as_command rcbot.belief_mult	(extra cost given to paths of danger, default = 400)
+	as_command rcbot.dont_shoot		(1 = bots dont shoot)
+	as_command rcbot.use_belief		(0 = disable extra cost on dangerous paths)
 
 # cheats
 
@@ -248,7 +252,8 @@ sometimes you need cheats during debugging to make things easier, some are below
     as_command rcbot.notouch                       (puts player into observer mode, ensure survival mode is disabled)
     as_command rcbot.explo [magnitude]             (creates an explosion to kill of bosses quickly)
     as_command rcbot.teleport_wpt [waypoint id]    (teleports player to waypoint ID)
-    
+    as_command rcbot.teleport_set				   (sets teleport position)
+	as_command rcbot.teleport [player name]		   (teleports you or player with name to set position)
 # Bot cam
 
 There is a bot camera that the listen player can sit back and watch, which follows bots in third person. 

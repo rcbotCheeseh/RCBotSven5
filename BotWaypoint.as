@@ -1902,6 +1902,7 @@ final class RCBotNavigator
 	float m_fNextTimeout;
 
 	int m_iCurrentWaypoint = -1;
+	int m_iPreviousWaypoint = -1;
 
 	array<AStarNode> paths(MAX_WAYPOINTS);
 	AStarNode@ curr;
@@ -1939,7 +1940,7 @@ final class RCBotNavigator
 	RCBotNavigator ( RCBot@ bot , int iGoalWpt, CBaseEntity@ pTarget = null )
 	{
 		m_pTarget = pTarget;
-		bot.m_iCurrentWaypoint = m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer,bot.m_iLastFailedWaypoint,512.0f,true,false);
+		bot.m_iPreviousWaypoint = m_iPreviousWaypoint = bot.m_iCurrentWaypoint = m_iCurrentWaypoint = iStart = g_Waypoints.getNearestWaypointIndex(bot.m_pPlayer.pev.origin, bot.m_pPlayer,bot.m_iLastFailedWaypoint,512.0f,true,false);
 
 		UTIL_DebugMsg(bot.m_pPlayer,"m_iCurrentWaypoint == " + m_iCurrentWaypoint,DEBUG_NAV);
 		m_fNextTimeout = 0;
@@ -1989,6 +1990,12 @@ final class RCBotNavigator
 			UTIL_DebugMsg(bot.m_pPlayer,"m_currentRoute.length () == 0",DEBUG_NAV);
 			state = NavigatorState_Fail;
 			return;
+		}
+
+		if ( m_iCurrentWaypoint != m_currentRoute[0] )
+		{
+			bot.m_iPreviousWaypoint  = m_iPreviousWaypoint = m_iCurrentWaypoint;
+			
 		}
 
 		bot.m_iCurrentWaypoint = m_iCurrentWaypoint = m_currentRoute[0];

@@ -59,6 +59,7 @@ CCVar@ m_pUseBelief;
 CCVar@ m_pBeliefMultiplier;
 CCVar@ m_pWPAutoPathDist;
 CCVar@ m_pDisableUtil;
+CCVar@ m_pBotSuicide;
 
 // some globals below
 int g_ScriptEntityOffset = 0;	// used by script - entity index in script is offset by this value, default is number of max clients
@@ -170,7 +171,7 @@ void PluginInit()
 	@m_pBeliefMultiplier = CCVar("belief_mult",400,"belief cost multiplier", ConCommandFlag::AdminOnly);
 	@m_pWPAutoPathDist = CCVar("autopath_dist",512,"Distance to auto add paths to waypoints", ConCommandFlag::AdminOnly);
 	@m_pDisableUtil = CCVar("disable_util", 0, "Disable bot's utility function, debug only", ConCommandFlag::AdminOnly);
-
+	@m_pBotSuicide = CCVar("suicide",1,"Allow bots ability to suicide if they get stuck",ConCommandFlag::AdminOnly);
 	g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
@@ -858,6 +859,7 @@ void PathWaypoint_RemovePathsTo ( const CCommand@ args )
 	}
 
 }
+
 // ------------------------------------
 // COMMANDS - 	end
 // ------------------------------------
