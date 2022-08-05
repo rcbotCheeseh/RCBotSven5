@@ -2201,149 +2201,159 @@ final class RCBotNavigator
 
 	array<int> m_currentRoute = {};
 
+	// run navigator tasks
 	int run (RCBot@ bot)
 	{		
 		switch ( state )
 		{
 			case NavigatorState_InProgress:
 			{
-						int iLoops = 0;
-		int iPath;
+				int iLoops = 0;
+				int iPath;
 
-						iMaxLoops = m_pNavRevs.GetInt();
+				iMaxLoops = m_pNavRevs.GetInt();
 
-		//BotMessage("Navigator State IN_PROGRESS...\n");
+//BotMessage("Navigator State IN_PROGRESS...\n");
 
-						while ( state == NavigatorState_InProgress )
+				while ( state == NavigatorState_InProgress )
+				{
+					iLoops++;
+
+
+					if ( m_theOpenList.empty() )
+					{
+						//BotMessage("EMPTY OPEN LIST");
+						state = NavigatorState_Fail;
+						break;
+					}							
+
+					@curr = nextNode();
+
+
+					if ( @curr is null )
+					{
+						//BotMessage("CURR NULL");
+						state = NavigatorState_Fail;
+						break;
+					}
+
+					if ( iLoops > iMaxLoops )
+						break;
+
+
+					if ( curr.getWaypoint() == iGoal )
+					{
+						state = NavigatorState_FoundGoal;
+						break;
+					}
+
+					CWaypoint@ currWpt = g_Waypoints.getWaypointAtIndex(curr.getWaypoint());
+					CWaypoint@ succWpt;
+					AStarNode@ succ;
+
+					iCurrentNode = curr.getWaypoint();
+					int iMaxPaths = currWpt.numPaths();
+
+					float fEnemyCost = 0;
+					
+					if ( m_pExperimental.GetBool() )
+						fEnemyCost = bot.getEnemyDanger(currWpt.m_vOrigin);
+
+					for ( iPath = 0; iPath < iMaxPaths; iPath ++ )
+					{
+						int iSucc = currWpt.getPath(iPath);
+
+					//	BotMessage("PATH FROM " + iCurrentNode + " TO " + iSucc);
+						
+						if ( iSucc == iLastNode ) // argh?
+							continue;
+						if ( iSucc == iCurrentNode ) // argh?
+							continue;										
+
+						/*(if ( m_lastFailedPath.bValid )
 						{
-							iLoops++;
-
-
-							if ( m_theOpenList.empty() )
+							if ( m_lastFailedPath.iFrom == iCurrentNode ) 
 							{
-								//BotMessage("EMPTY OPEN LIST");
-								state = NavigatorState_Fail;
-								break;
-							}							
-
-							@curr = nextNode();
-
-
-							if ( @curr is null )
-							{
-								//BotMessage("CURR NULL");
-								state = NavigatorState_Fail;
-								break;
-							}
-
-							if ( iLoops > iMaxLoops )
-								break;
-
-
-							if ( curr.getWaypoint() == iGoal )
-							{
-								state = NavigatorState_FoundGoal;
-								break;
-							}
-
-							CWaypoint@ currWpt = g_Waypoints.getWaypointAtIndex(curr.getWaypoint());
-							CWaypoint@ succWpt;
-							AStarNode@ succ;
-
-							iCurrentNode = curr.getWaypoint();
-							int iMaxPaths = currWpt.numPaths();
-
-							for ( iPath = 0; iPath < iMaxPaths; iPath ++ )
-							{
-								int iSucc = currWpt.getPath(iPath);
-
-							//	BotMessage("PATH FROM " + iCurrentNode + " TO " + iSucc);
-								
-								if ( iSucc == iLastNode ) // argh?
+								// failed this path last time
+								if ( m_lastFailedPath.iTo == iSucc )
+								{
+									m_lastFailedPath.bSkipped = true;
 									continue;
-								if ( iSucc == iCurrentNode ) // argh?
-									continue;										
-
-								/*(if ( m_lastFailedPath.bValid )
-								{
-									if ( m_lastFailedPath.iFrom == iCurrentNode ) 
-									{
-										// failed this path last time
-										if ( m_lastFailedPath.iTo == iSucc )
-										{
-											m_lastFailedPath.bSkipped = true;
-											continue;
-										}
-									}
-								}*/
-
-								@succ = @paths[iSucc];
-								@succWpt = g_Waypoints.getWaypointAtIndex(iSucc);
-
-								if ( !bot.canGotoWaypoint(currWpt,succWpt) )
-									continue;
-
-								float fCost = curr.getCost();
-
-								if ( m_pUseBelief.GetBool() )
-									fCost += bot.m_fBelief.getBeliefCost(iCurrentNode);			
-								if ( currWpt.m_iFlags != 0 ) // add cost to any flagged waypoint
-									fCost += 48.0f;					
-
-								if ( !currWpt.hasFlags(W_FL_TELEPORT) && !succWpt.hasFlags(W_FL_TELEPORT) )								
-									fCost += (succWpt.distanceFrom(currWpt.m_vOrigin));
-								// add extra cost to human tower waypoints
-								if ( currWpt.hasFlags(W_FL_HUMAN_TOWER) )
-									fCost += 512.0f;
-								
-							    if ( succWpt.m_vOrigin.z < currWpt.m_vOrigin.z )
-								{
-									if ( bot.HealthPercent() > 0 )
-									{
-										// add extra cost to high heights
-										fCost += (succWpt.m_vOrigin.z - currWpt.m_vOrigin.z) / bot.HealthPercent();
-									}
 								}
-
-								if ( succ.isOpen() || succ.isClosed() )
-								{
-									if ( succ.getParent() != -1 )
-									{
-										if ( fCost >= succ.getCost() )
-											continue; // ignore route
-									}
-									else
-										continue;
-								}
-
-								succ.unClose();
-
-								succ.setParent(iCurrentNode);
-								//BotMessage("Succ " + iSucc + " parent = " + iCurrentNode);
-
-								succ.setCost(fCost);	
-
-								succ.setWaypoint(iSucc);
-
-								if ( succ.heuristicSet() == false )		
-								{
-									float h = pStartWpt.distanceFrom(succWpt.m_vOrigin) + pGoalWpt.distanceFrom(succWpt.m_vOrigin);
-
-									succ.setHeuristic(h);
-								}
-
-								// Fix: do this AFTER setting heuristic and cost!!!!
-								if ( succ.isOpen() == false )
-								{
-									open(succ);
-								}
-
 							}
+						}*/
 
-							curr.close(); // close chosen node
+						@succ = @paths[iSucc];
+						@succWpt = g_Waypoints.getWaypointAtIndex(iSucc);
 
-							iLastNode = iCurrentNode;				
+						if ( !bot.canGotoWaypoint(currWpt,succWpt) )
+							continue;
+
+						float fCost = curr.getCost();
+
+						if ( m_pUseBelief.GetBool() )
+						{
+							fCost += bot.m_fBelief.getBeliefCost(iCurrentNode);		
+
+							fCost += fEnemyCost;
 						}	
+						if ( currWpt.m_iFlags != 0 ) // add cost to any flagged waypoint
+							fCost += 48.0f;					
+
+						if ( !currWpt.hasFlags(W_FL_TELEPORT) && !succWpt.hasFlags(W_FL_TELEPORT) )								
+							fCost += (succWpt.distanceFrom(currWpt.m_vOrigin));
+						// add extra cost to human tower waypoints
+						if ( currWpt.hasFlags(W_FL_HUMAN_TOWER) )
+							fCost += 512.0f;
+						
+						if ( succWpt.m_vOrigin.z < currWpt.m_vOrigin.z )
+						{
+							if ( bot.HealthPercent() > 0 )
+							{
+								// add extra cost to high heights
+								fCost += (succWpt.m_vOrigin.z - currWpt.m_vOrigin.z) / bot.HealthPercent();
+							}
+						}
+
+						if ( succ.isOpen() || succ.isClosed() )
+						{
+							if ( succ.getParent() != -1 )
+							{
+								if ( fCost >= succ.getCost() )
+									continue; // ignore route
+							}
+							else
+								continue;
+						}
+
+						succ.unClose();
+
+						succ.setParent(iCurrentNode);
+						//BotMessage("Succ " + iSucc + " parent = " + iCurrentNode);
+
+						succ.setCost(fCost);	
+
+						succ.setWaypoint(iSucc);
+
+						if ( succ.heuristicSet() == false )		
+						{
+							float h = pStartWpt.distanceFrom(succWpt.m_vOrigin) + pGoalWpt.distanceFrom(succWpt.m_vOrigin);
+
+							succ.setHeuristic(h);
+						}
+
+						// Fix: do this AFTER setting heuristic and cost!!!!
+						if ( succ.isOpen() == false )
+						{
+							open(succ);
+						}
+
+					}
+
+					curr.close(); // close chosen node
+
+					iLastNode = iCurrentNode;				
+				}	
 			}		
 			break;
 			case NavigatorState_FoundGoal:

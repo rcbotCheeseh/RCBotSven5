@@ -49,6 +49,7 @@ CConCommand@ m_pRCBotWaypointMove1;
 CConCommand@ m_pRCBotWaypointMove2;
 CConCommand@ m_pBeliefDebug;
 CConCommand@ m_pRCBotWaypointAuto;
+CConCommand@ m_pDebugBotCmd;
 // List of all console variables used by rcbot plugin below
 CCVar@ m_pVisRevs;
 CCVar@ m_pNavRevs;
@@ -60,6 +61,7 @@ CCVar@ m_pBeliefMultiplier;
 CCVar@ m_pWPAutoPathDist;
 CCVar@ m_pDisableUtil;
 CCVar@ m_pBotSuicide;
+CCVar@ m_pExperimental;
 
 // some globals below
 int g_ScriptEntityOffset = 0;	// used by script - entity index in script is offset by this value, default is number of max clients
@@ -147,6 +149,7 @@ void PluginInit()
 	@m_pRCBotWaypointMove2 = @CConCommand ( "waypoint_move2", "place the moved waypoint to new location",@WaypointMove2);
 	@m_pDebugMessages = @CConCommand ( "debug" , "debug messages toggle" , @DebugMessages );
 	@m_pDebugBot = @CConCommand ( "debug_bot" , "debug bot <name>" , @DebugBot );
+	@m_pDebugBotCmd = @CConCommand ( "debug_botcmd" , "debug botcmd <cmd>" , @DebugBotCmd );
 	@GodMode = @CConCommand("godmode","god mode",@GodModeFunc);
 	@NoClipMode = @CConCommand("noclip","noclip",@NoClipModeFunc);
 	@m_pNotouchMode = @CConCommand("notouch","no touch mode",@NoTouchFunc);
@@ -172,6 +175,8 @@ void PluginInit()
 	@m_pWPAutoPathDist = CCVar("autopath_dist",512,"Distance to auto add paths to waypoints", ConCommandFlag::AdminOnly);
 	@m_pDisableUtil = CCVar("disable_util", 0, "Disable bot's utility function, debug only", ConCommandFlag::AdminOnly);
 	@m_pBotSuicide = CCVar("suicide",1,"Allow bots ability to suicide if they get stuck",ConCommandFlag::AdminOnly);
+	@m_pExperimental = CCVar("experimental",0,"Allow experimental features",ConCommandFlag::AdminOnly);
+
 	g_BotCam.Clear(false);
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
@@ -444,6 +449,40 @@ void DebugMessages ( const CCommand@ args )
 	//	SayMessageAll(player,"Debug on");
 	//else
 	//	SayMessageAll(player,"Debug off");
+}
+
+void DebugBotCmd ( const CCommand@ args )
+{	
+	BotManager::BaseBot@ pBot = g_BotManager.FindBot( g_DebugBot.GetEntity() );
+
+	if ( pBot is null )
+	{
+		SayMessageAll(ListenPlayer(),"Debug bot null");
+	}
+
+	if ( args.ArgC() > 1 )
+	{
+		if ( args[1] == "ladder" )
+		{
+			if ( pBot.IsOnLadder() )
+			{
+				SayMessageAll(ListenPlayer(),"pBot->IsOnLadder() == true");
+			}
+			else 
+			{
+			SayMessageAll(ListenPlayer(),"pBot->IsOnLadder() == false");
+			}
+		}
+		else 
+		{
+SayMessageAll(ListenPlayer(),"Invalid debug command");
+		}
+	}
+	else 
+	{
+SayMessageAll(ListenPlayer(),"Invalid debug command");
+	}
+	
 }
 
 void DebugBot ( const CCommand@ args )

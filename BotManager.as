@@ -55,6 +55,8 @@ final class RCBot : BotManager::BaseBot
 
 	EHandle m_pNearestTank;
 
+	EHandle m_pNearestClient;
+
 	float m_flStuckTime = 0;
 
 	Vector m_vLastSeeEnemy;
@@ -709,6 +711,8 @@ final class RCBot : BotManager::BaseBot
 
 		if ( szClassname == "func_breakable" )
 			return BreakableIsEnemy(entity);
+		if ( szClassname == "func_guntarget" )
+			return entity.pev.velocity.Length() > 0;
 
 		if ( szClassname == "func_tank")
 		{
@@ -1202,6 +1206,18 @@ return true;
 			UTIL_DebugMsg(m_pPlayer,"IN_FORWARD",DEBUG_NAV);
 			setLookAt(vOrigin);
 			PressButton(IN_FORWARD);
+
+			const int FALL_DISTANCE = 64;
+
+			 if ((flags & W_FL_LADDER) != W_FL_LADDER)
+			 {
+				// We are above next waypoint by less than FALL_DISTANCE
+				// Just jump off
+				if ( (vOrigin.z < m_pPlayer.pev.origin.z) && (vOrigin.z + FALL_DISTANCE) > m_pPlayer.pev.origin.z )
+				{
+					Jump();
+				}
+			 }
 		}
 
 		if ( (flags & W_FL_STAY_NEAR) == W_FL_STAY_NEAR )
@@ -1699,6 +1715,8 @@ return true;
 		
 		
 	}
+
+	bool m_bReEvaluateUtility = false;
 	
 	float m_fNumTasks = 0;
 	float m_fNumTasksFailed = 0;
@@ -1747,10 +1765,17 @@ return true;
 
 		if ( entity.GetClassname() == "func_breakable" ) // less emphasis on breakables - focus more on things that can hurt us
 			fFactor *= 2;
+		else if ( entity.GetClassname() == "func_guntarget")
+			fFactor *= 10; // pose no threat
 		else if ( entity.GetClassname() == "monster_male_assassin" || entity.GetClassname() == "monster_hwgrunt" )
 			fFactor /= 2; // focus more on stronger enemies
 
 		return fFactor;
+	}
+
+	float getEnemyDanger ( Vector position )
+	{
+		return m_pEnemiesVisible.getDanger(position);
 	}
 	// we got a new visible event
 	void newVisible ( CBaseEntity@ ent )
@@ -1760,6 +1785,8 @@ return true;
 			// WTFFFFF!!!!!!!
 			return;
 		}
+		if ( ent is m_pPlayer ) // avoid myself
+			return;
 
 		if ( CanHeal(ent) ) // Oh I can heal this entity?
 		{
@@ -1779,9 +1806,6 @@ return true;
 			else if ( getHealFactor(ent) < getHealFactor(m_pRevive) )
 				m_pRevive = ent;
 		}
-
-		//BotMessage("New Visible " + ent.pev.classname + "\n");
-
 		// Oh, this guy is an enemy?
 		if ( IsEnemy(ent) )
 		{
@@ -1799,6 +1823,21 @@ return true;
 			{
 				setNearestTank(ent);
 			}
+		}
+		// Oh this is a friendly player who isn't me 
+		if ( (g_EntityFuncs.EntIndex(ent.edict()) > 0) && (g_EntityFuncs.EntIndex(ent.edict()) <= g_Engine.maxClients) )
+		{
+			CBaseEntity@ pPlayer = m_pNearestClient.GetEntity();
+
+			if ( ent.IsPlayerAlly() ) // check he is friendly
+			{
+				if ( (pPlayer is null) || (distanceFrom(ent) < distanceFrom(pPlayer)) )
+				{
+					// update my scientist to the nearest one
+					m_pNearestClient = pPlayer;
+				}
+			}
+
 		}
 		// Oh I see a friendly scientist?!
 		if ( ent.GetClassname() == "monster_scientist" )
@@ -1835,7 +1874,7 @@ return true;
 		//BotMessage("lost visible\n");
 
 		// he might have been an enemy
-		m_pEnemiesVisible.enemyLost(ent,this);
+		m_bReEvaluateUtility = m_pEnemiesVisible.enemyLost(ent,this);
 
 		// Todo --- Really need to clear these? I may have lost sight of them
 		// But they are actually still there!!!
@@ -1854,6 +1893,10 @@ return true;
 		if ( m_pNearestTank.GetEntity() is ent )
 		{
 			m_pNearestTank = null; // Clear it
+		}
+		if ( m_pNearestClient.GetEntity() is ent )
+		{
+			m_pNearestClient = null;
 		}
 	}
 	// Remember that I failed going some way
@@ -2202,7 +2245,7 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 		{
 			setLookAt(m_vHurtOrigin,PRIORITY_HURT);
 		}		
-		else if ( m_pNextWpt !is null &&  m_pNextWpt.hasFlags(W_FL_JUMP) )
+		else if ( m_pNextWpt !is null && m_pNextWpt.hasFlags(W_FL_JUMP) )
 		{
 			setLookAt(m_pNextWpt.m_vOrigin,PRIORITY_WAYPOINT);
 		}
@@ -2210,7 +2253,7 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 		{
 			setLookAt(m_vNoiseOrigin,PRIORITY_LISTEN);
 		}
-		else if ( m_bLastSeeEnemyValid && ((m_fLastSeeEnemyTime+5) > g_Engine.time) )
+		else if ( m_bLastSeeEnemyValid && ((m_fLastSeeEnemyTime+7) > g_Engine.time) )
 		{
 			setLookAt(m_vLastSeeEnemy,PRIORITY_LAST_SEE_ENEMY);
 		}
@@ -2219,8 +2262,6 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 			if ( m_pNextWpt !is null )
 			{
 				int index = m_pNextWpt.iIndex;
-
-
 
 				Vector vLookat = m_pNextWpt.m_vOrigin;
 
@@ -2370,7 +2411,7 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 			m_fTaskFailTime = g_Engine.time + 30;
 		}
 
-		if ( m_pCurrentSchedule !is null )
+		if ( !m_bReEvaluateUtility && m_pCurrentSchedule !is null )
 		{
 			if ( m_pCurrentSchedule.execute(this) == SCHED_TASK_FAIL )
 			{
@@ -2390,6 +2431,8 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 		{
 			if ( m_pDisableUtil.GetBool() == false )
 			{
+				m_bReEvaluateUtility = false;
+				
 				@m_pCurrentSchedule = utils.execute(this);
 
 				if ( @m_pCurrentSchedule != null )
@@ -2582,11 +2625,38 @@ final class BotEnemiesVisible
 		return lastSeen.nearestEnemySeen(bot);
 	}
 
-	void enemyLost ( CBaseEntity@ pent, RCBot@ bot )
+	bool enemyLost ( CBaseEntity@ pent, RCBot@ bot )
 	{
-		removeEnemy(pent);
-
 		lastSeen.add(pent,bot);
+
+		return removeEnemy(pent);
+	}
+	// High CPU used here
+	float getDanger ( Vector position )
+	{
+		float ret = 0;
+
+		for ( uint i = 0; i < enemiesVisible.length(); i ++ )
+		{
+			BotEnemySeen@ temp = @enemiesVisible[i];
+			CBaseEntity@ pent = temp.pEnemy.GetEntity();
+			float distance = 0;
+
+			if ( pent is null )
+			{
+				continue;
+			}
+
+			distance = (pent.GetOrigin() - position).Length();
+			distance = 128.0 - distance;
+
+			if ( distance < 0 )
+				distance = 0;
+
+			ret += distance;
+		}
+
+		return ret;
 	}
 
 	EHandle getBestEnemy ( RCBot@ bot )
@@ -2639,7 +2709,7 @@ final class BotEnemiesVisible
 		return enemiesVisible.length();
 	}
 
-	void removeEnemy ( CBaseEntity@ pent )
+	bool removeEnemy ( CBaseEntity@ pent )
 	{
 		uint i;
 	//	BotMessage("removeEnemy");
@@ -2650,9 +2720,11 @@ final class BotEnemiesVisible
 			if ( temp.isEnemy(pent) )
 			{
 				enemiesVisible.removeAt(i);					
-				return;
+				return true;
 			}
 		}
+
+		return false;
 	//	BotMessage("removeEnemy FAILED");
 	}
 

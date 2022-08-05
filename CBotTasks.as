@@ -1,4 +1,4 @@
-
+const float PLAYER_AVOID_DIST = 96.0f;
 const float REACHABLE_PICKUP_RANGE = 200.0f;
 // ------------------------------------
 // TASKS / SCHEDULES - 	START
@@ -69,6 +69,7 @@ class RCBotSchedule
 {
 	array<RCBotTask@> m_pTasks;
     uint m_iCurrentTaskIndex;
+    float m_fUtility = 0.0f;
 
     RCBotSchedule()
     {
@@ -238,6 +239,51 @@ final class CFindHealthTask : RCBotTask
     }
 }
 
+final class CBotTaskAvoidPlayer : RCBotTask
+{
+    EHandle m_pPlayer;
+    float m_fAvoidTimeout;
+
+    CBotTaskAvoidPlayer (CBaseEntity@ pPlayer )
+    {
+         m_pPlayer = pPlayer;
+         m_fAvoidTimeout = 0.0f;
+    }
+
+    string DebugString ()
+    {
+        return "CBotTaskAvoidPlayer";
+    }
+
+    void execute ( RCBot@ bot )
+    {
+        CBaseEntity@ pPlayer = m_pPlayer.GetEntity();
+
+        if ( pPlayer is null )
+        {
+            Failed();
+        } 
+        else if ( m_fAvoidTimeout == 0.0f || (bot.distanceFrom(pPlayer) < PLAYER_AVOID_DIST) ) 
+        {
+            m_fAvoidTimeout = g_Engine.time + 3.0f;
+            Vector vForward;
+
+            g_EngineFuncs.MakeVectors(bot.m_pPlayer.pev.v_angle);
+
+            vForward = g_Engine.v_forward;
+            // make 2D
+            vForward.z = 0;
+            vForward = vForward.Normalize();
+
+            // Face player and move backwards
+            bot.setMove(bot.m_pPlayer.GetOrigin() - (vForward * PLAYER_AVOID_DIST));
+            bot.setLookAt(pPlayer.pev.origin);
+        }
+        else if ( m_fAvoidTimeout < g_Engine.time )
+            Complete();
+    }
+}
+
 final class CBotTaskWait : RCBotTask
 {
      float m_fWaitTime = 0.0f;
@@ -264,7 +310,7 @@ final class CBotTaskWait : RCBotTask
         else if ( m_fWaitTime < g_Engine.time )
             Complete();
 
-        if ( m_bForceFacing )
+        if ( m_bForceFacing && !bot.hasEnemy() ) // don't force facing if I have an enemy
         {
             //UTIL_PrintVector("m_vFace",m_vFace);
             bot.setLookAt(m_vFace,PRIORITY_OVERRIDE+3);
@@ -2185,6 +2231,37 @@ class CBotAttackEnemyUtil : CBotUtil
     }
 }
 
+class CBotTaskAvoidPlayerUtil : CBotUtil 
+{
+    float calculateUtility ( RCBot@ bot )
+    {        
+       return 1.0f;
+    }
+    
+    bool canDo (RCBot@ bot)
+    {
+        if ( m_pExperimental.GetBool() == false )
+            return false;
+
+        return ((bot.m_flStuckTime + 5.0f) > g_Engine.time) && (g_Engine.time > m_fNextDo) && (bot.m_pNearestClient.GetEntity() !is null) && (bot.distanceFrom(bot.m_pNearestClient.GetEntity()) < PLAYER_AVOID_DIST);
+    }    
+
+    string DebugMessage ()
+    {
+        return "CBotTaskAvoidPlayerUtil";
+    }
+
+    RCBotSchedule@ execute ( RCBot@ bot )
+    {
+        RCBotSchedule@ sched = RCBotSchedule();
+
+        //RCBot@ bot, int wpt, CBaseEntity@ pEntity = nul
+        sched.addTask(CBotTaskAvoidPlayer(bot.m_pNearestClient));
+
+        return sched;
+    }
+}
+
 /**
  * CBotHealPlayerUtil
  *
@@ -2420,7 +2497,7 @@ class CCheckoutNoiseUtil : CBotUtil
 
     bool canDo (RCBot@ bot)
     {
-        return bot.m_flHearNoiseTime + 10.0f > g_Engine.time;
+        return (bot.m_flHearNoiseTime + 10.0f) > g_Engine.time;
     }    
 
     RCBotSchedule@ execute ( RCBot@ bot )
@@ -2953,6 +3030,7 @@ class CBotUtilities
             m_Utils.insertLast(CBotThrowGrenadeUtil());
             m_Utils.insertLast(CBotFindCoverUtil());
             m_Utils.insertLast(CBotAttackEnemyUtil());
+            m_Utils.insertLast(CBotTaskAvoidPlayerUtil());
     }
 
     void reset ()
@@ -2989,17 +3067,24 @@ class CBotUtilities
             UtilsCanDo.sort(function(a,b) { return a.utility > b.utility; });
 
             m_fNoUtilCanDoTime = 0;
+
             for ( uint i = 0; i < UtilsCanDo.length(); i ++ )
             {
                 CBotUtil@ chosenUtil = UtilsCanDo[i];
+
+                if ( bot.m_pCurrentSchedule !is null )
+                {
+                    if ( chosenUtil.utility <= bot.m_pCurrentSchedule.m_fUtility )
+                        continue; // ignore this utliity as it is less than current utility
+                }
+
                 RCBotSchedule@ sched = chosenUtil.execute(bot);
 
                 if ( sched !is null )
-                {     
-                    //chosenUtil.chosen();     
-                    //m_iNumUtilsChosen++;          
+                {            
                     UTIL_DebugMsg(bot.m_pPlayer,"Chosen Utility = " + chosenUtil.DebugMessage() + " Value = " + chosenUtil.utility, DEBUG_UTIL );
                     chosenUtil.setNextDo();
+                    sched.m_fUtility = chosenUtil.utility;
 
                     return sched;
                 }
