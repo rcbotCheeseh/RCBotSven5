@@ -41,19 +41,129 @@ bool CheckScriptOperator ( float check, ScriptOperator op, float value )
 
     return ret;
 }
+/*
+abstract class BotObjectiveFlag 
+{
+    string m_name;
+
+    BotObjectiveFlag ( string name )
+    {
+        m_name = name;
+    }
+
+    bool isName ( string name )
+    {
+        return m_name == name;
+    }
+
+    bool CanDo ( CBaseEntity@ bot )
+    {
+        return false;
+    }
+}
+
+final class BotObjectiveFlag_NeedFullHealth : BotObjectiveFlag
+{
+    BotObjectiveFlag_NeedFullHealth ()
+    {
+        super("need_full_health");
+    }
+
+    bool CanDo ( CBaseEntity@ bot )
+    {
+        return bot.pev.health >= 100.0;
+    }
+}
+
+final class BotObjectiveFlag_NeedFullArmor : BotObjectiveFlag
+{
+    BotObjectiveFlag_NeedFullArmor ()
+    {
+        super("need_full_armor");
+    }
+
+    bool CanDo ( CBaseEntity@ bot )
+    {
+        return bot.pev.armorvalue >= 100.0;
+    }
+}
+
+class BotObjectiveFlags
+{
+    array<BotObjectiveFlag@> m_flags;
+
+    BotObjectiveFlags()
+    {
+        m_flags = {};
+    }
+
+    void addFlag ( BotObjectiveFlag@ flag )
+    {
+        m_flags.push_back(flag);
+    }
+
+    bool CanDo ( CBaseEntity@ bot )
+    {
+        for ( uint i = 0; i < m_flags.length() ; i ++ )
+        {
+            if ( m_flags[i].CanDo(bot) == false )
+                return false;
+        }
+
+        return true;
+    }
+};
+
+
+final class BotObjectiveFlagManager : BotObjectiveFlags
+{
+    BotObjectiveFlagManager()
+    {
+        addFlag(BotObjectiveFlag_NeedFullHealth());
+        addFlag(BotObjectiveFlag_NeedFullArmor());
+    }
+
+    BotObjectiveFlag@ getFlag ( string name )
+    {
+        for ( uint i = 0; i < m_flags.length() ; i ++ )
+        {
+            if ( m_flags[i].isName(name) )
+                return m_flags[i];
+        }
+
+        return null;
+    }
+
+    void Parse ( string flags, BotObjectiveFlags@ flags_object )
+    {
+        array<string> flags_split = flags.Split("|");
+
+        for ( uint i = 0; i < flags_split.length() ; i ++ )
+        {
+           BotObjectiveFlag@ flag_object = getFlag(flags_split[i]);
+
+           if ( flags_object !is null )
+                flags_object.addFlag(flag_object);
+        }
+    }
+
+};
+
+BotObjectiveFlagManager m_BotObjectiveFlagManager = BotObjectiveFlagManager();
+*/
 
 // Example
-//#WID, prev, entity search, parameter, operator, value
-//[0],   [1],           [2],      [3],      [4],    [5]
-//12,    -1,    env_sprite,  distance,        >,   100
-//32,    12,          null,  	   null,     null,  null 
+//#WID, prev, entity search, parameter, operator, value, extra_flags
+//[0],   [1],           [2],      [3],      [4],    [5],  [6]
+//12,    -1,    env_sprite,  distance,        >,   100,   need_armor|need_health
+//32,    12,          null,  	   null,     null,  null,  null
 BotObjectiveScript@ ObjectiveScriptRead ( string line )
 {
 
     // comma separated
     array<string> args = line.Split( "," );
 
-    if ( args.length() != 6 )
+    if ( args.length() < 6 )
         return null;
 
     for ( uint i = 0; i < args.length() ; i ++ )
@@ -65,7 +175,12 @@ BotObjectiveScript@ ObjectiveScriptRead ( string line )
     int prev = atoi(args[1]);
     int ent = atoi(args[2]);
     string param = args[3];
-    string op = args[4];    
+    string op = args[4];   
+
+   // string flags = "";
+    
+    /*if ( args.length() > 6 )
+        flags = args[6];*/
 
     ScriptOperator sop;
 
@@ -85,7 +200,7 @@ BotObjectiveScript@ ObjectiveScriptRead ( string line )
     float value = atof(args[5]);
 
     return BotObjectiveScript ( id, prev,
-     ent, param, sop, value );
+     ent, param, sop, value/*, flags*/ );
 }
 
 class BotObjectiveScript
@@ -97,10 +212,12 @@ class BotObjectiveScript
     ScriptOperator operator;
     float value;
     EHandle entity;
+    //BotObjectiveFlags@ m_flags;
 
     BotObjectiveScript ( int wptid, int prev_id,
-     int ent_id, string param, ScriptOperator op, float val )
+     int ent_id, string param, ScriptOperator op, float val/*, string flags*/ )
     {
+
         id = wptid;
         previous_id = prev_id;
         // entity ID is the script value take away 8
@@ -114,6 +231,10 @@ class BotObjectiveScript
         value = val;
         
         entity = null;
+
+       // @m_flags = BotObjectiveFlags();
+
+       // m_BotObjectiveFlagManager.Parse(flags,m_flags);
 
         initEntity();
     }    
@@ -208,6 +329,9 @@ class BotWaypointScript
             return BotWaypointScriptResult_Error;
         }
 
+        //if ( script.m_flags.CanDo(pBot) == false )
+        //    return BotWaypointScriptResult_Error; // need pre-requisite
+
         if ( script.previous_id >= 0 )
         {
             if ( canDoObjective(pBot,script.previous_id) != BotWaypointScriptResult_Complete )
@@ -227,7 +351,22 @@ class BotWaypointScript
 
         Vector vOrigin = pWpt.m_vOrigin;
 
-        if ( script.entity_id != -1 )
+         if ( script.entity_id == 0 ) // self
+         {
+             CBaseEntity@ pent = pBot;
+
+              if ( script.parameter == "health" )
+              {
+                if ( CheckScriptOperator(pent.pev.health,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+              }
+              else if ( script.parameter == "armor" )
+              {
+                if ( CheckScriptOperator(pent.pev.armorvalue,script.operator,script.value) )
+                    return BotWaypointScriptResult_Complete;
+              }
+         }
+        else if ( script.entity_id > 0 )
         {
             CBaseEntity@ pent = script.entity.GetEntity();
      
