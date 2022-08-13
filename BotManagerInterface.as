@@ -692,6 +692,12 @@ namespace BotManager
 
 						g_ScriptEntityOffset = val;					
 					}
+					else if ( args[0] == "suicide" )
+					{
+						int val = atoi(args[1]);
+
+						m_pBotSuicide.SetBool(val>0);
+					}
 				}
 
 				config.Close();

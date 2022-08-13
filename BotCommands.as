@@ -114,9 +114,7 @@ void PluginInit()
 {
 	g_Module.ScriptInfo.SetAuthor( "Cheeseh" );
 	g_Module.ScriptInfo.SetContactInfo( "rcbot.bots-united.com" );
-	
-	g_BotManager.PluginInit();
-	
+
 	@m_pAddBot = @CConCommand( "addbot", "Adds a new bot", @AddBotCallback );
 	@m_pRemoveBot = @CConCommand( "removebot", "Removes a bot", @RemoveBotCallback );
 
@@ -178,6 +176,9 @@ void PluginInit()
 	@m_pExperimental = CCVar("experimental",0,"Allow experimental features",ConCommandFlag::AdminOnly);
 
 	g_BotCam.Clear(false);
+		
+	g_BotManager.PluginInit();
+	
 	//@m_pAutoConfig = CCVar("auto_config", 1, "Execute config/config.ini every time a bot is being added", ConCommandFlag::AdminOnly);
 }
 // Shows rcbot's belief at closest waypoint
