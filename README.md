@@ -50,7 +50,9 @@ If bots do not move ensure that rcw (Waypoints) exist for the map in the rcw fol
 
 say any of the following messages for bots to follow commands
 
-    '<bot name> press [this/that/a] button' - bot will move to your location and press nearest button
+    '<bot name> press [this/that/a] ...' - bot will move to your location and press nearest button
+	'<bot name> press [this/that/a] ... <time>' - bot will move to button location and press in <time> seconds. Bot will update you on time left.
+		Example:	"press this in 5" (bot will move to button and say "Pressing in 5 secs..." and update once per second.
     '<bot name> wait [here/there/etc...]' - bot will move to your location and wait for 90 sec
     '<bot name> come [here/there/etc...'] - bot will move to your location but not wait
     '<bot name> pickup [a/some] <ammo/weapon/health/armor>' - bot will move to your location and attempt to pickup what you wanted

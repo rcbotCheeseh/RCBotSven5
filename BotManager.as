@@ -271,11 +271,11 @@ final class RCBot : BotManager::BaseBot
 
 					if ( arg < args.length() )
 					{
-						if ( args[arg] == "min" || args[arg] == "mins" )
+						if ( args[arg][0] == 'm' ) // mins
 						{
 							fTime *= 60.0f;
 						}
-						else if ( args[arg] == "hour" || args[arg] == "hours" )
+						else if ( args[arg][0] == 'h' ) // hours
 						{
 							fTime *= 3600.0f;
 						}											
@@ -319,10 +319,14 @@ final class RCBot : BotManager::BaseBot
 					}
 				}
 			}
-			else if ( args[1] == "press") 
+			else if ( args[1] == "press" ) 
 			{
 				RCBotSchedule@ sched = SCHED_CREATE_NEW();
-				
+
+				float fTime = 0.0f; 
+
+				fTime = atof( args[args.size()-1] );
+
 				CBaseEntity@ pButton = UTIL_FindNearestEntity ( "func_button", talker.EyePosition(), 128.0f, true, false );
 
 				if ( pButton is null )
@@ -338,7 +342,11 @@ final class RCBot : BotManager::BaseBot
 					{
 						sched.addTask(task);
 						sched.addTask(CBotMoveToOrigin(vTalker));
-						sched.addTask(CUseButtonTask(pButton));
+
+						if ( fTime > 0.0 )
+							sched.addTask(CUseButtonTimed(pButton,fTime));
+						else
+							sched.addTask(CUseButtonTask(pButton));
 						
 						OK = true;
 					}
@@ -2069,6 +2077,7 @@ return true;
 				Jump();
 			}
 			// look at waypoint
+			m_flStuckTime = g_Engine.time;
 		}
 
 		DoJump();
@@ -2376,9 +2385,14 @@ void te_playerattachment(CBasePlayer@ target, float vOffset=51.0f,
 
 	float m_fSuicideTime = 0.0f;
 
+	void PreventSuicide ()
+	{
+	  	m_fSuicideTime = g_Engine.time + 5.0f;
+	}
+
 	void suicide ()
 	{
-		if (m_fSuicideTime < g_Engine.time )
+		if ( m_fSuicideTime < g_Engine.time )
 		{
 			m_fNextShout = g_Engine.time + 3.0f; // prevents bot from shouting medic
 			m_pPlayer.Killed(m_pPlayer.pev, 0);

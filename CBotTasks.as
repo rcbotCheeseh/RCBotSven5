@@ -310,6 +310,8 @@ final class CBotTaskWait : RCBotTask
         else if ( m_fWaitTime < g_Engine.time )
             Complete();
 
+        bot.PreventSuicide();
+
         if ( m_bForceFacing && !bot.hasEnemy() ) // don't force facing if I have an enemy
         {
             //UTIL_PrintVector("m_vFace",m_vFace);
@@ -1003,6 +1005,99 @@ final class CUseButtonTask : RCBotTask
             if (fButtonVelocity>0.0f)
                 m_bMomentaryStarted = true;
         }
+    }
+}
+
+
+final class CUseButtonTimed : RCBotTask 
+{
+    EHandle m_pButton;
+    int m_iState = 0;
+    float m_fTime = 0;
+    float m_fPressTime = 0;
+    float m_fNextSay = 0;
+
+    string DebugString ()
+    {
+        return "CUseButtonTask";
+    }
+
+    CUseButtonTimed ( CBaseEntity@ button, float fTime )
+    {
+        m_pButton = button;
+        m_fPressTime = fTime;
+    } 
+
+    void execute ( RCBot@ bot )
+    {
+        CBaseEntity@ pButton = m_pButton.GetEntity();
+        CBotWeapon@ pBestWeapon = null;
+        
+        if ( pButton is null )
+        {
+            // Failed
+            Failed();
+            return;
+        }
+
+        bot.PreventSuicide();
+
+        Vector vOrigin = UTIL_EntityOrigin(pButton);
+
+        bot.setLookAt(vOrigin,PRIORITY_OVERRIDE);
+
+
+            
+        switch ( m_iState )
+        {
+        case 0:
+            // Look At Button for 0.5 sec
+            if ( m_fTime == 0.0 )
+                m_fTime = g_Engine.time + 0.5;
+            else if ( m_fTime < g_Engine.time )
+                m_iState ++;
+
+break;
+        case 1:
+        
+                if ( (vOrigin-bot.m_pPlayer.pev.origin).Length2D() > 70 )
+                {
+                    bot.setMove(vOrigin);
+                }
+                else 
+                {
+                    m_fPressTime = g_Engine.time + m_fPressTime;
+                    m_fNextSay = g_Engine.time + 0.0;
+                    m_iState++;
+                }
+            break;
+        case 2:
+              
+
+        bot.StopMoving();
+    
+            if ( m_fNextSay < g_Engine.time )
+            {
+                if ( (m_fPressTime - 1.0) < g_Engine.time )
+                {
+                    bot.PressButton(IN_USE);
+                    bot.Say("Pressed!");
+                    m_iState++;
+                }
+                else 
+                {
+                    // Count down
+                    bot.Say("Pressing in " + int(m_fPressTime - g_Engine.time) + " secs...");
+                    m_fNextSay = g_Engine.time + 1.0;
+                }
+            }
+            break;
+        case 3:
+            // Complete
+            Complete();
+            break;
+        }
+        
     }
 }
 

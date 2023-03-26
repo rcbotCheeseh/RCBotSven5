@@ -684,19 +684,25 @@ namespace BotManager
 						if ( val <= g_Engine.maxClients )
 						{
 							m_iBotQuota = uint(val);
+
+							BotMessage("m_iBotQuota = " + val);
 						}
 					}
 					else if ( args[0] == "script_entity_offset" )
 					{
 						int val = atoi(args[1]);
 
-						g_ScriptEntityOffset = val;					
+						g_ScriptEntityOffset = val;		
+
+						BotMessage("g_ScriptEntityOffset = " + val);			
 					}
 					else if ( args[0] == "suicide" )
 					{
 						int val = atoi(args[1]);
 
 						m_pBotSuicide.SetBool(val>0);
+
+						BotMessage("m_pBotSuicide = " + (val>0));
 					}
 				}
 
