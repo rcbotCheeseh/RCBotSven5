@@ -10,22 +10,22 @@ http://rcbot.bots-united.com/forums/index.php?act=Attach&type=post&id=561
 3. edit the file "default_plugins.txt" in "svencoop" folder using notepad
 4. add "BotManager" plugin to the list of plugins in the file:
 
-
+For example
 ```
-
-
-
-
- "plugin"
+// File header comment here
+"plugins"
+{
+    "plugin"
     {
         "name" "RCBot"
         "script" "BotManager/BotManager"
         "concommandns" "rcbot"
     }
-
-
-
+    // other plugins here
+}
 ```
+
+
 
 do not put comments (//) in front of these lines!!!
 
