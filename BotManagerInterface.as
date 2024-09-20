@@ -803,7 +803,7 @@ namespace BotManager
 			ReadConfig( "scripts/plugins/BotManager/config/" + mapname + ".ini" );
 		}
 		
-		HookReturnCode MapChange()
+		HookReturnCode MapChange(const string& in sLevel) // update for Svencoop 5.26
 		{
 			m_NextDebugMessageTime = 0;
 		    
