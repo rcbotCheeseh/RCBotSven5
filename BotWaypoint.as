@@ -1933,7 +1933,10 @@ final class RCBotNavigator
 
 		@pNode = m_theOpenList.top();
 		m_theOpenList.pop();
-			
+
+		if ( pNode !is null )
+			pNode.unOpen();
+
 		return pNode;
 	}
 
@@ -2219,13 +2222,15 @@ final class RCBotNavigator
 				{
 					iLoops++;
 
+					if ( iLoops > iMaxLoops )
+						break;
 
 					if ( m_theOpenList.empty() )
 					{
 						//BotMessage("EMPTY OPEN LIST");
 						state = NavigatorState_Fail;
 						break;
-					}							
+					}
 
 					@curr = nextNode();
 
@@ -2236,9 +2241,6 @@ final class RCBotNavigator
 						state = NavigatorState_Fail;
 						break;
 					}
-
-					if ( iLoops > iMaxLoops )
-						break;
 
 
 					if ( curr.getWaypoint() == iGoal )
@@ -2335,7 +2337,7 @@ final class RCBotNavigator
 
 						succ.setWaypoint(iSucc);
 
-						if ( succ.heuristicSet() == false )		
+						if ( succ.heuristicSet() == false )
 						{
 							float h = pStartWpt.distanceFrom(succWpt.m_vOrigin) + pGoalWpt.distanceFrom(succWpt.m_vOrigin);
 
