@@ -299,11 +299,11 @@
     {
         TraceResult tr;
 
-        g_Utility.TraceLine( vFrom, vTo, ignore_monsters, dont_ignore_glass , ignore !is null ? null : ignore.edict(), tr );
+        g_Utility.TraceLine( vFrom, vTo, ignore_monsters, dont_ignore_glass , ignore is null ? null : ignore.edict(), tr );
 
         CBaseEntity@ pEntity = g_EntityFuncs.Instance( tr.pHit );
 
-        return tr.flFraction >= 1.0f || ((pTo == pEntity)&&(pTo !is null));
+        return tr.flFraction >= 1.0f || ((pTo !is null)&&(pTo is pEntity));
     }   
 		 	        
 

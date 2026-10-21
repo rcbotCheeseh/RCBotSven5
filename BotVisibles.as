@@ -96,17 +96,21 @@ class CBotVisibles
 
 		iMaxLoops = m_pVisRevs.GetInt();
 
+		// neither of these change while we scan, so resolve them once
+		// instead of once per entity
+		CBaseEntity@ groundEntity = g_EntityFuncs.Instance(player.pev.groundentity);
+		CBaseEntity@ pBlocking = m_pBot.m_pBlocking.GetEntity();
+
 		do
 		{
-			CBaseEntity@ groundEntity = g_EntityFuncs.Instance(player.pev.groundentity);
 			int flags = 0;
 			bool bBodyVisible = false;
 			bool bHeadVisible = false;
-				
-   			@m_pCurrentEntity = g_EntityFuncs.FindEntityByClassname(m_pCurrentEntity, "*"); 
-			
+
+   			@m_pCurrentEntity = g_EntityFuncs.FindEntityByClassname(m_pCurrentEntity, "*");
+
 			iLoops ++;
-			
+
 			if ( m_pCurrentEntity is null )
 			{
 				continue;
@@ -115,7 +119,7 @@ class CBotVisibles
 			if ( m_pCurrentEntity is player )
 				continue;
 
-			if ( m_pBot.m_pBlocking.GetEntity() !is m_pCurrentEntity )
+			if ( pBlocking !is m_pCurrentEntity )
 			{
 				if ( groundEntity !is m_pCurrentEntity )
 				{				
@@ -142,9 +146,11 @@ class CBotVisibles
 
 					if ( m_pBot.CanAvoid(m_pCurrentEntity) )
 					{
-						if ( m_pNearestAvoid.GetEntity() is null || ( (m_pNearestAvoid.GetEntity() !is m_pCurrentEntity) && (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist)) )
+						CBaseEntity@ pNearestAvoid = m_pNearestAvoid.GetEntity();
+
+						if ( pNearestAvoid is null || ( (pNearestAvoid !is m_pCurrentEntity) && (m_pBot.distanceFrom(m_pCurrentEntity) < m_fNearestAvoidDist)) )
 						{
-							m_pNearestAvoid = m_pCurrentEntity;							
+							m_pNearestAvoid = m_pCurrentEntity;
 						}
 					}
 				}
@@ -154,7 +160,10 @@ class CBotVisibles
 			{
 				if ( m_pBot.distanceFrom(m_pCurrentEntity) < 300.0f )
 				{
-					if ( m_pCurrentEntity.GetClassname() == "grenade" )
+					// one engine call + one string, rather than one per compare
+					string szClassname = m_pCurrentEntity.GetClassname();
+
+					if ( szClassname == "grenade" )
 					{
 						if ( m_pCurrentEntity.pev.owner !is null )
 						{
@@ -167,7 +176,7 @@ class CBotVisibles
 							}
 						}
 					}
-					else if ( m_pCurrentEntity.GetClassname() == "monster_alien_voltigore" && m_pCurrentEntity.pev.frame == 255 )				
+					else if ( szClassname == "monster_alien_voltigore" && m_pCurrentEntity.pev.frame == 255 )
 					{
 						if ( m_pCurrentEntity.IsPlayerAlly() == false )
 						{
